@@ -2,7 +2,7 @@
 
 The Transformer is seed-BIMODAL on MQAR (stability_test: solves 2/5; seed 0 looks collapse-prone),
 and a long warmup + cosine-to-floor over a big budget delays the phase transition until the LR has
-decayed too far to sharpen it. Before ANY PRISM comparison we must establish: with a transition-
+decayed too far to sharpen it. Before ANY Prizma comparison we must establish: with a transition-
 friendly schedule and MULTIPLE seeds, what is the Transformer's reliable solve frontier? A parity
 claim is only meaningful where the Transformer is a *strong* baseline (high solve-rate).
 

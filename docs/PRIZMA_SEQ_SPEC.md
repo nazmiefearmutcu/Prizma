@@ -1,11 +1,11 @@
-# PRISM-Seq — Implementable Architecture Specification
+# Prizma-Seq — Implementable Architecture Specification
 
 **Status:** Committee-agreed build contract. This is the single source of truth the architects implement against. It synthesizes the three candidate designs and the three judge reports into ONE buildable PyTorch/MPS architecture, then states the exact recurrence, the falsifiable bar, the experiment matrix, the causal ablations, and the honest failure section.
 
 **Winning design (committee verdict):** **single-state Predictive-Coding Gated-DeltaNet** mixer (Designs 2/3 core — confirmed by all three judges as the only variant that fits the minutes-per-run MPS budget and reuses the existing `seq/` harness), built with **Design 3's exact free-energy derivation** as the canonical novelty defense, **L2-normalized keys** (Designs 1/3, for an exact projection erase and crispest recall — NOT Design 2's kernel feature map, which two judges flagged as recall-blurring), and **Design 1's multi-expert precision routing carried as an OPTIONAL later axis only** (the buildability judge measured M=4 at ~34 min/run, which breaks the budget, and identified a chunked-parallel/differentiability hazard in the per-token router). The continual-learning result is a clearly separated secondary axis.
 
 **The claim we license (verbatim, never inflated):**
-> *PRISM-Seq is a credible efficient-attention-replacement candidate at small scale, in the tested regime: parameter- and FLOP-matched against a tuned Transformer it clears the field-standard attention-diagnostic suite, is competitive on a small char-LM within an explicit margin, demonstrates a measured linear/constant-memory inference advantage, and its named mechanism is causally responsible (not "a bigger RNN"). Large-scale LM parity and backprop-free parity are NOT claimed and are stated as open frontiers.*
+> *Prizma-Seq is a credible efficient-attention-replacement candidate at small scale, in the tested regime: parameter- and FLOP-matched against a tuned Transformer it clears the field-standard attention-diagnostic suite, is competitive on a small char-LM within an explicit margin, demonstrates a measured linear/constant-memory inference advantage, and its named mechanism is causally responsible (not "a bigger RNN"). Large-scale LM parity and backprop-free parity are NOT claimed and are stated as open frontiers.*
 
 ---
 
@@ -37,7 +37,7 @@ Model interface (frozen by `seq/common.py`, do not change): every model is an `n
 
 ### 1.1 What is replaced and why
 
-Self-attention forms an `n×n` score matrix: every query attends to every key (O(n²) compute, O(n) KV-cache). PRISM-Seq replaces this with a **carried associative workspace state** `S_t ∈ R^{d_h×d_h}` per head — the cortical workspace `a` of `PRISM.md §1`, finally implemented as a key→value-bound matrix instead of a flat latent (it was never implemented in `src/prism.py`; this is the C1 linchpin gap). Token `t` mixes with all earlier tokens **only through `S`**, never through a pairwise matrix. Mixing is two state operations per token:
+Self-attention forms an `n×n` score matrix: every query attends to every key (O(n²) compute, O(n) KV-cache). Prizma-Seq replaces this with a **carried associative workspace state** `S_t ∈ R^{d_h×d_h}` per head — the cortical workspace `a` of `Prizma.md §1`, finally implemented as a key→value-bound matrix instead of a flat latent (it was never implemented in `src/prizma.py`; this is the C1 linchpin gap). Token `t` mixes with all earlier tokens **only through `S`**, never through a pairwise matrix. Mixing is two state operations per token:
 
 1. **READ** (recognition-by-reconstruction): retrieve the value bound to the current query.
 2. **WRITE** (precision-gated targeted erase-and-write): bind the current (key, value), erasing any stale binding at that key first.
@@ -46,7 +46,7 @@ Cost: **O(n·d_h²)** total training, **O(d_h²) per step / O(d_h²) state** inf
 
 ### 1.2 Per-token encoder (the input-dependent, per-token, content-based gate)
 
-Every routing/write/read decision is a function of the **current token's content, recomputed every step** (mandatory per C1; PRISM's per-domain recognition-routing recast to per-token):
+Every routing/write/read decision is a function of the **current token's content, recomputed every step** (mandatory per C1; Prizma's per-domain recognition-routing recast to per-token):
 
 ```
 x_t   = RMSNorm( h_t )                         # h_t = residual stream input, [B,d]
@@ -58,21 +58,21 @@ v_t   = qkv_t[...,2]                            # [B,H,d_h]   (NOT normalized)
 
 `W_qkv = nn.Linear(d, 3d, bias=False)` — this is **exactly attention's 4·d² projection budget** minus the output proj, so param-matching is trivial-by-construction (Design 2/judge-3 observation). **L2-normalization of `k` is non-negotiable** (`‖k_t‖=1`): it makes the Householder erase `(I − β k kᵀ)` an exact rank-1 projection → exact last-binding overwrite → crispest MQAR recall (judge 1's decisive point). We use L2-norm, **not** Design 2's positive kernel feature map `elu+1` (which blurs key separation and reduces effective slot count; kept only as a documented stability fallback in §1.10).
 
-### 1.3 Precision-weighted write gate (PRISM's bid, per-token) — the unified precision signal
+### 1.3 Precision-weighted write gate (Prizma's bid, per-token) — the unified precision signal
 
 The single precision/surprise driver, read three ways (the named novelty C7.2):
 
 ```
 ε_t = v_t − S_{t-1} k_t                         # [B,H,d_h]  reconstruction error at key k_t
-e_t = ‖ε_t‖²                                    # [B,H,1]    surprise energy  (= PRISM b_m = ½εᵀΠε)
+e_t = ‖ε_t‖²                                    # [B,H,1]    surprise energy  (= Prizma b_m = ½εᵀΠε)
 β_t = sigmoid( a_β · e_t + W_β x_t + b_β )       # [B,H,1]    write strength, clamped to (0, 0.99]
 α_t = sigmoid( W_α x_t )                         # [B,H,1]    data-dependent forget (Gated-DeltaNet)
 ```
 
-- `ε_t = v_t − S_{t-1} k_t` **is literally PRISM's error neuron** `ε_m = x_m − W_m f(z_m)` (`PRISM.md §2.1`), read in value-space. This is the load-bearing PC identity, not an analogy.
-- `β_t` is PRISM's metaplastic gate `β(E)` with `dβ/dE>0`: **surprising (novel-key) tokens write hard; mastered/familiar tokens decay `β` toward a floor, protecting existing bindings** (`PRISM.md §2.3`).
-- `α_t` is the data-dependent decay (PRISM's PGM/ω consolidation as a per-token forget). Decay-alone under-recalls, write-alone under-forgets — both are needed (C1).
-- **One driver, two opposite-sign reads:** write-rate `β` (rises with surprise) and read-precision `π` (rises with mastery) are the same `e_t` read with opposite sign (`PRISM.md §2.3`). Competitors compute query-gating and forget-gating from **separate learned projections**; PRISM-Seq derives both from one error signal. B6 must show the read-gate is causally equivalent in function to the write-`β`, or the unification claim is dropped honestly.
+- `ε_t = v_t − S_{t-1} k_t` **is literally Prizma's error neuron** `ε_m = x_m − W_m f(z_m)` (`Prizma.md §2.1`), read in value-space. This is the load-bearing PC identity, not an analogy.
+- `β_t` is Prizma's metaplastic gate `β(E)` with `dβ/dE>0`: **surprising (novel-key) tokens write hard; mastered/familiar tokens decay `β` toward a floor, protecting existing bindings** (`Prizma.md §2.3`).
+- `α_t` is the data-dependent decay (Prizma's PGM/ω consolidation as a per-token forget). Decay-alone under-recalls, write-alone under-forgets — both are needed (C1).
+- **One driver, two opposite-sign reads:** write-rate `β` (rises with surprise) and read-precision `π` (rises with mastery) are the same `e_t` read with opposite sign (`Prizma.md §2.3`). Competitors compute query-gating and forget-gating from **separate learned projections**; Prizma-Seq derives both from one error signal. B6 must show the read-gate is causally equivalent in function to the write-`β`, or the unification claim is dropped honestly.
 
 `W_β, W_α = nn.Linear(d, H, bias=True)` (one scalar gate per head; `a_β, b_β` learned scalars). Negligible params, fully counted in the ledger.
 
@@ -83,13 +83,13 @@ S_t = α_t · S_{t-1} (I − β_t k_t k_tᵀ) + β_t v_t k_tᵀ
     = α_t · S_{t-1} + β_t ( v_t − α_t S_{t-1} k_t ) k_tᵀ                   (with ‖k_t‖=1)
 ```
 
-**Derivation (the killer reframe — Design 3, the strongest defense against "just Gated-DeltaNet with a PC relabel"):** the write is ONE gradient step on PRISM's per-token free-energy functional. Define the per-token free energy
+**Derivation (the killer reframe — Design 3, the strongest defense against "just Gated-DeltaNet with a PC relabel"):** the write is ONE gradient step on Prizma's per-token free-energy functional. Define the per-token free energy
 ```
 F_t(S) = ½ ‖ v_t − S k_t ‖²_{Π_t}              (the §2.1 module-error term, in state-space)
 ∂F_t/∂S = −( v_t − S k_t ) k_tᵀ = ε_t k_tᵀ      (the open error neuron times the trace)
 S_t = α_t S_{t-1} − β_t · ∂F_t/∂S |_{S=S_{t-1}}  = α_t S_{t-1} + β_t ε_t k_tᵀ
 ```
-So the DeltaNet/Householder erase-and-write **falls out of predictive coding**: `β_t Π_t ε_t k_tᵀ` is exactly `PRISM.md §2.4`'s local rule `dW ∝ (Π ε) ⊗ r` with `r = k_t`, and the eligibility trace `Tr_m ~ f(z)ε` IS the outer product `ε_t k_tᵀ`. The `(I − β k kᵀ)` factor ERASES the old binding at `k_t` before writing `v_t` — a later key overwrites an earlier one. **Additive/EMA accumulation is FORBIDDEN as the recall substrate** (C1): it is the decay-memory family that fails MQAR.
+So the DeltaNet/Householder erase-and-write **falls out of predictive coding**: `β_t Π_t ε_t k_tᵀ` is exactly `Prizma.md §2.4`'s local rule `dW ∝ (Π ε) ⊗ r` with `r = k_t`, and the eligibility trace `Tr_m ~ f(z)ε` IS the outer product `ε_t k_tᵀ`. The `(I − β k kᵀ)` factor ERASES the old binding at `k_t` before writing `v_t` — a later key overwrites an earlier one. **Additive/EMA accumulation is FORBIDDEN as the recall substrate** (C1): it is the decay-memory family that fails MQAR.
 
 ### 1.5 The workspace READ — recognition-by-reconstruction + local-window safety net
 
@@ -100,13 +100,13 @@ o_t     = W_o( concat_heads( o_S_t + o_win_t ) ) # [B,d]
 h_{t}'  = h_t + o_t                              # residual; then standard FFN sublayer
 ```
 
-- `o_S_t = S_t q_t = Σ_j (k_jᵀ q_t) v_j` (up to erases) is the numpy code's argmin-surprise routing (`prism.py:99–107`) recast as a one-shot associative read with **frozen weights, per token**. For near-orthonormal keys `k_jᵀ q_t ≈ δ_{ij}`, so the read returns the last-bound value — the `softmax-argmax(k·q)` analogue.
+- `o_S_t = S_t q_t = Σ_j (k_jᵀ q_t) v_j` (up to erases) is the numpy code's argmin-surprise routing (`prizma.py:99–107`) recast as a one-shot associative read with **frozen weights, per token**. For near-orthonormal keys `k_jᵀ q_t ≈ δ_{ij}`, so the read returns the last-bound value — the `softmax-argmax(k·q)` analogue.
 - `WindowAttn_w` is the field-standard small exact-attention window (Based/Griffin/Gated-DeltaNet) guaranteeing precise local recall while `S` carries long range (C3). **Disclosed in the diagram and the param/FLOP ledger.** `w=16` default (kept small so long-range recall provably needs `S` — B6 gate). It shares `q,k,v` projections with the mixer (no extra projection params; only the FLOPs are counted).
 - `W_o = nn.Linear(d, d, bias=False)` — the attention-output-proj analogue.
 
 ### 1.6 The FFN sublayer (identical to the baseline — Design 3 discipline)
 
-After the mixer residual, an FFN sublayer **byte-identical to the Transformer baseline's** (`seq/transformer.py`: RMSNorm pre-norm + SwiGLU). This guarantees that **only the mixing operator differs** between PRISM-Seq and the Transformer, making the comparison an unambiguous attention-replacement test and the param-match unimpeachable (judges 2 and 3, graft).
+After the mixer residual, an FFN sublayer **byte-identical to the Transformer baseline's** (`seq/transformer.py`: RMSNorm pre-norm + SwiGLU). This guarantees that **only the mixing operator differs** between Prizma-Seq and the Transformer, making the comparison an unambiguous attention-replacement test and the param-match unimpeachable (judges 2 and 3, graft).
 
 ### 1.7 Position and causality
 
@@ -129,7 +129,7 @@ MQAR within ONE forward pass, weights frozen, sequence-resident:
 
 ### 1.9 (Optional, gated-OFF by default) Multi-expert precision routing — Design 1, LATER axis only
 
-`M` parallel workspace experts `{S_t^{(m)}}`, precision bid `b_m = π_m ‖ε_t^{(m)}‖²`, router `g_t = softmax_m(−b_m/τ)`, aggregated read `r_t = Σ_m g_{t,m} S_t^{(m)} q_t`. This preserves PRISM's genuine differentiator (precision-routed mixture-of-recurrent-memories) and raises effective rank to `M·d_h`.
+`M` parallel workspace experts `{S_t^{(m)}}`, precision bid `b_m = π_m ‖ε_t^{(m)}‖²`, router `g_t = softmax_m(−b_m/τ)`, aggregated read `r_t = Σ_m g_{t,m} S_t^{(m)} q_t`. This preserves Prizma's genuine differentiator (precision-routed mixture-of-recurrent-memories) and raises effective rank to `M·d_h`.
 
 **It is NOT in the gating build.** The buildability judge measured `M=4` at ~34 min/run (breaks the minutes budget) and identified that the per-token router's dependence on each expert's carried state is a sequential within-chunk dependency the chunked WY/UT transform assumes away. **Therefore:** the multi-expert axis is implemented ONLY after the single-state model clears the minimal bar, and ONLY as **top-1 hard routing evaluated in the O(1) recurrent decode path** (where the sequential dependency is free), never inside the chunked-parallel training form. If it is built, B6 must verify the router sends a query to the SAME expert that holds its key (else routing splits bindings and breaks MQAR — judge 1's flagged failure mode); if that verification is shaky, fall back to the single shared state. The single-state model is the deliverable that licenses the claim.
 
@@ -192,23 +192,23 @@ All of `{W_qkv, W_β, W_α, W_o, the chunked delta recurrence, the window head, 
 ### 3.2 BONUS (non-gating, C4) — local / PC / DFA mode with a quantified tax
 
 - The **state write is already local by construction**: the delta step is a one-step PC gradient on `ε_t k_tᵀ` — **no backprop-through-time for the state path**.
-- The per-token projections + readout are trained with **fixed-random feedback (DFA)** instead of `Wᵀ`, inherited from the numpy code's `Bdec/Bcls` feedback matrices (`PRISM.md §2.5`).
+- The per-token projections + readout are trained with **fixed-random feedback (DFA)** instead of `Wᵀ`, inherited from the numpy code's `Bdec/Bcls` feedback matrices (`Prizma.md §2.5`).
 - **Expected tax:** DFA lags most on long-credit tasks (MQAR rung3, large-gap induction), which is also where the razor-thin-LR instability bites. The local mode gets an **extra LR sweep** and the **trainable-LR window is itself reported as a metric**.
-- **Reported as a NUMBER with architecture held constant** (local-PRISM-Seq vs backprop-PRISM-Seq, the SAME model) — NEVER local-PRISM-Seq vs backprop-Transformer (C4 anti-confound). Backprop-free parity is stated as an open frontier, not claimed; this axis is never a gate.
+- **Reported as a NUMBER with architecture held constant** (local-Prizma-Seq vs backprop-Prizma-Seq, the SAME model) — NEVER local-Prizma-Seq vs backprop-Transformer (C4 anti-confound). Backprop-free parity is stated as an open frontier, not claimed; this axis is never a gate.
 
 ### 3.3 Param/FLOP honesty (C5, hard rule)
 
-Count **EVERY tensor in the forward pass** in a disclosed ledger via `seq/common.count_by_module`, including the fixed window-head and any fixed-random DFA feedback matrices (disclosed as **non-trainable-but-not-free** — memory + FLOPs counted). The numpy doc's "sabit FA matrisleri sayılmaz" stance (`PRISM.md §6.5`) is **FORBIDDEN** here. FLOPs/step (inference) and FLOPs/token (training) are audited and reported for both models so a win cannot come from secretly spending more compute.
+Count **EVERY tensor in the forward pass** in a disclosed ledger via `seq/common.count_by_module`, including the fixed window-head and any fixed-random DFA feedback matrices (disclosed as **non-trainable-but-not-free** — memory + FLOPs counted). The numpy doc's "sabit FA matrisleri sayılmaz" stance (`Prizma.md §6.5`) is **FORBIDDEN** here. FLOPs/step (inference) and FLOPs/token (training) are audited and reported for both models so a win cannot come from secretly spending more compute.
 
 ---
 
 ## PART 4 — PyTorch module breakdown (targets MPS, drops into `seq/`)
 
-All in `seq/prism_seq.py` (~300 lines). Reuses `seq/common.py` (train/eval/param ledger/latency) and `seq/transformer.py` (FFN/RMSNorm/baseline). Float32, no autocast.
+All in `seq/prizma_seq.py` (~300 lines). Reuses `seq/common.py` (train/eval/param ledger/latency) and `seq/transformer.py` (FFN/RMSNorm/baseline). Float32, no autocast.
 
 ```python
 @dataclass
-class PRISMSeqConfig:
+class PrizmaSeqConfig:
     vocab: int = 64
     d_model: int = 64
     n_layers: int = 2
@@ -222,7 +222,7 @@ class PRISMSeqConfig:
     # multi-expert (OFF by default; later axis only — §1.9)
     n_experts: int = 1
 
-class PRISMSeqBlock(nn.Module):
+class PrizmaSeqBlock(nn.Module):
     """Pre-LN -> precision-routed workspace mixer -> residual -> SwiGLU FFN -> residual."""
     def __init__(self, cfg): ...
         # self.norm1 = RMSNorm(d)                         # reuse transformer.RMSNorm
@@ -251,8 +251,8 @@ class WindowAttn(nn.Module):
     # exact causal attention restricted to last w tokens via unfold/mask; shares q,k,v
     def forward(self, q, k, v): ...        # [B,H,T,d_h] -> [B,H,T,d_h]
 
-class PRISMSeqLM(nn.Module):
-    """TokEmb (+optional learned pos for char-LM parity) -> L x PRISMSeqBlock -> RMSNorm -> tied head."""
+class PrizmaSeqLM(nn.Module):
+    """TokEmb (+optional learned pos for char-LM parity) -> L x PrizmaSeqBlock -> RMSNorm -> tied head."""
     def __init__(self, cfg): ...
         # self.tok = nn.Embedding(V, d); self.blocks = ModuleList(...); self.head tied to tok
     def forward(self, idx):                # idx: [B,T] long -> logits: [B,T,V]   (frozen interface)
@@ -269,10 +269,10 @@ Tensor-shape contract (diagnostic config `d=64,H=2,d_h=32`): `q,k,v` `[B,2,T,32]
 
 ## PART 5 — The parameter-matched Transformer baseline
 
-**Use `seq/transformer.py` verbatim** (the confirmed non-strawman): decoder-only, RMSNorm pre-norm, causal MHA via `scaled_dot_product_attention(is_causal=True)`, **SwiGLU** MLP (`d_ff ≈ 8/3·d`), learned absolute positions, tied head. PRISM-Seq reuses the SAME RMSNorm/SwiGLU/embedding/head code (§1.6) so **only the mixer differs**.
+**Use `seq/transformer.py` verbatim** (the confirmed non-strawman): decoder-only, RMSNorm pre-norm, causal MHA via `scaled_dot_product_attention(is_causal=True)`, **SwiGLU** MLP (`d_ff ≈ 8/3·d`), learned absolute positions, tied head. Prizma-Seq reuses the SAME RMSNorm/SwiGLU/embedding/head code (§1.6) so **only the mixer differs**.
 
-- **Tuned as hard as PRISM-Seq:** per-task LR sweep `{1e-3,3e-4,1e-4}`, AdamW (0.9/0.95, wd 0.1), cosine+warmup, dropout where it helps. Must clear the well-posedness floor on every task (≥0.98 induction, solves MQAR rung1) BEFORE comparison; else re-tune the task config.
-- **±5% trainable-param match at every config**, `d_model/L/vocab/seq` identical. Mixer projections are `4·d²` in both models (PRISM-Seq `W_qkv 3d² + W_o d²` = attention's `qkv 3d² + proj d²`); FFN identical; gates add `O(d·H)` — so ±5% is hit by a single `d_model` nudge.
+- **Tuned as hard as Prizma-Seq:** per-task LR sweep `{1e-3,3e-4,1e-4}`, AdamW (0.9/0.95, wd 0.1), cosine+warmup, dropout where it helps. Must clear the well-posedness floor on every task (≥0.98 induction, solves MQAR rung1) BEFORE comparison; else re-tune the task config.
+- **±5% trainable-param match at every config**, `d_model/L/vocab/seq` identical. Mixer projections are `4·d²` in both models (Prizma-Seq `W_qkv 3d² + W_o d²` = attention's `qkv 3d² + proj d²`); FFN identical; gates add `O(d·H)` — so ±5% is hit by a single `d_model` nudge.
 - **B5 gives the Transformer its best honest path (KV-cache)**, never a denied one.
 - Matched sizes: diagnostics (B1–B3, B6) ~110–120K params; char-LM (B4) ~1.4M params.
 
@@ -280,16 +280,16 @@ Tensor-shape contract (diagnostic config `d=64,H=2,d_h=32`): `q,k,v` `[B,2,T,32]
 
 ## PART 6 — The FINAL agreed falsifiable bar (numbered pass/fail)
 
-All comparisons are PRISM-Seq vs the param/FLOP-matched, individually-tuned Transformer, same data/seeds/hardware. Every number is mean over **≥3 seeds {0,1,2}** (≥5 for B4) with **95% CIs**. A verdict is declared only when the CI supports it. The discriminating rung is the gate; report ALL seeds and ALL rungs.
+All comparisons are Prizma-Seq vs the param/FLOP-matched, individually-tuned Transformer, same data/seeds/hardware. Every number is mean over **≥3 seeds {0,1,2}** (≥5 for B4) with **95% CIs**. A verdict is declared only when the CI supports it. The discriminating rung is the gate; report ALL seeds and ALL rungs.
 
 1. **B1 — MQAR (decisive gate).** Zoology/Based protocol (`seq/tasks.MQAR`), keys distinct per sequence, loss masked to answer positions, eval = 2000 fresh sequences on a disjoint seed. Run rung1 (seq=128,D=16,Q=4), rung2 (seq=256,D=32,Q=8), **rung3 (seq=512,D=64,Q=16) — the gate.** **PASS:** rung1 & rung2 ≥ 0.95 AND ≥ T−0.02; **rung3 ≥ T−0.03** with CIs not favoring T by >0.03. **FAIL:** collapses to chance on any rung T solves, or trails by >0.03 on rung3.
-2. **B1b — MQAR capacity sweep (pre-registered, run FIRST).** Vary `D ∈ {8,16,32,64,128}`; sweep PRISM-Seq recall-state knob (`d_h`/effective rank) ∈ {8,16,32,64}. **PASS:** stays within B1 margins up to a **pre-registered `D*`** (register `D*` and the `d_h` achieving it, with effective near-orthogonal slot count ≥ ~1.5×D*, BEFORE seeing results); recall-vs-state curve reported. **FAIL:** falls below `D*` at every feasible state size ⇒ rescope claim to achieved `D*` (honest) or B1 fails.
+2. **B1b — MQAR capacity sweep (pre-registered, run FIRST).** Vary `D ∈ {8,16,32,64,128}`; sweep Prizma-Seq recall-state knob (`d_h`/effective rank) ∈ {8,16,32,64}. **PASS:** stays within B1 margins up to a **pre-registered `D*`** (register `D*` and the `d_h` achieving it, with effective near-orthogonal slot count ≥ ~1.5×D*, BEFORE seeing results); recall-vs-state curve reported. **FAIL:** falls below `D*` at every feasible state size ⇒ rescope claim to achieved `D*` (honest) or B1 fails.
 3. **B2 — Induction (sanity, subsumed by B1).** `seq/tasks.Induction`, seq=256, scored at induction positions, gap-binned (1–16 / 16–64 / 64–256). **PASS:** ≥ 0.98 AND ≥ T−0.01; **64–256 gap bin ≥ 0.95** (T itself ≥0.98). **FAIL:** high accuracy only in the 1–16 bin (local shortcut, not true induction).
-4. **B3 — Selective copying (input-dependent-gating gate).** `seq/tasks.SelectiveCopy`, seq=256, 16 data tokens at RANDOM positions; run BOTH the fixed-spacing control and the selective variant. **PASS:** selective per-token ≥ 0.97 AND ≥ T−0.02; exact-sequence ≥ 0.90; control gate: ≥0.97 on fixed too, AND `PRISM_noGate` (B6) drops on the SELECTIVE variant while staying high on the fixed variant. **FAIL:** cannot exceed a time-invariant-mixing baseline on the selective variant.
+4. **B3 — Selective copying (input-dependent-gating gate).** `seq/tasks.SelectiveCopy`, seq=256, 16 data tokens at RANDOM positions; run BOTH the fixed-spacing control and the selective variant. **PASS:** selective per-token ≥ 0.97 AND ≥ T−0.02; exact-sequence ≥ 0.90; control gate: ≥0.97 on fixed too, AND `PRIZMA_noGate` (B6) drops on the SELECTIVE variant while staying high on the fixed variant. **FAIL:** cannot exceed a time-invariant-mixing baseline on the selective variant.
 5. **B4 — Char-LM (closest, scale-sensitive call).** tiny-shakespeare (contiguous 90/5/5, no boundary leak) + text8 first 5 MB; seq=256; early-stop on val BPC; evaluate FROZEN on TEST. **PASS ("competitive"):** test BPC ≤ T + 0.05 on BOTH corpora, ≥3 seeds (≥5 for the closest), CI not worse by >0.05; must beat a 5-gram / small-LSTM floor. **BONUS:** ≤ T (true parity/win). **Minimal-viable note:** B4 may be reported as "competitive within margin OR explicitly the closest gap" without invalidating the minimal claim, provided B1/B1b/B3/B5/B6 pass cleanly.
 6. **B4b — Length extrapolation.** Train B2/B3 at seq=256, test at seq=512/1024; report the curve. **PASS:** report honestly; a scoped drop is allowed; claiming "solves" from train-length-only numbers is forbidden.
-7. **B5 — Structural advantage (the "alternative" differentiator, MEASURED).** Same B4 checkpoint, sweep `n ∈ {128,256,512,1024,2048,4096}`. PRISM-Seq via `init_state/step` (O(1)) vs Transformer KV-cache; measure per-token decode latency vs n, peak state/cache memory vs n, prefill+generate-512 time. `torch.mps` memory APIs + `mps.synchronize()`, 20-iter median, settling constant counted. **PASS:** PRISM-Seq latency statistically FLAT in n (slope not >0; within 20% across n=128→4096) while T grows ≥linearly; AND PRISM-Seq peak state memory CONSTANT (within 10%) while T's KV-cache grows ≥4×; AND measured crossover **n\* ≤ 2048**. **FAIL:** cannot run O(1)-state, OR latency/memory also grow with n.
-8. **B6 — Mechanism-causal ablations (anti-strawman gate).** On B1-rung3 + B3-selective, all variants param-matched within ±5%. **6.1 internal:** `PRISM_noPrecision` (uniform input-independent gate), `PRISM_noWorkspace` (plain causal linear recurrence, no state broadcast), `PRISM_noDelta` (additive/EMA write — the make-or-break), `PRISM_noRouteReadout` (no content-based read). **6.2 family + controls:** vanilla GRU, minimal linear-attn block, single Mamba/SSM block (param+FLOP matched); uniform-write / learned-softmax-gate / random-gate controls. **PASS:** `noPrecision` and `noDelta` drop selective and/or MQAR-rung3 by ≥0.15; `noWorkspace` trails full on MQAR-rung3 by ≥0.10; precision-gating beats uniform/softmax/random with non-overlapping CIs; full model ≥ GRU/linear-attn/Mamba family. **FAIL:** any internal ablation matches full within CI on both tasks (mechanism not load-bearing ⇒ it is just a recurrent net).
+7. **B5 — Structural advantage (the "alternative" differentiator, MEASURED).** Same B4 checkpoint, sweep `n ∈ {128,256,512,1024,2048,4096}`. Prizma-Seq via `init_state/step` (O(1)) vs Transformer KV-cache; measure per-token decode latency vs n, peak state/cache memory vs n, prefill+generate-512 time. `torch.mps` memory APIs + `mps.synchronize()`, 20-iter median, settling constant counted. **PASS:** Prizma-Seq latency statistically FLAT in n (slope not >0; within 20% across n=128→4096) while T grows ≥linearly; AND Prizma-Seq peak state memory CONSTANT (within 10%) while T's KV-cache grows ≥4×; AND measured crossover **n\* ≤ 2048**. **FAIL:** cannot run O(1)-state, OR latency/memory also grow with n.
+8. **B6 — Mechanism-causal ablations (anti-strawman gate).** On B1-rung3 + B3-selective, all variants param-matched within ±5%. **6.1 internal:** `PRIZMA_noPrecision` (uniform input-independent gate), `PRIZMA_noWorkspace` (plain causal linear recurrence, no state broadcast), `PRIZMA_noDelta` (additive/EMA write — the make-or-break), `PRIZMA_noRouteReadout` (no content-based read). **6.2 family + controls:** vanilla GRU, minimal linear-attn block, single Mamba/SSM block (param+FLOP matched); uniform-write / learned-softmax-gate / random-gate controls. **PASS:** `noPrecision` and `noDelta` drop selective and/or MQAR-rung3 by ≥0.15; `noWorkspace` trails full on MQAR-rung3 by ≥0.10; precision-gating beats uniform/softmax/random with non-overlapping CIs; full model ≥ GRU/linear-attn/Mamba family. **FAIL:** any internal ablation matches full within CI on both tasks (mechanism not load-bearing ⇒ it is just a recurrent net).
 
 **Minimal Viable Bar (honestly licenses the claim):** **B1 (incl. rung3) + B1b + B3 (with control) + B5 + B6.** B2 is a cheap sanity pass; B4 should clear but may be the closest-gap item. **If MQAR-rung3 (B1) fails OR B5 shows no real structural advantage, the alternative claim is NOT supported — regardless of the other items.**
 
@@ -301,32 +301,32 @@ Serialize GPU jobs (single MPS); parallelize only CPU data-prep across 10 cores.
 
 | # | Experiment | Models compared | Config (d / L / H / seq / steps) | Seeds | Primary metric & pass | Est. time |
 |---|---|---|---|---|---|---|
-| 0 | **B1b capacity sweep** (FIRST) | PRISM-Seq (d_h∈{8,16,32,64}) vs Transformer | 64 / 2 / 2 / 512 / 4000; D∈{8,16,32,64,128} | 3 | recall-vs-D curve; pass to pre-registered D* | ~30 min |
-| 1 | **B1 MQAR** (rung1/2/3) | PRISM-Seq vs Transformer | 64 / 2 / 2 / {128,256,512} / 4000 | 3 | answer-acc; rung3 ≥ T−0.03 | ~30 min |
-| 2 | **B2 Induction** (+gap bins) | PRISM-Seq vs Transformer | 64 / 2 / 2 / 256 / 3000 | 3 | ≥0.98, 64–256 bin ≥0.95 | ~12 min |
-| 3 | **B3 Selective copy** (selective+fixed) | PRISM-Seq vs Transformer (+noGate) | 64 / 2 / 2 / 256 / 4000 | 3 | selective per-token ≥0.97; control gate | ~25 min |
-| 4 | **B4 Char-LM** | PRISM-Seq vs Transformer | 192 / 3 / 4 / 256 / 4000 (val early-stop) | 5 | test BPC ≤ T+0.05, both corpora | ~1.4 h |
-| 5 | **B4b length extrapolation** | PRISM-Seq, Transformer (B2/B3 ckpts) | test seq {512,1024} | 3 | report curve honestly | ~5 min |
-| 6 | **B5 inference advantage** | PRISM-Seq (step) vs Transformer (KV-cache) | reuse B4 ckpt; n∈{128…4096}, gen 512, 20-iter median | n/a | flat latency + constant mem + n*≤2048 | ~10 min |
+| 0 | **B1b capacity sweep** (FIRST) | Prizma-Seq (d_h∈{8,16,32,64}) vs Transformer | 64 / 2 / 2 / 512 / 4000; D∈{8,16,32,64,128} | 3 | recall-vs-D curve; pass to pre-registered D* | ~30 min |
+| 1 | **B1 MQAR** (rung1/2/3) | Prizma-Seq vs Transformer | 64 / 2 / 2 / {128,256,512} / 4000 | 3 | answer-acc; rung3 ≥ T−0.03 | ~30 min |
+| 2 | **B2 Induction** (+gap bins) | Prizma-Seq vs Transformer | 64 / 2 / 2 / 256 / 3000 | 3 | ≥0.98, 64–256 bin ≥0.95 | ~12 min |
+| 3 | **B3 Selective copy** (selective+fixed) | Prizma-Seq vs Transformer (+noGate) | 64 / 2 / 2 / 256 / 4000 | 3 | selective per-token ≥0.97; control gate | ~25 min |
+| 4 | **B4 Char-LM** | Prizma-Seq vs Transformer | 192 / 3 / 4 / 256 / 4000 (val early-stop) | 5 | test BPC ≤ T+0.05, both corpora | ~1.4 h |
+| 5 | **B4b length extrapolation** | Prizma-Seq, Transformer (B2/B3 ckpts) | test seq {512,1024} | 3 | report curve honestly | ~5 min |
+| 6 | **B5 inference advantage** | Prizma-Seq (step) vs Transformer (KV-cache) | reuse B4 ckpt; n∈{128…4096}, gen 512, 20-iter median | n/a | flat latency + constant mem + n*≤2048 | ~10 min |
 | 7 | **B6.1 internal ablations** | full vs noPrecision/noWorkspace/noDelta/noRouteReadout | 64 / 2 / 2; rung3 + selective | 3 | each drops ≥ stated Δ, non-overlap CI | ~45 min |
-| 8 | **B6.2 family baselines + gate controls** | PRISM-Seq vs GRU/linear-attn/Mamba; uniform/softmax/random gate | matched params+FLOPs; rung3 + selective | 3 | precision-gate beats controls; ≥ family | ~40 min |
+| 8 | **B6.2 family baselines + gate controls** | Prizma-Seq vs GRU/linear-attn/Mamba; uniform/softmax/random gate | matched params+FLOPs; rung3 + selective | 3 | precision-gate beats controls; ≥ family | ~40 min |
 
 **Per-item deliverable:** deterministic driver + `results.json` (per-seed raw + config + param/FLOP ledger + commit hash). **Suite deliverable:** one-command re-run, honest-limits ledger, borrowed-vs-new table, explicit losses/open-frontiers statement.
 
 ---
 
-## PART 8 — Ablations proving the PRISM mechanism is causal (detail for B6)
+## PART 8 — Ablations proving the Prizma mechanism is causal (detail for B6)
 
-Each ablation removes exactly one load-bearing PRISM piece, param-matched within ±5% so a drop cannot be blamed on capacity:
+Each ablation removes exactly one load-bearing Prizma piece, param-matched within ±5% so a drop cannot be blamed on capacity:
 
 | Ablation | What it removes | Predicted effect (the causal signature) |
 |---|---|---|
-| `PRISM_noDelta` | targeted erase-and-write → additive/EMA `S_t = α S_{t-1} + β v_t k_tᵀ` (no `(I−βkkᵀ)`) | MQAR-rung3 and/or selective drop ≥0.15 — re-bindings superpose, last-binding recall breaks. **The make-or-break write-rule ablation.** |
-| `PRISM_noPrecision` | content-based surprise gate → fixed/uniform input-independent gate | selective-copy drops ≥0.15 — cannot skip blanks / write data selectively |
-| `PRISM_noWorkspace` | carried-state broadcast → plain causal linear recurrence of equal params | trails full on MQAR-rung3 by ≥0.10 — no associative binding store |
-| `PRISM_noRouteReadout` | content-based read `S q` → position/identity readout | MQAR collapses — query no longer routes to its bound key |
+| `PRIZMA_noDelta` | targeted erase-and-write → additive/EMA `S_t = α S_{t-1} + β v_t k_tᵀ` (no `(I−βkkᵀ)`) | MQAR-rung3 and/or selective drop ≥0.15 — re-bindings superpose, last-binding recall breaks. **The make-or-break write-rule ablation.** |
+| `PRIZMA_noPrecision` | content-based surprise gate → fixed/uniform input-independent gate | selective-copy drops ≥0.15 — cannot skip blanks / write data selectively |
+| `PRIZMA_noWorkspace` | carried-state broadcast → plain causal linear recurrence of equal params | trails full on MQAR-rung3 by ≥0.10 — no associative binding store |
+| `PRIZMA_noRouteReadout` | content-based read `S q` → position/identity readout | MQAR collapses — query no longer routes to its bound key |
 | **gate controls** | precision-`β` → uniform-write / learned-softmax-gate / random-gate | precision-gating beats all three with non-overlapping CIs |
-| **family baselines** | whole mixer → GRU / linear-attn / Mamba block | full PRISM-Seq ≥ family; if tied, honestly reported as "linear-RNN family member, competitive with Mamba — NOT a Transformer alternative" |
+| **family baselines** | whole mixer → GRU / linear-attn / Mamba block | full Prizma-Seq ≥ family; if tied, honestly reported as "linear-RNN family member, competitive with Mamba — NOT a Transformer alternative" |
 | **window-head ablation** | shrink/remove `WindowAttn_w` with MQAR bindings/induction gaps spaced PAST `w` | long-range (64–256 gap) recall SURVIVES → proves `S`, not the window, carries long range (C3 honesty gate) |
 | **precision-unification test** | compare read-gate (π↑) vs write-`β` functional roles | read-gate causally equivalent to write-`β`, or the one-precision-signal novelty is DROPPED honestly |
 
@@ -345,13 +345,13 @@ These are the highest-probability failure modes, each with its mitigation and it
 7. **Length extrapolation (B4b) may degrade past train length** despite the position-free state. *Mitigation/honesty:* report the curve; scope it as an open limit; never hide it.
 8. **Multi-expert routing split (only if §1.9 is built).** A query may route to a different expert than the one holding its key, breaking MQAR — a failure single-state DeltaNet does not have. *Mitigation:* keep §1.9 OFF for the gating build; if built, top-1 in the decode path only, and B6 must verify same-expert routing or fall back to single state.
 
-**The verdict to aim for — and never exceed — is exactly Part 1's claim string.** Large-scale LM parity and backprop-free parity remain UNPROVEN open frontiers. The continual-learning result (PRISM's proven strength) is carried as a clearly separated secondary axis (task-free continual SEQUENCE modeling via recognition-surprise expert recruit/freeze over a non-stationary token stream), with the same honest limits as `PRISM.md §8` (needs input-distinguishable, temporally-contiguous domains), never conflated with sequence competence.
+**The verdict to aim for — and never exceed — is exactly Part 1's claim string.** Large-scale LM parity and backprop-free parity remain UNPROVEN open frontiers. The continual-learning result (Prizma's proven strength) is carried as a clearly separated secondary axis (task-free continual SEQUENCE modeling via recognition-surprise expert recruit/freeze over a non-stationary token stream), with the same honest limits as `Prizma.md §8` (needs input-distinguishable, temporally-contiguous domains), never conflated with sequence competence.
 
 ---
 
 ### Files referenced
-- Brief: `/Users/nazmi/Desktop/Projeler/proje/PRISM/docs/TRANSFORMER_ALTERNATIVE_BRIEF.md`
-- PRISM writeup: `/Users/nazmi/Desktop/Projeler/proje/PRISM/docs/PRISM.md`
-- Numpy ancestor (no workspace dynamics / token mixing / position — NOT the perf substrate): `/Users/nazmi/Desktop/Projeler/proje/PRISM/src/prism.py`
-- Existing harness (reuse): `/Users/nazmi/Desktop/Projeler/proje/PRISM/seq/common.py`, `seq/tasks.py`, `seq/transformer.py`
-- Build target (new): `/Users/nazmi/Desktop/Projeler/proje/PRISM/seq/prism_seq.py` + per-bar driver scripts
+- Brief: `/Users/nazmi/Desktop/Projeler/proje/Prizma/docs/TRANSFORMER_ALTERNATIVE_BRIEF.md`
+- Prizma writeup: `/Users/nazmi/Desktop/Projeler/proje/Prizma/docs/Prizma.md`
+- Numpy ancestor (no workspace dynamics / token mixing / position — NOT the perf substrate): `/Users/nazmi/Desktop/Projeler/proje/Prizma/src/prizma.py`
+- Existing harness (reuse): `/Users/nazmi/Desktop/Projeler/proje/Prizma/seq/common.py`, `seq/tasks.py`, `seq/transformer.py`
+- Build target (new): `/Users/nazmi/Desktop/Projeler/proje/Prizma/seq/prizma_seq.py` + per-bar driver scripts

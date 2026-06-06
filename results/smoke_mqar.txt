@@ -7,10 +7,10 @@ task MQAR(V=40,pairs=16,q=96,gap=0) seq_len 128
     step  2000  loss 2.9213  acc 0.1757  lr 1.04e-04
     step  2500  loss 2.7681  acc 0.2362  lr 4.28e-10
 >>> Transformer: best=0.236 final=0.236 60s
---- PRISM-Seq (100420 params) ---
+--- Prizma-Seq (100420 params) ---
     step   500  loss 0.9282  acc 0.7790  lr 9.33e-04
     step  1000  loss 0.5256  acc 0.8340  lr 6.92e-04
     step  1500  loss 0.4150  acc 0.8601  lr 3.71e-04
     step  2000  loss 0.3124  acc 0.8707  lr 1.04e-04
     step  2500  loss 0.3502  acc 0.8673  lr 4.28e-10
->>> PRISM-Seq: best=0.871 final=0.867 239s
+>>> Prizma-Seq: best=0.871 final=0.867 239s

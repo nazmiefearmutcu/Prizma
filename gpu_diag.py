@@ -1,8 +1,8 @@
-"""PRISM-Seq vs Transformer — the remaining diagnostic legs (INDUCTION + SELECTIVE-COPY), for a
+"""Prizma-Seq vs Transformer — the remaining diagnostic legs (INDUCTION + SELECTIVE-COPY), for a
 CUDA GPU (Colab). Closes the §1/§2 "diagnostic suite" gap that `gpu_bench.py` left open (it covered
 MQAR D=128). Mirrors `gpu_bench.py` EXACTLY in structure/protocol and REUSES its helpers
 (`run_cell`, `solve_stats`, `_load`, `_save`, `tf_factory`, `ps_factory`, `GENWARM`, `DEV`) so the
-two runners compose into the same `$PRISM_RESULTS` directory.
+two runners compose into the same `$PRIZMA_RESULTS` directory.
 
 Pre-registered protocol (`docs/superpowers/specs/2026-06-05-...-design.md` §1), matched + fair:
 
@@ -10,8 +10,8 @@ Pre-registered protocol (`docs/superpowers/specs/2026-06-05-...-design.md` §1),
                         cleanly SOLVES MQAR D=128 in gpu_bench.py (best~1.0), so it is a genuine
                         non-strawman baseline for these (easier) tasks. Arms:
                           TF           = tf_factory(d,L,H)                       (tuned reference)
-                          PRISM-quad2  = ps_factory(..., feat_map='quad2', feat_n2=224)
-                          PRISM-none   = ps_factory(...)                         (ablation control)
+                          Prizma-quad2  = ps_factory(..., feat_map='quad2', feat_n2=224)
+                          Prizma-none   = ps_factory(...)                         (ablation control)
                         All three are param-matched to within ~1% (printed at startup).
 
   LEG: INDUCTION        in-context induction-head probe. Trained on a MIXED-length distribution over
@@ -20,7 +20,7 @@ Pre-registered protocol (`docs/superpowers/specs/2026-06-05-...-design.md` §1),
                         fairly graded at every length. EVALUATED at fixed prefix lengths 64 / 128 / 256
                         on a FROZEN reproducible eval set (same `cfg.eval_seed` batches as training's
                         frozen eval -> reproducible, no best-of-noisy-curve inflation). Bar (§1.2):
-                        PRISM-quad2 >= 0.98, and >= 0.95 at the 256 gap. 3 seeds. solve threshold 0.98.
+                        Prizma-quad2 >= 0.98, and >= 0.95 at the 256 gap. 3 seeds. solve threshold 0.98.
 
   LEG: SELECTIVE-COPY   Mamba's content-selective copy. Trained + scored on SelectiveCopy(fixed=False)
                         (selective) AND a fixed=True CONTROL (must be ~equal across arms -> isolates
@@ -31,11 +31,11 @@ Identical for all arms: same task / budget (cap + plateau early-stop) / frozen e
 Per-model optimizer constants follow gpu_bench's pattern (GENWARM). max_len is set to cover each
 task's seq_len (+8) by the imported factories. O(1) discipline preserved (models untouched).
 
-Results stream incrementally + crash-safe to $PRISM_RESULTS/gpu_diag.json via the imported `_save`
+Results stream incrementally + crash-safe to $PRIZMA_RESULTS/gpu_diag.json via the imported `_save`
 (completed cells skipped by cellkey -> a Colab disconnect never loses progress; resumable). A
 `diag_summary` records per-leg solve_rate + median + bests for each arm.
 
-Env: set PRISM_RESULTS to a Drive-mounted dir for persistence (default ./results).
+Env: set PRIZMA_RESULTS to a Drive-mounted dir for persistence (default ./results).
 Run: python3 gpu_diag.py                 # both legs
      python3 gpu_diag.py induction        # only listed legs (also accepts: selcopy)
      python3 gpu_diag.py induction selcopy
@@ -59,11 +59,11 @@ from gpu_bench import (  # noqa: F401  (re-exported for symmetry / external impo
 from seq.common import TrainConfig, train_model, param_count, set_seed, masked_acc
 from seq.tasks import Induction, SelectiveCopy
 from seq.transformer import Transformer, TFConfig
-from seq.prism_seq import PRISMSeqLM, PRISMSeqConfig
+from seq.prizma_seq import PrizmaSeqLM, PrizmaSeqConfig
 
 # Dedicated results file (sibling of gpu_bench.json, same dir). We rebind gpu_bench.OUT to this so
 # the imported `run_cell`/`_save` (which close over gpu_bench.OUT) stream here, crash-safe.
-RES = os.environ.get("PRISM_RESULTS", os.path.join(os.path.dirname(__file__), "results"))
+RES = os.environ.get("PRIZMA_RESULTS", os.path.join(os.path.dirname(__file__), "results"))
 os.makedirs(RES, exist_ok=True)
 OUT = os.path.join(RES, "gpu_diag.json")
 gpu_bench.OUT = OUT          # <- imported _load/_save/run_cell now target gpu_diag.json
@@ -103,11 +103,11 @@ class _MixedInduction:
         return self._tasks[self.lens[-1]].sample(B, device)
 
 
-def _ind_factory(d, L, H, prism=None):
-    """Model factory sized for the MIXED-induction longest prefix. `prism=None` -> TF; else kwargs."""
-    if prism is None:
+def _ind_factory(d, L, H, prizma=None):
+    """Model factory sized for the MIXED-induction longest prefix. `prizma=None` -> TF; else kwargs."""
+    if prizma is None:
         return tf_factory(d, L, H)
-    return ps_factory(d, L, H, **prism)
+    return ps_factory(d, L, H, **prizma)
 
 
 def _run_ind_cell(res, cellkey, model_fac, task_fac, cap, seed, recipe, eval_every,
@@ -157,9 +157,9 @@ def _print_param_match(res):
     V = IND_VOCAB
     probes = {
         "TF":          Transformer(TFConfig(vocab=V, d_model=d, n_layers=L, n_heads=H, max_len=300, rope=True)),
-        "PRISM-quad2": PRISMSeqLM(PRISMSeqConfig(vocab=V, d_model=d, n_layers=L, n_heads=H, max_len=300,
+        "Prizma-quad2": PrizmaSeqLM(PrizmaSeqConfig(vocab=V, d_model=d, n_layers=L, n_heads=H, max_len=300,
                                                  feat_map="quad2", feat_n2=FEAT_N2)),
-        "PRISM-none":  PRISMSeqLM(PRISMSeqConfig(vocab=V, d_model=d, n_layers=L, n_heads=H, max_len=300)),
+        "Prizma-none":  PrizmaSeqLM(PrizmaSeqConfig(vocab=V, d_model=d, n_layers=L, n_heads=H, max_len=300)),
     }
     counts = {k: param_count(m) for k, m in probes.items()}
     base = counts["TF"]
@@ -184,8 +184,8 @@ def induction(res, scale=SCALE, feat_n2=FEAT_N2, seeds=SEEDS, cap=60000, eval_ev
     task_fac = lambda: _MixedInduction(vocab=IND_VOCAB, lens=IND_LENS)
     arms = {
         "TF":          _ind_factory(d, L, H, None),
-        "PRISM-quad2": _ind_factory(d, L, H, dict(feat_map="quad2", feat_n2=feat_n2)),
-        "PRISM-none":  _ind_factory(d, L, H, dict()),
+        "Prizma-quad2": _ind_factory(d, L, H, dict(feat_map="quad2", feat_n2=feat_n2)),
+        "Prizma-none":  _ind_factory(d, L, H, dict()),
     }
     # eval-set knobs MUST match TrainConfig defaults so the per-length frozen eval mirrors train's.
     bs, eb, eseed = TrainConfig.batch_size, TrainConfig.eval_batches, TrainConfig.eval_seed
@@ -211,10 +211,10 @@ def induction(res, scale=SCALE, feat_n2=FEAT_N2, seeds=SEEDS, cap=60000, eval_ev
         print(f"  -> {aname}: solve@0.98={st['solve_rate_098']} median={st['median']} "
               f"per-len-median={st['per_len_median']}", flush=True)
     # PASS check (descriptive; pre-registered bar §1.2)
-    q = summary.get("PRISM-quad2", {})
+    q = summary.get("Prizma-quad2", {})
     pl_med = q.get("per_len_median", {})
     passes = (q.get("median", 0) >= 0.98) and (pl_med.get("256", 0) >= 0.95)
-    summary["_bar"] = {"rule": "PRISM-quad2 median>=0.98 AND per-len-median@256>=0.95",
+    summary["_bar"] = {"rule": "Prizma-quad2 median>=0.98 AND per-len-median@256>=0.95",
                        "pass": bool(passes)}
     print(f"  ==> INDUCTION bar (quad2 >=0.98, >=0.95@256): {'PASS' if passes else 'NOT MET'}", flush=True)
     res["diag_induction_summary"] = summary
@@ -233,8 +233,8 @@ def selcopy(res, scale=SCALE, feat_n2=FEAT_N2, seeds=SEEDS, cap=60000, eval_ever
     }
     arms = {
         "TF":          _ind_factory(d, L, H, None),
-        "PRISM-quad2": _ind_factory(d, L, H, dict(feat_map="quad2", feat_n2=feat_n2)),
-        "PRISM-none":  _ind_factory(d, L, H, dict()),
+        "Prizma-quad2": _ind_factory(d, L, H, dict(feat_map="quad2", feat_n2=feat_n2)),
+        "Prizma-none":  _ind_factory(d, L, H, dict()),
     }
     summary = {}
     for vname, task_fac in variants.items():
@@ -250,14 +250,14 @@ def selcopy(res, scale=SCALE, feat_n2=FEAT_N2, seeds=SEEDS, cap=60000, eval_ever
                   f"median={st['median']} bests={st['bests']}", flush=True)
     # PASS check (descriptive; pre-registered bar §1.3)
     sel = summary.get("selective", {})
-    q_med = sel.get("PRISM-quad2", {}).get("median", 0.0)
+    q_med = sel.get("Prizma-quad2", {}).get("median", 0.0)
     tf_med = sel.get("TF", {}).get("median", 0.0)
     fixed = summary.get("fixed", {})
     fx = {a: fixed.get(a, {}).get("median", 0.0) for a in arms}
     fixed_spread = (max(fx.values()) - min(fx.values())) if fx else 1.0
     passes = (q_med >= 0.97) and (q_med >= tf_med - 0.02)
     summary["_bar"] = {
-        "rule": "selective PRISM-quad2 median>=0.97 AND >= TF_median-0.02; fixed control ~equal",
+        "rule": "selective Prizma-quad2 median>=0.97 AND >= TF_median-0.02; fixed control ~equal",
         "selective_quad2_median": round(q_med, 4), "selective_tf_median": round(tf_med, 4),
         "fixed_medians": {a: round(v, 4) for a, v in fx.items()},
         "fixed_spread": round(fixed_spread, 4), "pass": bool(passes),
@@ -292,13 +292,13 @@ def main():
         diag["induction"] = {a: {"solve_rate_098": s[a].get("solve_rate_098"),
                                  "median": s[a].get("median"), "bests": s[a].get("bests"),
                                  "per_len_median": s[a].get("per_len_median")}
-                             for a in ("TF", "PRISM-quad2", "PRISM-none") if a in s}
+                             for a in ("TF", "Prizma-quad2", "Prizma-none") if a in s}
         diag["induction"]["_bar"] = s.get("_bar")
     if "diag_selcopy_summary" in res:
         s = res["diag_selcopy_summary"]
         diag["selcopy"] = {v: {a: {"solve_rate_097": s[v][a].get("solve_rate_097"),
                                    "median": s[v][a].get("median"), "bests": s[v][a].get("bests")}
-                               for a in ("TF", "PRISM-quad2", "PRISM-none") if a in s.get(v, {})}
+                               for a in ("TF", "Prizma-quad2", "Prizma-none") if a in s.get(v, {})}
                            for v in ("selective", "fixed") if v in s}
         diag["selcopy"]["_bar"] = s.get("_bar")
     res["diag_summary"] = diag

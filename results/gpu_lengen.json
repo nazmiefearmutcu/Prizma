@@ -65,7 +65,7 @@
     "seed": 2,
     "cap": 40000
   },
-  "induction.PRISM-quad2.s0": {
+  "induction.Prizma-quad2.s0": {
     "by_len": {
       "64": 0.9995,
       "128": 0.9297,
@@ -87,7 +87,7 @@
     "seed": 0,
     "cap": 40000
   },
-  "induction.PRISM-quad2.s1": {
+  "induction.Prizma-quad2.s1": {
     "by_len": {
       "64": 0.998,
       "128": 0.9751,
@@ -109,7 +109,7 @@
     "seed": 1,
     "cap": 40000
   },
-  "induction.PRISM-quad2.s2": {
+  "induction.Prizma-quad2.s2": {
     "by_len": {
       "64": 0.998,
       "128": 0.9663,
@@ -201,7 +201,7 @@
         "params": 795776,
         "retention_longest_over_train": 0.041
       },
-      "PRISM-quad2": {
+      "Prizma-quad2": {
         "per_len": {
           "64": {
             "median": 0.998,

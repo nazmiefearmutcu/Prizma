@@ -1,7 +1,7 @@
 """Give the Transformer enough budget to COMPLETE its (late, slow) MQAR phase transition, so the
 D=64 baseline is legitimate. gen-warm (lr=1e-3, warmup=2000) was climbing at step 12k (0.03->0.24);
 this extends the cap to 40k with the plateau-stop (stops when it actually converges). Establishes
-the fair TF number to compare against PRISM-quad2 (0.906 @ 12k).
+the fair TF number to compare against Prizma-quad2 (0.906 @ 12k).
 
 Run: python3.13 tf_long.py [target_pairs] [cap]   # default 64, 40000
 """

@@ -1,4 +1,4 @@
-PRISM-Seq on MQAR(V=64,keys<32,pairs=16,q=96,gap=0)
+Prizma-Seq on MQAR(V=64,keys<32,pairs=16,q=96,gap=0)
     step   300  loss 2.7657  acc 0.1446  lr 9.90e-04
     step   600  loss 2.5337  acc 0.1393  lr 9.36e-04
     step   900  loss 2.5153  acc 0.1366  lr 8.42e-04
@@ -9,4 +9,4 @@ PRISM-Seq on MQAR(V=64,keys<32,pairs=16,q=96,gap=0)
     step  2400  loss 2.4970  acc 0.1503  lr 1.92e-04
     step  2700  loss 2.4814  acc 0.1498  lr 1.24e-04
     step  3000  loss 2.4994  acc 0.1482  lr 1.00e-04
->>> PRISM-Seq disjoint: best=0.150 320s
+>>> Prizma-Seq disjoint: best=0.150 320s

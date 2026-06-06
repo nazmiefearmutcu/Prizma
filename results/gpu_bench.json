@@ -189,7 +189,7 @@
     "seed": 4,
     "cap": 80000
   },
-  "p2.PRISM-none.s0": {
+  "p2.Prizma-none.s0": {
     "best": 0.959136962890625,
     "plateau": 60000,
     "params": 862368,
@@ -214,7 +214,7 @@
       "2048": 9.2905,
       "4096": 18.5035
     },
-    "prism_decode_s": {
+    "prizma_decode_s": {
       "128": 0.8887,
       "256": 1.7976,
       "512": 3.5744,
@@ -230,7 +230,7 @@
       "2048": 2097152,
       "4096": 4194304
     },
-    "prism_state_floats": {
+    "prizma_state_floats": {
       "128": 147456,
       "256": 147456,
       "512": 147456,
@@ -239,7 +239,7 @@
       "4096": 147456
     }
   },
-  "p2.PRISM-none.s1": {
+  "p2.Prizma-none.s1": {
     "best": 0.9583473205566406,
     "plateau": 46000,
     "params": 862368,
@@ -247,7 +247,7 @@
     "seed": 1,
     "cap": 80000
   },
-  "p2.PRISM-none.s2": {
+  "p2.Prizma-none.s2": {
     "best": 0.9479713439941406,
     "plateau": 42000,
     "params": 862368,
@@ -255,7 +255,7 @@
     "seed": 2,
     "cap": 80000
   },
-  "p2.PRISM-quad2.s0": {
+  "p2.Prizma-quad2.s0": {
     "best": 0.9991264343261719,
     "plateau": 20000,
     "params": 862368,
@@ -263,7 +263,7 @@
     "seed": 0,
     "cap": 80000
   },
-  "p2.PRISM-quad2.s1": {
+  "p2.Prizma-quad2.s1": {
     "best": 0.9982795715332031,
     "plateau": 16000,
     "params": 862368,
@@ -271,7 +271,7 @@
     "seed": 1,
     "cap": 80000
   },
-  "p2.PRISM-quad2.s2": {
+  "p2.Prizma-quad2.s2": {
     "best": 0.9954643249511719,
     "plateau": 18000,
     "params": 862368,
@@ -293,7 +293,7 @@
         1.0
       ]
     },
-    "PRISM-none": {
+    "Prizma-none": {
       "solve_rate": "3/3",
       "median": 0.9583,
       "mean_ci95": [
@@ -306,7 +306,7 @@
         0.948
       ]
     },
-    "PRISM-quad2": {
+    "Prizma-quad2": {
       "solve_rate": "3/3",
       "median": 0.9983,
       "mean_ci95": [
@@ -344,7 +344,7 @@
     "seed": 2,
     "cap": 80000
   },
-  "p2eff.PRISM-quad2-d64L2H2.s0": {
+  "p2eff.Prizma-quad2-d64L2H2.s0": {
     "best": 0.9987907409667969,
     "plateau": 26000,
     "params": 131400,
@@ -352,7 +352,7 @@
     "seed": 0,
     "cap": 80000
   },
-  "p2eff.PRISM-quad2-d64L2H2.s1": {
+  "p2eff.Prizma-quad2-d64L2H2.s1": {
     "best": 0.9966659545898438,
     "plateau": 26000,
     "params": 131400,
@@ -360,7 +360,7 @@
     "seed": 1,
     "cap": 80000
   },
-  "p2eff.PRISM-quad2-d64L2H2.s2": {
+  "p2eff.Prizma-quad2-d64L2H2.s2": {
     "best": 0.9348831176757812,
     "plateau": 60000,
     "params": 131400,
@@ -368,7 +368,7 @@
     "seed": 2,
     "cap": 80000
   },
-  "p2eff.PRISM-none-d64L2H2.s0": {
+  "p2eff.Prizma-none-d64L2H2.s0": {
     "best": 0.5182609558105469,
     "plateau": 68000,
     "params": 131400,
@@ -376,7 +376,7 @@
     "seed": 0,
     "cap": 80000
   },
-  "p2eff.PRISM-none-d64L2H2.s1": {
+  "p2eff.Prizma-none-d64L2H2.s1": {
     "best": 0.3185920715332031,
     "plateau": 80000,
     "params": 131400,
@@ -384,7 +384,7 @@
     "seed": 1,
     "cap": 80000
   },
-  "p2eff.PRISM-none-d64L2H2.s2": {
+  "p2eff.Prizma-none-d64L2H2.s2": {
     "best": 0.7181854248046875,
     "plateau": 46000,
     "params": 131400,
@@ -392,7 +392,7 @@
     "seed": 2,
     "cap": 80000
   },
-  "p2eff.PRISM-randlin-d64L2H2.s0": {
+  "p2eff.Prizma-randlin-d64L2H2.s0": {
     "best": 0.6681060791015625,
     "plateau": 80000,
     "params": 131400,
@@ -400,7 +400,7 @@
     "seed": 0,
     "cap": 80000
   },
-  "p2eff.PRISM-randlin-d64L2H2.s1": {
+  "p2eff.Prizma-randlin-d64L2H2.s1": {
     "best": 0.40752410888671875,
     "plateau": 80000,
     "params": 131400,
@@ -408,7 +408,7 @@
     "seed": 1,
     "cap": 80000
   },
-  "p2eff.PRISM-randlin-d64L2H2.s2": {
+  "p2eff.Prizma-randlin-d64L2H2.s2": {
     "best": 0.5892906188964844,
     "plateau": 58000,
     "params": 131400,
@@ -430,7 +430,7 @@
         0.02
       ]
     },
-    "PRISM-quad2-d64L2H2": {
+    "Prizma-quad2-d64L2H2": {
       "solve_rate": "3/3",
       "median": 0.9967,
       "mean_ci95": [
@@ -443,7 +443,7 @@
         0.935
       ]
     },
-    "PRISM-none-d64L2H2": {
+    "Prizma-none-d64L2H2": {
       "solve_rate": "0/3",
       "median": 0.5183,
       "mean_ci95": [
@@ -456,7 +456,7 @@
         0.718
       ]
     },
-    "PRISM-randlin-d64L2H2": {
+    "Prizma-randlin-d64L2H2": {
       "solve_rate": "0/3",
       "median": 0.5893,
       "mean_ci95": [

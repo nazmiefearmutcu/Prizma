@@ -24,7 +24,7 @@ device=mps MixedMQAR(V=256,pairs=1-64,q=128,gap=0) eval@D=64 seq=256
     step 10000  loss 0.6505  acc 0.2579  lr 1.62e-04
     step 11000  loss 2.1059  acc 0.2625  lr 1.16e-04
     step 12000  loss 0.0601  acc 0.2640  lr 1.00e-04
->>> PRISM-none   best@D64=0.264 plateau@12000 (1992s, 115016p)
+>>> Prizma-none   best@D64=0.264 plateau@12000 (1992s, 115016p)
     step  1000  loss 2.8925  acc 0.0255  lr 9.90e-04
     step  2000  loss 3.0950  acc 0.1687  lr 9.49e-04
     step  3000  loss 1.0167  acc 0.5892  lr 8.81e-04
@@ -37,4 +37,4 @@ device=mps MixedMQAR(V=256,pairs=1-64,q=128,gap=0) eval@D=64 seq=256
     step 10000  loss 0.0084  acc 0.9002  lr 1.62e-04
     step 11000  loss 0.1539  acc 0.9028  lr 1.16e-04
     step 12000  loss 0.0063  acc 0.9063  lr 1.00e-04
->>> PRISM-quad2  best@D64=0.906 plateau@12000 (2737s, 115016p)
+>>> Prizma-quad2  best@D64=0.906 plateau@12000 (2737s, 115016p)

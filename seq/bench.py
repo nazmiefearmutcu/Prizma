@@ -4,7 +4,7 @@ training budgets (enough that a proper Transformer masters each task — establi
 and runs ANY model factory through it over multiple seeds with identical data/loss/optimiser/budget.
 
 A model_factory is `f(vocab:int, max_len:int) -> nn.Module` mapping inputs[B,T] long ->
-logits[B,T,vocab]. Both Transformer and PRISM-Seq are passed as factories so the comparison is
+logits[B,T,vocab]. Both Transformer and Prizma-Seq are passed as factories so the comparison is
 apples-to-apples (same task instance, same TrainConfig, same seeds).
 """
 from __future__ import annotations

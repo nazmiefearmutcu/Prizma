@@ -1,5 +1,5 @@
 """
-Deterministic synthetic continual-learning benchmarks for PRISM.
+Deterministic synthetic continual-learning benchmarks for Prizma.
 
 Everything is offline and seeded. Two task constructions are provided:
 
@@ -14,7 +14,7 @@ Everything is offline and seeded. Two task constructions are provided:
                        disjoint groups; task t asks the network to classify only the
                        classes in group t (re-indexed to 0..g-1). Different tasks live
                        in different input regions, so a *router* can tell them apart
-                       from input statistics alone -- the regime PRISM's gate exploits.
+                       from input statistics alone -- the regime Prizma's gate exploits.
 
 The base dataset is labelled by a fixed random "teacher" MLP, which guarantees a
 non-linear, learnable structure (a linear model cannot solve it) without any download.
@@ -122,7 +122,7 @@ def structured_permuted_tasks(n_tasks=5, n_samples=6000, d=24, k_latent=8,
     if noise_std > 0:
         # iid (permutation-invariant) noise dilutes the structured signal -> shrinks the
         # recognition margin. A separability knob: noise_std=0 -> cleanly distinguishable;
-        # large noise_std -> domains indistinguishable (PRISM should degrade to naive).
+        # large noise_std -> domains indistinguishable (Prizma should degrade to naive).
         v = (v + noise_std * rng.normal(0, 1, v.shape)).astype(np.float32)
     # teacher labels on the LATENTS (shared rule, domain-invariant)
     Wt1 = rng.normal(0, 1.0 / np.sqrt(k_latent), (k_latent, 32))

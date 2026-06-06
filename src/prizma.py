@@ -1,13 +1,13 @@
 """
-PRISM -- Surprise-Gated Mixture of Predictive-Coding Experts (ART-routing core).
+Prizma -- Surprise-Gated Mixture of Predictive-Coding Experts (ART-routing core).
 
 Honest scope (per the design committee): this prototype targets the regime where the headline
 claim is *achievable and meaningful* -- a DOMAIN-INCREMENTAL stream whose domains are
-input-distinguishable -- and tests whether PRISM can, with NO task labels and NO task
+input-distinguishable -- and tests whether Prizma can, with NO task labels and NO task
 boundaries, (i) discover the domain structure online, (ii) allocate one expert per domain,
 and (iii) protect mastered domains. In the fully-ambiguous shared-input regime (same x,
 different label per task) we separately PROVE no single-head learner can retain all tasks;
-PRISM is not claimed to help there.
+Prizma is not claimed to help there.
 
 Each EXPERT m = predictive-coding auto-encoder (encoder Wenc, decoder Wdec; the recognizer)
             + classifier head (Wcls). All updates are LOCAL: decoder/head use the exact PC /
@@ -73,7 +73,7 @@ class Expert:
         return Z, EPS, logits
 
 
-class PRISM:
+class Prizma:
     def __init__(self, d, h, K, n_experts=8, seed=0,
                  lr=0.05, lr_cls=0.1, lambda_cls=1.0, feedback="random",
                  z_novel=5.0, commit_ratio=0.5, commit_after=256, consolidate=True,

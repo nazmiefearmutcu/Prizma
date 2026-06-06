@@ -9,9 +9,9 @@ CALIBRATION MQAR(V=40,pairs=16,q=96,gap=0)
     step  7000  loss 0.2253  acc 0.8775  lr 1.35e-04
     step  8000  loss 0.2485  acc 0.8862  lr 1.00e-04
 >>> Transformer 8000: best=0.886 189s
---- PRISM-Seq 4000 steps (floor 0.1) ---
+--- Prizma-Seq 4000 steps (floor 0.1) ---
     step  1000  loss 0.5607  acc 0.8337  lr 8.87e-04
     step  2000  loss 0.3914  acc 0.8629  lr 5.68e-04
     step  3000  loss 0.0354  acc 0.9858  lr 2.39e-04
     step  4000  loss 0.0157  acc 0.9949  lr 1.00e-04
->>> PRISM-Seq 4000: best=0.995 422s
+>>> Prizma-Seq 4000: best=0.995 422s

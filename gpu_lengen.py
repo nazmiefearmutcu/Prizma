@@ -1,10 +1,10 @@
-"""PRISM-Seq vs Transformer — LENGTH EXTRAPOLATION benchmark, CUDA/Colab-ready (also runs on MPS/CPU).
+"""Prizma-Seq vs Transformer — LENGTH EXTRAPOLATION benchmark, CUDA/Colab-ready (also runs on MPS/CPU).
 
 The classic attention-vs-SSM differentiator: TRAIN at one sequence length L, then EVALUATE the SAME
 frozen weights at LONGER lengths {2x, 4x, 8x}L WITHOUT retraining, and read off the extrapolation
 curve (accuracy vs eval_len/train_len). The question this answers:
 
-    Does PRISM-Seq (position-free delta state + a small LOCAL window head) generalize to
+    Does Prizma-Seq (position-free delta state + a small LOCAL window head) generalize to
     longer-than-trained sequences better or worse than a tuned RoPE Transformer at matched params?
 
 Why this is a clean probe for these two architectures (verified against the code):
@@ -13,10 +13,10 @@ Why this is a clean probe for these two architectures (verified against the code
     with no crash; `max_len` only sizes the (unused, rope=True) learned pos-embedding. So the TF
     *can* run at longer T; whether ACCURACY holds at unseen positions is the open question (RoPE is
     known to degrade past its trained range without interpolation tricks).
-  * PRISM-Seq (seq/prism_seq.py): the delta state S in R^{d_h x d_phi} is POSITION-FREE and constant
+  * Prizma-Seq (seq/prizma_seq.py): the delta state S in R^{d_h x d_phi} is POSITION-FREE and constant
     in T (RoPE is OFF on delta keys by design); position only enters via the short causal conv +
     causal write-order. The local window head builds a [T,T] band mask from the actual T -> also
-    accepts any length. So PRISM is structurally length-agnostic; the empirical question is whether a
+    accepts any length. So Prizma is structurally length-agnostic; the empirical question is whether a
     state TRAINED on length-L statistics still recalls correctly when the recall distance grows.
 
 PRIMARY TASK = Induction (the cleanest length-gen probe): a unique bigram [A,B] sits somewhere in a
@@ -32,17 +32,17 @@ PROTOCOL (apples-to-apples, no leakage):
   * Models are built with max_len = (longest eval length + 8) so nothing can crash on the long evals.
   * A SINGLE model is trained to plateau at the TRAIN length only (via seq.common.train_model).
   * That ONE frozen model is then evaluated at each eval length on a FROZEN, reproducible eval set
-    built with a fixed eval_seed PER LENGTH that is SHARED across arms -> TF and PRISM see the
+    built with a fixed eval_seed PER LENGTH that is SHARED across arms -> TF and Prizma see the
     byte-identical eval batches at every length. (set_seed(eval_seed+len) before drawing each set.)
-  * Arms: TF (RoPE) and PRISM-quad2, parameter-matched (counts printed). 3 seeds by default.
+  * Arms: TF (RoPE) and Prizma-quad2, parameter-matched (counts printed). 3 seeds by default.
   * Reported per arm: train-length acc + acc at each longer eval length = the extrapolation curve,
     plus `lengen_summary` with the per-arm per-length MEDIAN over seeds. Honest read: who degrades
     less as eval_len/train_len grows.
 
-Crash-safe + resumable: every (arm x seed) cell streams to $PRISM_RESULTS/gpu_lengen.json and is
+Crash-safe + resumable: every (arm x seed) cell streams to $PRIZMA_RESULTS/gpu_lengen.json and is
 skipped if already present, so a Colab disconnect never loses progress. Does NOT touch gpu_bench.json.
 
-Env: PRISM_RESULTS -> a Drive-mounted dir for persistence (default ./results).
+Env: PRIZMA_RESULTS -> a Drive-mounted dir for persistence (default ./results).
 Run:
     python gpu_lengen.py                # induction (primary)
     python gpu_lengen.py induction      # same, explicit
@@ -67,7 +67,7 @@ from seq.common import TrainConfig, train_model, param_count, set_seed, masked_a
 from seq.tasks import Induction, MQAR
 
 # Distinct results file — NEVER clobber gpu_bench.json.
-RES = os.environ.get("PRISM_RESULTS", os.path.join(os.path.dirname(__file__), "results"))
+RES = os.environ.get("PRIZMA_RESULTS", os.path.join(os.path.dirname(__file__), "results"))
 os.makedirs(RES, exist_ok=True)
 OUT = os.path.join(RES, "gpu_lengen.json")
 
@@ -153,7 +153,7 @@ def _eval_at_lengths(model, spec, eval_seed, eval_batches, batch_size, device):
 
     KEY CORRECTNESS: for each length L we reseed with (eval_seed + L) BEFORE drawing that length's
     eval batches. The reseed depends only on (eval_seed, L) — NOT on the arm or the model — so the
-    Transformer and PRISM are scored on byte-identical batches at every length (apples-to-apples).
+    Transformer and Prizma are scored on byte-identical batches at every length (apples-to-apples).
     The trained weights are never updated here; this is pure frozen evaluation at unseen lengths.
     """
     model.train(False)
@@ -179,7 +179,7 @@ def run_arm(res, spec, arm_name, model_fac, cap, seed, eval_batches, batch_size,
         return res[cellkey]
     train_task = spec["train_fac"]()
     # Build the model with max_len = longest eval length (+8) so the LONG evals can never crash on a
-    # position table / cache that is too small. For rope=True TF and default PRISM this only sizes
+    # position table / cache that is too small. For rope=True TF and default Prizma this only sizes
     # an unused learned-pos embedding, but it is the correct, defensive contract the task demands.
     model = model_fac(train_task.vocab, spec["longest_T"])
     p = param_count(model)
@@ -211,10 +211,10 @@ def run_arm(res, spec, arm_name, model_fac, cap, seed, eval_batches, batch_size,
 
 
 def _arms(d, L, H, feat_n2):
-    """Param-matched arms: RoPE Transformer vs PRISM-quad2 (quadratic feature map = 0 extra params)."""
+    """Param-matched arms: RoPE Transformer vs Prizma-quad2 (quadratic feature map = 0 extra params)."""
     return {
         "TF": tf_factory(d, L, H),
-        "PRISM-quad2": ps_factory(d, L, H, feat_map="quad2", feat_n2=feat_n2),
+        "Prizma-quad2": ps_factory(d, L, H, feat_map="quad2", feat_n2=feat_n2),
     }
 
 
@@ -260,7 +260,7 @@ def run_task(res, spec, scale, feat_n2, seeds, cap, eval_batches, batch_size):
     print(f"     PARAM-MATCH: " + "  ".join(f"{a}={n}" for a, n in pc.items()), flush=True)
     if len(set(pc.values())) > 1:
         lo, hi = min(pc.values()), max(pc.values())
-        print(f"     (param spread {hi - lo} = {100*(hi-lo)/lo:.2f}% — feat_n2 tunes PRISM width to "
+        print(f"     (param spread {hi - lo} = {100*(hi-lo)/lo:.2f}% — feat_n2 tunes Prizma width to "
               f"match TF; quad2 monomials add 0 params)", flush=True)
     for arm, fac in arms.items():
         for s in seeds:

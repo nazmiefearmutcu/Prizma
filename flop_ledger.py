@@ -1,11 +1,11 @@
 """SKEPTIC-C FLOP / throughput ledger — PARAMETERIZED over scale.
 
-Analytical per-token forward FLOPs for the matched-param TF vs PRISM-quad2 at seq T,
+Analytical per-token forward FLOPs for the matched-param TF vs Prizma-quad2 at seq T,
 per scale (d_model, H, L), plus the lever's marginal cost and the window-head share.
 
 Counts MACs*2 = FLOPs. Matmul [m,k]x[k,n] = 2*m*k*n FLOPs. Counted per SEQUENCE (all T
 tokens) for the training forward, then /T for per-token. Attention is counted at its
-TRUE causal O(T^2/2) training cost (honest, no over-count). PRISM's chunked_delta is
+TRUE causal O(T^2/2) training cost (honest, no over-count). Prizma's chunked_delta is
 counted at its true chunk-matmul cost; the window head both as-coded (full SDPA) and at
 its ideal banded cost.
 
@@ -13,7 +13,7 @@ Run: python3 flop_ledger.py            # prints both the legacy d64L2H2 and head
 """
 import torch
 from seq.transformer import Transformer, TFConfig
-from seq.prism_seq import PRISMSeqLM, PRISMSeqConfig
+from seq.prizma_seq import PrizmaSeqLM, PrizmaSeqConfig
 from seq.common import param_count
 
 V = 512
@@ -41,7 +41,7 @@ def tf_layer_flops_causal(T, d, H, dff):
     }
 
 
-def prism_layer_flops(T, d, H, dff, d_phi, C=64, w=16, kc=4):
+def prizma_layer_flops(T, d, H, dff, d_phi, C=64, w=16, kc=4):
     dh = d // H
     f = {}
     f["conv"] = 2 * T * d * kc                         # depthwise causal conv k=4
@@ -85,24 +85,24 @@ def ledger(d, H, L, d_phi, T=T, label="", show_components=True):
     print(f"   TF: layer {total(tfl)/1e6:8.2f} MFLOP  x{L}+head = {tf_total/1e6:8.2f} MFLOP/seq  "
           f"= {tf_total/T/1e3:7.1f} kFLOP/token")
 
-    pf = prism_layer_flops(T, d, H, dff, d_phi=d_phi)
+    pf = prizma_layer_flops(T, d, H, dff, d_phi=d_phi)
     ps_ascoded = total(pf, exclude=("window_band_ideal",))
     ps_ideal = total(pf, exclude=("window_full_TT",))
     ps_total_ascoded = L * ps_ascoded + head_flops
     ps_total_ideal = L * ps_ideal + head_flops
     if show_components:
-        print(f"PRISM-quad2 (d_phi={d_phi}) per-layer:")
+        print(f"Prizma-quad2 (d_phi={d_phi}) per-layer:")
         for k, v in pf.items():
             print(f"   {k:<18} {v/1e6:8.2f} MFLOP")
-    print(f"   PRISM as-coded: x{L}+head = {ps_total_ascoded/1e6:8.2f} MFLOP/seq = "
+    print(f"   Prizma as-coded: x{L}+head = {ps_total_ascoded/1e6:8.2f} MFLOP/seq = "
           f"{ps_total_ascoded/T/1e3:7.1f} kFLOP/token")
-    print(f"   PRISM ideal   : x{L}+head = {ps_total_ideal/1e6:8.2f} MFLOP/seq = "
+    print(f"   Prizma ideal   : x{L}+head = {ps_total_ideal/1e6:8.2f} MFLOP/seq = "
           f"{ps_total_ideal/T/1e3:7.1f} kFLOP/token")
-    print(f"   RATIO PRISM/TF forward:  as-coded {ps_total_ascoded/tf_total:4.2f}x   "
+    print(f"   RATIO Prizma/TF forward:  as-coded {ps_total_ascoded/tf_total:4.2f}x   "
           f"ideal {ps_total_ideal/tf_total:4.2f}x")
 
     # lever marginal cost
-    pf_none = prism_layer_flops(T, d, H, dff, d_phi=dh)
+    pf_none = prizma_layer_flops(T, d, H, dff, d_phi=dh)
     print(f"   lever (d_phi {d_phi} vs {dh}): delta-state x{pf['delta_state']/pf_none['delta_state']:.1f}  "
           f"| window_full share = {100*L*pf['window_full_TT']/ps_total_ascoded:4.1f}% as-coded, "
           f"band = {100*L*pf['window_band_ideal']/ps_total_ideal:4.1f}% ideal")
@@ -117,25 +117,25 @@ def flop_matched_tf_search(d, H, L, d_phi, target_ratio, T=T):
     dff = dff_of(d)
     head = mm(T, d, V)
     base_tf = L * total(tf_layer_flops_causal(T, d, H, dff)) + head
-    pf = prism_layer_flops(T, d, H, dff, d_phi=d_phi)
-    prism_ascoded = L * total(pf, exclude=("window_band_ideal",)) + head
-    print(f"\n=== FLOP-matched TF search @ d={d} H={H} L={L} (match PRISM-quad2 as-coded "
-          f"{prism_ascoded/T/1e3:.1f} kFLOP/tok) ===")
+    pf = prizma_layer_flops(T, d, H, dff, d_phi=d_phi)
+    prizma_ascoded = L * total(pf, exclude=("window_band_ideal",)) + head
+    print(f"\n=== FLOP-matched TF search @ d={d} H={H} L={L} (match Prizma-quad2 as-coded "
+          f"{prizma_ascoded/T/1e3:.1f} kFLOP/tok) ===")
     # option A: deeper TF (more layers) at same width
     for L2 in range(L, 4 * L + 1):
         tot = L2 * total(tf_layer_flops_causal(T, d, H, dff)) + head
-        if tot >= prism_ascoded:
+        if tot >= prizma_ascoded:
             print(f"   deeper: TF d{d}L{L2}H{H}  -> {tot/T/1e3:6.1f} kFLOP/tok  "
-                  f"({tot/base_tf:.2f}x base, {tot/prism_ascoded:.2f}x PRISM)")
+                  f"({tot/base_tf:.2f}x base, {tot/prizma_ascoded:.2f}x Prizma)")
             break
     # option B: wider d_model (keep L,H ratio) — FLOP ~ d^2
     for dm in range(d, 3 * d + 1, 16):
         if dm % H:
             continue
         tot = L * total(tf_layer_flops_causal(T, dm, H, dff_of(dm))) + mm(T, dm, V)
-        if tot >= prism_ascoded:
+        if tot >= prizma_ascoded:
             print(f"   wider : TF d{dm}L{L}H{H}  -> {tot/T/1e3:6.1f} kFLOP/tok  "
-                  f"({tot/base_tf:.2f}x base, {tot/prism_ascoded:.2f}x PRISM)")
+                  f"({tot/base_tf:.2f}x base, {tot/prizma_ascoded:.2f}x Prizma)")
             break
 
 
@@ -143,9 +143,9 @@ if __name__ == "__main__":
     print("Param counts (matched):")
     for (d, L, H) in [(64, 2, 2), (128, 4, 4)]:
         tf = Transformer(TFConfig(vocab=V, d_model=d, n_layers=L, n_heads=H, max_len=T + 8, rope=True))
-        ps = PRISMSeqLM(PRISMSeqConfig(vocab=V, d_model=d, n_layers=L, n_heads=H, max_len=T + 8,
+        ps = PrizmaSeqLM(PrizmaSeqConfig(vocab=V, d_model=d, n_layers=L, n_heads=H, max_len=T + 8,
                                        feat_map="quad2", feat_n2=224))
-        print(f"   d{d}L{L}H{H}: TF {param_count(tf):,}  PRISM-quad2 {param_count(ps):,}")
+        print(f"   d{d}L{L}H{H}: TF {param_count(tf):,}  Prizma-quad2 {param_count(ps):,}")
 
     ledger(64, 2, 2, d_phi=256, label="LEGACY d64L2H2")
     h = ledger(128, 4, 4, d_phi=256, label="HEADLINE d128L4H4")

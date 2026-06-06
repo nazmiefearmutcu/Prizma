@@ -3,15 +3,15 @@
 The depth-scaled FLOP-match (p2b, TF d128L9H4) confounds "more FLOPs" with "harder to optimize"
 (deep TFs fail on MQAR at this scale — see P1 depth-bimodality: L2 clean, L4 bimodal, L9→0.02).
 The FAIR FLOP-match keeps depth fixed (L=4) and scales WIDTH: TF d208L4H4 ≈ 4994 kFLOP/tok
-(1.11× PRISM-quad2's as-coded forward FLOPs; flop_ledger.py). This avoids the depth-trainability
-confound, so it is the honest test of "is PRISM's D=128 recall just spent compute?":
-  - if d208L4H4 ALSO fails  -> PRISM-quad2's matched-param recall is not reachable by a same-budget
-                               attention model at this scale (strong for PRISM);
-  - if d208L4H4 SOLVES      -> equal FLOPs via width lets attention solve too; PRISM's edge is then
+(1.11× Prizma-quad2's as-coded forward FLOPs; flop_ledger.py). This avoids the depth-trainability
+confound, so it is the honest test of "is Prizma's D=128 recall just spent compute?":
+  - if d208L4H4 ALSO fails  -> Prizma-quad2's matched-param recall is not reachable by a same-budget
+                               attention model at this scale (strong for Prizma);
+  - if d208L4H4 SOLVES      -> equal FLOPs via width lets attention solve too; Prizma's edge is then
                                parameter-efficiency + O(1) memory, NOT raw capability (honest, still real).
 
-Writes p2c.* into the SAME $PRISM_RESULTS/gpu_bench.json (resumable). Run on Colab after extra_arms:
-    PRISM_RESULTS=/content/drive/MyDrive/prism_results python -u flop_match_width.py
+Writes p2c.* into the SAME $PRIZMA_RESULTS/gpu_bench.json (resumable). Run on Colab after extra_arms:
+    PRIZMA_RESULTS=/content/drive/MyDrive/prizma_results python -u flop_match_width.py
 """
 from gpu_bench import run_cell, solve_stats, tf_factory, _load, _save, OUT, DEV
 from seq.tasks import MixedMQAR

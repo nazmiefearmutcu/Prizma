@@ -2,13 +2,13 @@
   "_baseline": {
     "Transformer_genwarm": 1.0
   },
-  "PRISM-quad2": {
+  "Prizma-quad2": {
     "best": 0.99951171875,
     "plateau": 27000,
     "params": 115016,
     "sec": 5892.1
   },
-  "PRISM-none": {
+  "Prizma-none": {
     "best": 0.93096923828125,
     "plateau": 30000,
     "params": 115016,

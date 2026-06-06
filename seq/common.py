@@ -1,5 +1,5 @@
 """
-Shared infrastructure for the PRISM-Seq vs Transformer head-to-head.
+Shared infrastructure for the Prizma-Seq vs Transformer head-to-head.
 
 Everything is model-agnostic. A "sequence model" is any nn.Module with
 
@@ -7,7 +7,7 @@ Everything is model-agnostic. A "sequence model" is any nn.Module with
 
 i.e. causal/autoregressive next-token-style scoring at every position. Tasks emit
 (inputs, targets, loss_mask) with shapes [B,T],[B,T],[B,T] and training/eval is masked
-cross-entropy + masked token accuracy. This keeps Transformer and PRISM-Seq on identical
+cross-entropy + masked token accuracy. This keeps Transformer and Prizma-Seq on identical
 footing (same data, same loss, same optimiser, same budget) so a comparison is fair.
 
 Target hardware: Apple Silicon MPS, 16 GB, float32. No CUDA, no autocast.

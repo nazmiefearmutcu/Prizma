@@ -23,7 +23,7 @@ import torch
 from seq.common import TrainConfig, train_model, param_count, get_device
 from seq.tasks import MQAR
 from seq.transformer import Transformer, TFConfig
-from seq.prism_seq import PRISMSeqLM, PRISMSeqConfig
+from seq.prizma_seq import PrizmaSeqLM, PrizmaSeqConfig
 
 DEV = get_device()
 RES = os.path.join(os.path.dirname(__file__), "results")
@@ -36,10 +36,10 @@ def make_tf(V, T):
 
 
 def make_ps(V, T):
-    return PRISMSeqLM(PRISMSeqConfig(vocab=V, d_model=64, n_layers=2, n_heads=2, max_len=T + 8))
+    return PrizmaSeqLM(PrizmaSeqConfig(vocab=V, d_model=64, n_layers=2, n_heads=2, max_len=T + 8))
 
 
-MODELS = {"Transformer": make_tf, "PRISM-Seq": make_ps}
+MODELS = {"Transformer": make_tf, "Prizma-Seq": make_ps}
 
 # The two hard rungs from run_bar.B1 (rung1 already ties at 1.000/0.998; not in question here).
 RUNGS = {

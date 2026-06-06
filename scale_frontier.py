@@ -4,7 +4,7 @@ D=128-parity comparison happens where the baseline is genuinely strong (fairness
 The matched tiny TF (d=64,L=2) fails MQAR D=64 at chance across 3 recipes x 3 seeds (tf_frontier) ->
 D=64/128 are out of range for that size. This scans bigger TF configs (width/depth/head-dim) at the
 target D to locate the base scale where the TF solves it; that scale then anchors the param-matched
-PRISM-none vs PRISM-quad2 comparison.
+Prizma-none vs Prizma-quad2 comparison.
 
 Run:  python3.13 scale_frontier.py 64          # default configs at D=64
       python3.13 scale_frontier.py 64 128

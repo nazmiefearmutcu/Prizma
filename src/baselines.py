@@ -1,15 +1,15 @@
 """
-Backprop baselines on the same numpy substrate as PRISM, for a fair comparison.
+Backprop baselines on the same numpy substrate as Prizma, for a fair comparison.
 
   * MLP        -- plain backprop MLP (SGD). The naive sequential baseline; expected to
                   forget catastrophically.
   * EWC        -- MLP + Elastic Weight Consolidation (Kirkpatrick 2017). Uses TASK
                   BOUNDARIES (it must be told when a task ends to snapshot params and the
                   Fisher diagonal). This is the *privileged* upper-bound competitor:
-                  PRISM aims to approach it WITHOUT task boundaries.
+                  Prizma aims to approach it WITHOUT task boundaries.
 
 We implement backprop by hand (no autograd) so the comparison against the local
-PC/PRISM learners is on identical numerical footing.
+PC/Prizma learners is on identical numerical footing.
 """
 
 from __future__ import annotations

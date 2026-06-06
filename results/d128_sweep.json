@@ -6,14 +6,14 @@
     "cap": 60000,
     "sec": 4176.2
   },
-  "PRISM-quad2-256": {
+  "Prizma-quad2-256": {
     "best": 0.9994697570800781,
     "plateau": 33000,
     "params": 131400,
     "cap": 40000,
     "sec": 12969.0
   },
-  "PRISM-none": {
+  "Prizma-none": {
     "best": 0.3688316345214844,
     "plateau": 40000,
     "params": 131400,

@@ -7,19 +7,19 @@ E1  MAIN COMPARISON (structured-permuted, distinguishable)
   EWC           ACC=0.456±0.019   FGT=0.411±0.020
   replay(boundaries) ACC=0.737±0.011   FGT=0.156±0.009
   oracle_multihead ACC=0.879±0.011   FGT=0.000±0.000
-  PRISM(DFA,no W^T) ACC=0.834±0.015   FGT=0.000±0.000
-  PRISM_exactW^T ACC=0.708±0.021   FGT=0.000±0.000
-  PRISM_noRoute(ablation) ACC=0.446±0.024   FGT=0.489±0.023
-  [params] backprop/EWC=20744  PRISM(trainable)=22144
+  Prizma(DFA,no W^T) ACC=0.834±0.015   FGT=0.000±0.000
+  PRIZMA_exactW^T ACC=0.708±0.021   FGT=0.000±0.000
+  PRIZMA_noRoute(ablation) ACC=0.446±0.024   FGT=0.489±0.023
+  [params] backprop/EWC=20744  Prizma(trainable)=22144
 
 ======================================================================
 E2  SEPARABILITY SWEEP (noise blurs domains -> find the boundary)
 ======================================================================
-  noise=0.0  PRISM: ACC=0.827 FGT=0.000 (committed~5)   | backprop: ACC=0.433 FGT=0.562
-  noise=0.3  PRISM: ACC=0.721 FGT=0.016 (committed~5)   | backprop: ACC=0.299 FGT=0.608
-  noise=0.6  PRISM: ACC=0.557 FGT=0.052 (committed~5)   | backprop: ACC=0.261 FGT=0.508
-  noise=0.9  PRISM: ACC=0.430 FGT=0.073 (committed~5)   | backprop: ACC=0.239 FGT=0.421
-  noise=1.2  PRISM: ACC=0.344 FGT=0.077 (committed~5)   | backprop: ACC=0.222 FGT=0.350
+  noise=0.0  Prizma: ACC=0.827 FGT=0.000 (committed~5)   | backprop: ACC=0.433 FGT=0.562
+  noise=0.3  Prizma: ACC=0.721 FGT=0.016 (committed~5)   | backprop: ACC=0.299 FGT=0.608
+  noise=0.6  Prizma: ACC=0.557 FGT=0.052 (committed~5)   | backprop: ACC=0.261 FGT=0.508
+  noise=0.9  Prizma: ACC=0.430 FGT=0.073 (committed~5)   | backprop: ACC=0.239 FGT=0.421
+  noise=1.2  Prizma: ACC=0.344 FGT=0.077 (committed~5)   | backprop: ACC=0.222 FGT=0.350
 
 ======================================================================
 E3  CAPACITY SWEEP (n_experts vs K=5 domains)
@@ -31,7 +31,7 @@ E3  CAPACITY SWEEP (n_experts vs K=5 domains)
   experts=8 (K=5): ACC=0.827  FGT=0.000
 
 ======================================================================
-E4  LOCALITY: PRISM with RANDOM feedback (DFA, no W^T) vs exact (P2)
+E4  LOCALITY: Prizma with RANDOM feedback (DFA, no W^T) vs exact (P2)
 ======================================================================
   feedback=exact  : ACC=0.691  FGT=0.000
   feedback=random : ACC=0.827  FGT=0.000
@@ -40,7 +40,7 @@ E4  LOCALITY: PRISM with RANDOM feedback (DFA, no W^T) vs exact (P2)
 E5  IMPOSSIBLE-REGIME CONTROL (rotating-checkerboard, ambiguous)
 ======================================================================
   single-head ORACLE ceiling (per-x majority) = 0.780
-  PRISM final ACC = 0.570   backprop final ACC = 0.694
-  => PRISM does NOT exceed the ceiling: honest boundary confirmed (OK)
+  Prizma final ACC = 0.570   backprop final ACC = 0.694
+  => Prizma does NOT exceed the ceiling: honest boundary confirmed (OK)
 
-Saved -> /Users/nazmi/Desktop/Projeler/proje/PRISM/experiments/../results/results.json   (total 70.6s)
+Saved -> /Users/nazmi/Desktop/Projeler/proje/Prizma/experiments/../results/results.json   (total 70.6s)

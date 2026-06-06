@@ -1,10 +1,10 @@
-"""PRISM-quad2 vs a tuned Transformer char-LM — a CREDIBLE, REGULARIZED, configurable rebuild.
+"""Prizma-quad2 vs a tuned Transformer char-LM — a CREDIBLE, REGULARIZED, configurable rebuild.
 
 This is a hardened successor to `gpu_charlm.py` (the §4 "small LM" bar leg). It param-matches
-PRISM-Seq-quad2 against an honest decoder-only Transformer (RMSNorm + SwiGLU + RoPE, the one in
+Prizma-Seq-quad2 against an honest decoder-only Transformer (RMSNorm + SwiGLU + RoPE, the one in
 `seq/transformer.py`) at a small scale and asks the falsifiable, pre-registered question:
 
-    PASS iff  PRISM-quad2 best_bpc <= TF best_bpc + 0.05   (param-matched, >= 2 seeds)
+    PASS iff  Prizma-quad2 best_bpc <= TF best_bpc + 0.05   (param-matched, >= 2 seeds)
 
 where the headline metric is **test bits-per-char (BPC)** = mean held-out next-char CE (nats)/ln2.
 
@@ -19,13 +19,13 @@ its own optimum — non-credible. This rebuild fixes that WITHOUT favoring eithe
 
   1. ANTI-OVERFITTING, applied FAIRLY to BOTH models:
        * AdamW weight_decay (CLI --weight_decay, default 0.1). Optimizer-level => IDENTICAL pressure
-         on PRISM and the TF, no architecture edits, perfectly symmetric.
+         on Prizma and the TF, no architecture edits, perfectly symmetric.
        * DROPOUT IS DELIBERATELY NOT USED.  Audit of the constructors:
             - seq/transformer.py  : TFConfig HAS `dropout` (attention dropout via SDPA dropout_p).
-            - seq/prism_seq.py    : PRISMSeqConfig has NO dropout anywhere (neither the delta path,
+            - seq/prizma_seq.py    : PrizmaSeqConfig has NO dropout anywhere (neither the delta path,
                                     the window SDPA head, nor an embedding/residual dropout).
          Dropout therefore exists on ONLY ONE side. Enabling it would apply regularization pressure
-         to the Transformer that PRISM cannot receive — an UNFAIR contrast that would flatter PRISM.
+         to the Transformer that Prizma cannot receive — an UNFAIR contrast that would flatter Prizma.
          Per the fairness contract we rely on weight_decay ONLY (architecture-agnostic) and record
          this choice in the JSON `_config` (`dropout_used=false`, `dropout_reason=...`). A bigger,
          more diverse corpus (text8, default) is the primary, fair overfitting control.
@@ -41,15 +41,15 @@ grid (each architecture trains at its own best LR on the SAME grid — the stand
 protocol; disclosed), the FROZEN reproducible eval set, deterministic seeding before BOTH data
 sampling and model construction, and the crash-safe streaming-JSON cache-by-key resumable ledger.
 
-Param-match: the feature map is buffers (0 trainable params), so PRISM-quad2's count is fixed; the
-TF's SwiGLU d_ff is sized so its param count lands within ~1% of PRISM-quad2 (recorded in _config as
+Param-match: the feature map is buffers (0 trainable params), so Prizma-quad2's count is fixed; the
+TF's SwiGLU d_ff is sized so its param count lands within ~1% of Prizma-quad2 (recorded in _config as
 param_match_pct). If anything that favors the TF baseline.
 
-Crash-safe + resumable: every (arm x seed) record streams to $PRISM_RESULTS/gpu_charlm2.json via an
+Crash-safe + resumable: every (arm x seed) record streams to $PRIZMA_RESULTS/gpu_charlm2.json via an
 atomic write; completed cells are skipped on restart. SEPARATE file from gpu_charlm.json so a live
 run writing that file is never clobbered.
 
-Env:  set PRISM_RESULTS to a Drive-mounted dir for persistence (default ./results).
+Env:  set PRIZMA_RESULTS to a Drive-mounted dir for persistence (default ./results).
 Run:  python3 gpu_charlm2.py                          # text8 subset (default), 2 seeds
       python3 gpu_charlm2.py --corpus shakespeare     # tiny-shakespeare
       python3 gpu_charlm2.py --smoke                   # fast 1-seed tiny-config sanity check
@@ -72,7 +72,7 @@ import torch.nn.functional as F
 
 from seq.common import param_count, set_seed
 from seq.transformer import Transformer, TFConfig
-from seq.prism_seq import PRISMSeqLM, PRISMSeqConfig
+from seq.prizma_seq import PrizmaSeqLM, PrizmaSeqConfig
 
 # --------------------------------------------------------------------------------------------- #
 # Device + crash-safe JSON ledger (mirrors gpu_charlm._load/_save; SEPARATE file gpu_charlm2.json
@@ -80,7 +80,7 @@ from seq.prism_seq import PRISMSeqLM, PRISMSeqConfig
 # --------------------------------------------------------------------------------------------- #
 DEV = torch.device("cuda" if torch.cuda.is_available()
                    else ("mps" if torch.backends.mps.is_available() else "cpu"))
-RES = os.environ.get("PRISM_RESULTS", os.path.join(os.path.dirname(__file__), "results"))
+RES = os.environ.get("PRIZMA_RESULTS", os.path.join(os.path.dirname(__file__), "results"))
 os.makedirs(RES, exist_ok=True)
 OUT = os.path.join(RES, "gpu_charlm2.json")
 
@@ -88,7 +88,7 @@ _DATA_DIR = os.path.join(os.path.dirname(__file__), "seq", "data")
 _SHAKES = os.path.join(_DATA_DIR, "shakespeare.txt")
 _SHAKES_URL = "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
 
-# text8 raw (100M lowercase a-z + space). Cache the RAW file under $PRISM_RESULTS so a resumed run
+# text8 raw (100M lowercase a-z + space). Cache the RAW file under $PRIZMA_RESULTS so a resumed run
 # never re-downloads. Try the HF raw mirror first (plain text, no unzip), then the canonical zip.
 # NOTE: the verified-live HF raw file is the `ardMLX/text8` repo's plain `text8` object (302->CDN,
 # Content-Length=100,000,000). The `.zip` variant and the `afmck` raw path do NOT exist (404), so
@@ -124,7 +124,7 @@ def _rng_range(xs):
 # Corpus loading.
 #   shakespeare: reuse seq/data/shakespeare.txt; download from karpathy URL if absent (same path as
 #                gpu_charlm.py). CONTIGUOUS 90/10 train/test split (no n-gram leak across boundary).
-#   text8:       download ONCE (HF raw -> zip fallback) and cache RAW to $PRISM_RESULTS/text8.
+#   text8:       download ONCE (HF raw -> zip fallback) and cache RAW to $PRIZMA_RESULTS/text8.
 #                Use a SUBSET: first `train_chars` train / next 500k val / next 500k test. Vocab is
 #                built deterministically from the data (sorted unique chars => V=27 for text8).
 # --------------------------------------------------------------------------------------------- #
@@ -135,7 +135,7 @@ def _fetch_bytes(url, timeout):
     allowed = (_SHAKES_URL, _TEXT8_RAW_URL) + _TEXT8_ZIP_URLS
     if url not in allowed:
         raise ValueError(f"refusing non-allowlisted URL: {url!r}")
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (PRISM-charlm2)"})
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Prizma-charlm2)"})
     with urllib.request.urlopen(req, timeout=timeout) as r:  # nosec B310 # nosemgrep
         return r.read()
 
@@ -160,7 +160,7 @@ def _ensure_shakespeare():
 
 
 def _ensure_text8_raw():
-    """Return (path_to_raw_text8, source). Caches the full 100M-char text8 to $PRISM_RESULTS/text8."""
+    """Return (path_to_raw_text8, source). Caches the full 100M-char text8 to $PRIZMA_RESULTS/text8."""
     if os.path.exists(_TEXT8_CACHE) and os.path.getsize(_TEXT8_CACHE) > 50_000_000:
         return _TEXT8_CACHE, "cache"
     os.makedirs(os.path.dirname(_TEXT8_CACHE), exist_ok=True)
@@ -269,13 +269,13 @@ def load_corpus(which: str, seq_len: int, *, text8_train_chars=10_000_000,
 
 
 # --------------------------------------------------------------------------------------------- #
-# Model factories. PRISM-quad2 is the model under test; the Transformer is the baseline. For char-LM
-# PRISM needs learned_pos=True (its delta path is position-free, so absolute positions come from a
+# Model factories. Prizma-quad2 is the model under test; the Transformer is the baseline. For char-LM
+# Prizma needs learned_pos=True (its delta path is position-free, so absolute positions come from a
 # learned embedding here, the standard char-LM parity setting). The TF gets a slightly larger d_ff to
-# param-match PRISM-quad2 within ~1% (the feature map is buffers => 0 params, so PRISM's count is
+# param-match Prizma-quad2 within ~1% (the feature map is buffers => 0 params, so Prizma's count is
 # fixed and the match must be made on the TF side).
 #
-# DROPOUT: not wired. TFConfig supports `dropout` but PRISMSeqConfig does NOT, so passing it would
+# DROPOUT: not wired. TFConfig supports `dropout` but PrizmaSeqConfig does NOT, so passing it would
 # regularize only the TF (unfair). We pass NOTHING dropout-related to either side. See module docstring.
 # --------------------------------------------------------------------------------------------- #
 def tf_factory(d, L, H, T, d_ff=None):
@@ -285,13 +285,13 @@ def tf_factory(d, L, H, T, d_ff=None):
 
 def ps_factory(d, L, H, T, **kw):
     kw.setdefault("learned_pos", True)
-    return lambda V: PRISMSeqLM(PRISMSeqConfig(vocab=V, d_model=d, n_layers=L, n_heads=H,
+    return lambda V: PrizmaSeqLM(PrizmaSeqConfig(vocab=V, d_model=d, n_layers=L, n_heads=H,
                                                max_len=T + 8, **kw))
 
 
 def _match_tf_dff(d, L, H, T, target_params, V_probe=65):
     """Pick the TF SwiGLU d_ff (multiple of 8) whose param count is closest to `target_params`
-    (PRISM-quad2's count). Returns (d_ff, tf_params)."""
+    (Prizma-quad2's count). Returns (d_ff, tf_params)."""
     base = TFConfig(vocab=V_probe, d_model=d, n_layers=L, n_heads=H, max_len=T + 8, rope=True).d_ff
     best = (base, None, 1e18)
     for dff in range(max(8, base - 64), base + 320, 8):
@@ -472,18 +472,18 @@ def smoke_hp(args):
 def build_arms(d, L, H, T, feat_n2, tf_dff):
     return {
         "TF":          tf_factory(d, L, H, T, d_ff=tf_dff),
-        "PRISM-quad2": ps_factory(d, L, H, T, feat_map="quad2", feat_n2=feat_n2),
-        "PRISM-none":  ps_factory(d, L, H, T, feat_map="none"),   # ablation: state w/o the feature map
+        "Prizma-quad2": ps_factory(d, L, H, T, feat_map="quad2", feat_n2=feat_n2),
+        "Prizma-none":  ps_factory(d, L, H, T, feat_map="none"),   # ablation: state w/o the feature map
     }
 
 
 def _print_param_match(arms, V, label):
     print(f"\n  param-match @ {label} (V={V}):", flush=True)
     counts = {a: param_count(f(V)) for a, f in arms.items()}
-    ref = counts["PRISM-quad2"]
+    ref = counts["Prizma-quad2"]
     for a, p in counts.items():
-        diff = (p - ref) / ref * 100 if a != "PRISM-quad2" else 0.0
-        print(f"    {a:<12} {p:>10,} params   ({diff:+.2f}% vs PRISM-quad2)", flush=True)
+        diff = (p - ref) / ref * 100 if a != "Prizma-quad2" else 0.0
+        print(f"    {a:<12} {p:>10,} params   ({diff:+.2f}% vs Prizma-quad2)", flush=True)
     return counts
 
 
@@ -501,15 +501,15 @@ def run(args):
                             text8_val_chars=args.text8_val_chars, text8_test_chars=args.text8_test_chars)
     print(f"corpus: {data.name}  (source={src}, random-baseline BPC={data.rand_bpc:.3f})", flush=True)
 
-    # param-match: size the TF d_ff to PRISM-quad2's count, then confirm + print.
+    # param-match: size the TF d_ff to Prizma-quad2's count, then confirm + print.
     ps_target = param_count(ps_factory(d, L, H, T, feat_map="quad2", feat_n2=feat_n2)(data.vocab))
     tf_dff, tf_p = _match_tf_dff(d, L, H, T, ps_target, V_probe=data.vocab)
     arms = build_arms(d, L, H, T, feat_n2, tf_dff)
     if args.skip_none:
-        arms.pop("PRISM-none", None)   # leg-4 needs only TF vs PRISM-quad2; none is the (optional) ablation
+        arms.pop("Prizma-none", None)   # leg-4 needs only TF vs Prizma-quad2; none is the (optional) ablation
     counts = _print_param_match(arms, data.vocab, f"d{d}L{L}H{H} ctx{T} (TF d_ff={tf_dff})")
-    match_pct = (counts["TF"] - counts["PRISM-quad2"]) / counts["PRISM-quad2"] * 100
-    print(f"  -> TF vs PRISM-quad2 param-match: {match_pct:+.2f}% "
+    match_pct = (counts["TF"] - counts["Prizma-quad2"]) / counts["Prizma-quad2"] * 100
+    print(f"  -> TF vs Prizma-quad2 param-match: {match_pct:+.2f}% "
           f"({'OK <=1%' if abs(match_pct) <= 1.0 else 'WARN >1%'})", flush=True)
 
     res = _load()
@@ -527,10 +527,10 @@ def run(args):
                               "min-over-test; the oracle min_test_bpc is recorded either way."),
         # --- regularization honesty disclosure ---
         "dropout_used": False,
-        "dropout_reason": ("TFConfig supports dropout but PRISMSeqConfig does not; enabling it would "
+        "dropout_reason": ("TFConfig supports dropout but PrizmaSeqConfig does not; enabling it would "
                            "regularize only the Transformer (unfair). Anti-overfitting is weight_decay "
                            "(optimizer-level, identical for both) + a larger corpus (text8) ONLY."),
-        "weight_decay_applied_to": ["TF", "PRISM-quad2", "PRISM-none"],
+        "weight_decay_applied_to": ["TF", "Prizma-quad2", "Prizma-none"],
         "text8_subset": ({"train_chars": args.text8_train_chars, "val_chars": args.text8_val_chars,
                           "test_chars": args.text8_test_chars} if corpus == "text8" else None),
     }
@@ -548,16 +548,16 @@ def run(args):
                   f"baseline {rand_bpc:.4f} — this arm did not learn (check recipe). ***", flush=True)
 
     tf_med = summary["TF"]["median_bpc"]
-    ps_med = summary["PRISM-quad2"]["median_bpc"]
-    margin = round(tf_med - ps_med, 4)             # TF_best - PRISM_best (positive => PRISM ahead)
+    ps_med = summary["Prizma-quad2"]["median_bpc"]
+    margin = round(tf_med - ps_med, 4)             # TF_best - PRIZMA_best (positive => Prizma ahead)
     passed = bool(ps_med <= tf_med + 0.05)
     bar = {
-        "rule": "PRISM-quad2 best_bpc <= TF best_bpc + 0.05 (param-matched, >=2 seeds)",
+        "rule": "Prizma-quad2 best_bpc <= TF best_bpc + 0.05 (param-matched, >=2 seeds)",
         "metric": "test_bits_per_char",
         "pass": passed,
         "TF_median_best_bpc": tf_med,
-        "PRISM_quad2_median_best_bpc": ps_med,
-        "margin_tf_minus_prism": margin,           # TF - PRISM (lower BPC is better => + favors PRISM)
+        "PRIZMA_quad2_median_best_bpc": ps_med,
+        "margin_tf_minus_prizma": margin,           # TF - Prizma (lower BPC is better => + favors Prizma)
         "threshold": 0.05,
         "n_seeds": len(seeds),
         "param_match_pct": round(match_pct, 3),
@@ -568,12 +568,12 @@ def run(args):
 
     charlm_summary = {
         "corpus": corpus, "metric": "test_bits_per_char", "per_arm": summary,
-        "TF_median_bpc": tf_med, "PRISM_quad2_median_bpc": ps_med,
-        "TF_mean_bpc": summary["TF"]["mean_bpc"], "PRISM_quad2_mean_bpc": summary["PRISM-quad2"]["mean_bpc"],
-        "margin_tf_minus_prism": margin, "threshold": 0.05, "PASS": passed,
+        "TF_median_bpc": tf_med, "PRIZMA_quad2_median_bpc": ps_med,
+        "TF_mean_bpc": summary["TF"]["mean_bpc"], "PRIZMA_quad2_mean_bpc": summary["Prizma-quad2"]["mean_bpc"],
+        "margin_tf_minus_prizma": margin, "threshold": 0.05, "PASS": passed,
         "param_match_pct": round(match_pct, 3), "random_baseline_bpc": round(rand_bpc, 4),
-        "verdict": ("PASS: PRISM-quad2 within +0.05 of TF" if passed
-                    else "FAIL: PRISM-quad2 more than +0.05 worse than TF"),
+        "verdict": ("PASS: Prizma-quad2 within +0.05 of TF" if passed
+                    else "FAIL: Prizma-quad2 more than +0.05 worse than TF"),
     }
     res["_bar"] = bar
     res["charlm_summary"] = charlm_summary
@@ -582,7 +582,7 @@ def run(args):
     print("\n=== RESULTS ===", flush=True)
     print(f"corpus={corpus}  device={DEV.type}  steps={hp['steps']}  eval_every={hp['eval_every']}  "
           f"weight_decay={hp['weight_decay']}  dropout=OFF(weight_decay-only)", flush=True)
-    print(f"random-baseline BPC = {rand_bpc:.4f}   param-match (TF vs PRISM-quad2) = {match_pct:+.2f}%",
+    print(f"random-baseline BPC = {rand_bpc:.4f}   param-match (TF vs Prizma-quad2) = {match_pct:+.2f}%",
           flush=True)
     for arm, s in summary.items():
         flag = "  <-- > random!" if s["median_bpc"] > rand_bpc else ""
@@ -592,8 +592,8 @@ def run(args):
               f"final/seed={s['final_bpc_per_seed']}, {s['params']:,}p){flag}", flush=True)
     print(f"\n  _bar rule : {bar['rule']}", flush=True)
     print(f"  TF median best_bpc    = {tf_med:.4f}", flush=True)
-    print(f"  PRISM median best_bpc = {ps_med:.4f}", flush=True)
-    print(f"  margin (TF - PRISM)   = {margin:+.4f}   threshold +0.05   -> "
+    print(f"  Prizma median best_bpc = {ps_med:.4f}", flush=True)
+    print(f"  margin (TF - Prizma)   = {margin:+.4f}   threshold +0.05   -> "
           f"{'PASS' if passed else 'FAIL'}", flush=True)
     print("\n===CHARLM2_BAR===", flush=True)
     print(json.dumps(bar), flush=True)
@@ -605,14 +605,14 @@ def run(args):
 
 def build_parser():
     p = argparse.ArgumentParser(
-        description="Credible regularized PRISM-quad2 vs Transformer char-LM (test BPC, param-matched).")
+        description="Credible regularized Prizma-quad2 vs Transformer char-LM (test BPC, param-matched).")
     p.add_argument("--corpus", choices=["shakespeare", "text8"], default="text8",
                    help="corpus (default: text8 — large enough to control overfitting)")
     # anti-overfitting (fair, optimizer-level)
     p.add_argument("--weight_decay", type=float, default=0.1,
                    help="AdamW weight decay, applied IDENTICALLY to both models (default 0.1)")
     p.add_argument("--dropout", type=float, default=0.1,
-                   help="(ACCEPTED BUT NOT USED) PRISMSeqConfig has no dropout, so wiring it would be "
+                   help="(ACCEPTED BUT NOT USED) PrizmaSeqConfig has no dropout, so wiring it would be "
                         "unfair to the TF-only side; we rely on weight_decay. Recorded in _config.")
     # eval cadence + budget
     p.add_argument("--eval_every", type=int, default=250,
@@ -624,7 +624,7 @@ def build_parser():
     p.add_argument("--L", type=int, default=4, help="n_layers (default 4)")
     p.add_argument("--H", type=int, default=4, help="n_heads (default 4)")
     p.add_argument("--ctx", type=int, default=256, help="context length T (default 256)")
-    p.add_argument("--feat_n2", type=int, default=256, help="PRISM-quad2 monomials (default 256)")
+    p.add_argument("--feat_n2", type=int, default=256, help="Prizma-quad2 monomials (default 256)")
     # optimization knobs
     p.add_argument("--batch_size", type=int, default=48, help="batch size (default 48)")
     p.add_argument("--warmup", type=int, default=1000, help="LR warmup steps (default 1000)")
@@ -641,7 +641,7 @@ def build_parser():
                    help="text8 test chars (default 500k)")
     # misc
     p.add_argument("--skip_none", action="store_true",
-                   help="skip the PRISM-none ablation arm (leg-4 needs only TF vs PRISM-quad2; "
+                   help="skip the Prizma-none ablation arm (leg-4 needs only TF vs Prizma-quad2; "
                         "the feat_map causal-ablation is already covered by the MQAR B6 control)")
     p.add_argument("--smoke", action="store_true", help="fast tiny-config 1-seed sanity check")
     p.add_argument("--log", action="store_true", help="verbose per-eval logging")

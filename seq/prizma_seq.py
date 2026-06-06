@@ -1,16 +1,16 @@
 """
-PRISM-Seq — a Predictive-Coding Gated-DeltaNet sequence model (committee spec PRISM_SEQ_SPEC.md).
+Prizma-Seq — a Predictive-Coding Gated-DeltaNet sequence model (committee spec PRIZMA_SEQ_SPEC.md).
 
 Mixer = a carried associative workspace state S_t in R^{d_h x d_h} per head, updated by a
 precision-gated targeted erase-and-write (the delta rule), which is exactly ONE gradient step on
-PRISM's per-token free energy F_t(S)=1/2||v_t - S k_t||^2.  Read = S_{t-1} q_t (recognition-by-
+Prizma's per-token free energy F_t(S)=1/2||v_t - S k_t||^2.  Read = S_{t-1} q_t (recognition-by-
 reconstruction, strictly pre-write/causal) + a small exact local window head. FFN is byte-identical
 to the Transformer baseline so ONLY the mixer differs.
 
 Honest design note: the write gate beta is INPUT-dependent (sigma(W_beta x_t)), which keeps the
 chunk-parallel training form valid. Surprise-proportionality is intrinsic: the delta write is
 u_t = beta_t * (v_t - S_{t-1} k_t) = beta_t * epsilon_t — it writes the prediction error itself
-(PRISM's dW ~ (Pi*eps) (x) r). An optional surprise-gated variant (two-pass) is exposed for B6.
+(Prizma's dW ~ (Pi*eps) (x) r). An optional surprise-gated variant (two-pass) is exposed for B6.
 """
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ from .delta import chunked_delta
 
 
 @dataclass
-class PRISMSeqConfig:
+class PrizmaSeqConfig:
     vocab: int = 64
     d_model: int = 64
     n_layers: int = 2
@@ -96,8 +96,8 @@ def _l2(x, eps=1e-6):
 
 
 # --------------------------------- the block ---------------------------------------------- #
-class PRISMSeqBlock(nn.Module):
-    def __init__(self, cfg: PRISMSeqConfig):
+class PrizmaSeqBlock(nn.Module):
+    def __init__(self, cfg: PrizmaSeqConfig):
         super().__init__()
         self.cfg = cfg
         d, H, dh = cfg.d_model, cfg.n_heads, cfg.d_h
@@ -239,13 +239,13 @@ class PRISMSeqBlock(nn.Module):
         return h, (S, rk, rv, cring, pos + 1)
 
 
-class PRISMSeqLM(nn.Module):
-    def __init__(self, cfg: PRISMSeqConfig):
+class PrizmaSeqLM(nn.Module):
+    def __init__(self, cfg: PrizmaSeqConfig):
         super().__init__()
         self.cfg = cfg
         self.tok = nn.Embedding(cfg.vocab, cfg.d_model)
         self.pos = nn.Embedding(cfg.max_len, cfg.d_model) if cfg.learned_pos else None
-        self.blocks = nn.ModuleList([PRISMSeqBlock(cfg) for _ in range(cfg.n_layers)])
+        self.blocks = nn.ModuleList([PrizmaSeqBlock(cfg) for _ in range(cfg.n_layers)])
         self.nf = RMSNorm(cfg.d_model)
         self.head = nn.Linear(cfg.d_model, cfg.vocab, bias=False)
         self.head.weight = self.tok.weight
@@ -294,9 +294,9 @@ class PRISMSeqLM(nn.Module):
         return self.head(self.nf(h)), new
 
 
-def prism_seq_factory(d_model=64, n_layers=2, n_heads=2, **kw):
+def prizma_seq_factory(d_model=64, n_layers=2, n_heads=2, **kw):
     def f(vocab, max_len):
-        return PRISMSeqLM(PRISMSeqConfig(vocab=vocab, d_model=d_model, n_layers=n_layers,
+        return PrizmaSeqLM(PrizmaSeqConfig(vocab=vocab, d_model=d_model, n_layers=n_layers,
                                          n_heads=n_heads, max_len=max_len + 8, **kw))
     return f
 
@@ -307,8 +307,8 @@ if __name__ == "__main__":
     # O(1) GUARD (committee guardrail): for BOTH feat_map settings the streaming step() must equal
     # the parallel forward() to <1e-4, AND param_count must be identical (feature map = 0 params).
     for feat in ("none", "quad2"):
-        cfg = PRISMSeqConfig(vocab=64, d_model=64, n_layers=2, n_heads=2, feat_map=feat)
-        m = PRISMSeqLM(cfg).to(dev)
+        cfg = PrizmaSeqConfig(vocab=64, d_model=64, n_layers=2, n_heads=2, feat_map=feat)
+        m = PrizmaSeqLM(cfg).to(dev)
         x = torch.randint(0, 64, (2, 48), device=dev)
         y = m(x)
         m.train(False)

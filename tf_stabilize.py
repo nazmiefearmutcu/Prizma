@@ -1,7 +1,7 @@
 """Tune the Transformer to a STABLE, strong config on mixed-D MQAR @ target D (fairness: the
 baseline must be given its own best optimizer hyperparameters, per committee two-stage tuning).
 The punchy short-warmup schedule destabilizes the TF (loss oscillates 0.8<->4.5, eval flat at
-chance) while PRISM is robust. This sweeps gentler (lr, warmup) configs for the TF; the one that
+chance) while Prizma is robust. This sweeps gentler (lr, warmup) configs for the TF; the one that
 reaches the highest stable eval@target is the TF's fair config for the head-to-head.
 
 Run: python3.13 tf_stabilize.py [target_pairs]   # default 64

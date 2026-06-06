@@ -1,11 +1,11 @@
-"""PRISM-Seq vs Transformer — the LONG-CONTEXT decode-latency & memory probe (CUDA/Colab-ready).
+"""Prizma-Seq vs Transformer — the LONG-CONTEXT decode-latency & memory probe (CUDA/Colab-ready).
 
 WHY THIS EXISTS
 ---------------
 gpu_bench.py phase5 (`decode_latency`) measured per-step decode at sequence lengths n<=4096 and
-found BOTH models were *overhead-bound*: the per-step wall-clock was flat (TF ~4.5ms, PRISM ~7.0ms),
-so the asymptotic O(t)-per-step (Transformer KV-cache) vs O(1)-per-step (PRISM constant state)
-WALL-CLOCK crossover did NOT appear at that scale. PRISM only won on MEMORY there (constant state vs
+found BOTH models were *overhead-bound*: the per-step wall-clock was flat (TF ~4.5ms, Prizma ~7.0ms),
+so the asymptotic O(t)-per-step (Transformer KV-cache) vs O(1)-per-step (Prizma constant state)
+WALL-CLOCK crossover did NOT appear at that scale. Prizma only won on MEMORY there (constant state vs
 a linearly-growing KV-cache), and that was an *analytic* (floats) claim, not a measured one.
 
 This probe pushes decode MUCH further — bigger n (up to 65k) AND a bigger model (heavier per-step
@@ -17,12 +17,12 @@ not just in memory. Two outcomes are both legitimate and reported as-is:
                                                    not merely analytic).
 
 It also records the Transformer's practical OOM ceiling (the KV-cache is O(n) memory): hitting OOM is
-ITSELF a result favoring PRISM's constant footprint, so OOM is caught and logged, never fatal.
+ITSELF a result favoring Prizma's constant footprint, so OOM is caught and logged, never fatal.
 
 FAIRNESS / HONESTY (no rigging)
 -------------------------------
   * BOTH models decode through their `model.step()` streaming API — the fair O(1)-API path. The TF
-    `step()` is genuinely KV-cached (O(t) compute & memory at step t); PRISM `step()` carries a fixed
+    `step()` is genuinely KV-cached (O(t) compute & memory at step t); Prizma `step()` carries a fixed
     state + a length-`window` ring (verified O(1)). Same dtype, same device, same warmup, same reps.
   * Warmup steps before every timed measurement; median over reps; proper device sync
     (torch.cuda.synchronize / torch.mps.synchronize) bracketing each timed region.
@@ -30,22 +30,22 @@ FAIRNESS / HONESTY (no rigging)
     per-step ms (the thing that actually grows for the TF).
   * Memory: analytic floats (KV vs constant state) AT EVERY n, PLUS measured peak GPU bytes for the TF
     decode at each n on CUDA (reset_peak_memory_stats -> decode -> max_memory_allocated), and a measured
-    PRISM peak for contrast. On MPS the proper peak API is absent, so we sample current_allocated_memory
+    Prizma peak for contrast. On MPS the proper peak API is absent, so we sample current_allocated_memory
     as a best-effort (clearly labelled); the headline measured-memory result is a CUDA/Colab deliverable.
 
-Crash-safe + resumable: every measured (model, n) cell streams to $PRISM_RESULTS/gpu_latency.json via an
+Crash-safe + resumable: every measured (model, n) cell streams to $PRIZMA_RESULTS/gpu_latency.json via an
 atomic _save (mirrors gpu_bench.py). A Colab disconnect never loses progress, and re-running skips done
 cells. We write to the SIBLING gpu_latency.json and NEVER touch gpu_bench.json.
 
 Env:
-  PRISM_RESULTS   dir for the JSON ledger (default ./results).
-  PRISM_LAT_NS    comma-list overriding the n grid (e.g. "128,512,2048").
-  PRISM_LAT_SMOKE =1 -> fast local smoke (tiny model, n in {128,512,2048}, reps=2) for MPS/CPU verify.
-  PRISM_LAT_REPS  override reps (default 5; smoke uses 2).
+  PRIZMA_RESULTS   dir for the JSON ledger (default ./results).
+  PRIZMA_LAT_NS    comma-list overriding the n grid (e.g. "128,512,2048").
+  PRIZMA_LAT_SMOKE =1 -> fast local smoke (tiny model, n in {128,512,2048}, reps=2) for MPS/CPU verify.
+  PRIZMA_LAT_REPS  override reps (default 5; smoke uses 2).
 Run:
   python3 gpu_latency.py                 # full campaign (both model sizes) — for Colab/A100/L4
-  PRISM_LAT_SMOKE=1 python3 gpu_latency.py   # local machinery + step()-correctness smoke
-  python3 gpu_latency.py --smoke         # same as PRISM_LAT_SMOKE=1
+  PRIZMA_LAT_SMOKE=1 python3 gpu_latency.py   # local machinery + step()-correctness smoke
+  python3 gpu_latency.py --smoke         # same as PRIZMA_LAT_SMOKE=1
 """
 from __future__ import annotations
 
@@ -60,17 +60,17 @@ import torch
 
 from seq.common import get_device
 from seq.transformer import Transformer, TFConfig
-from seq.prism_seq import PRISMSeqLM, PRISMSeqConfig
+from seq.prizma_seq import PrizmaSeqLM, PrizmaSeqConfig
 
 # Prefer CUDA (the target), then MPS (local smoke), then CPU. Mirrors gpu_bench.py's selection.
 DEV = torch.device("cuda" if torch.cuda.is_available()
                    else ("mps" if torch.backends.mps.is_available() else "cpu"))
-RES = os.environ.get("PRISM_RESULTS", os.path.join(os.path.dirname(__file__), "results"))
+RES = os.environ.get("PRIZMA_RESULTS", os.path.join(os.path.dirname(__file__), "results"))
 os.makedirs(RES, exist_ok=True)
 OUT = os.path.join(RES, "gpu_latency.json")   # SIBLING of gpu_bench.json — never clobbered.
 
 V = 512          # vocab (matches gpu_bench.py phase5); decode tokens are random/argmax, content-agnostic.
-FEAT_N2 = 224    # PRISM quad2 monomials (matches gpu_bench.py phase2/phase5 PRISM-quad2 headline arm).
+FEAT_N2 = 224    # Prizma quad2 monomials (matches gpu_bench.py phase2/phase5 Prizma-quad2 headline arm).
 
 
 # --------------------------------- crash-safe ledger ------------------------------------- #
@@ -171,10 +171,10 @@ def kv_floats(L, H, dh, n):
     return 2 * L * H * dh * n
 
 
-def prism_state_floats(L, H, dh, d_phi, window):
-    """PRISM carried-state size in floats — CONSTANT in n: the d_h x d_phi associative state per head
+def prizma_state_floats(L, H, dh, d_phi, window):
+    """Prizma carried-state size in floats — CONSTANT in n: the d_h x d_phi associative state per head
     per layer, plus the length-`window` k/v ring (2*window*dh per head per layer). Independent of n.
-    (Generalizes gpu_bench.py phase5 prism_state_floats, which hard-coded window=16 and d_phi=dh+feat_n2.)"""
+    (Generalizes gpu_bench.py phase5 prizma_state_floats, which hard-coded window=16 and d_phi=dh+feat_n2.)"""
     return L * H * dh * d_phi + 2 * L * H * window * dh
 
 
@@ -183,15 +183,15 @@ def build_tf(d, L, H, max_len):
     return Transformer(TFConfig(vocab=V, d_model=d, n_layers=L, n_heads=H, max_len=max_len + 8, rope=True)).to(DEV)
 
 
-def build_prism(d, L, H, max_len):
-    # max_len does NOT bound PRISM's O(1) decode (no learned pos here); kept generous for safety.
-    return PRISMSeqLM(PRISMSeqConfig(vocab=V, d_model=d, n_layers=L, n_heads=H, max_len=max_len + 8,
+def build_prizma(d, L, H, max_len):
+    # max_len does NOT bound Prizma's O(1) decode (no learned pos here); kept generous for safety.
+    return PrizmaSeqLM(PrizmaSeqConfig(vocab=V, d_model=d, n_layers=L, n_heads=H, max_len=max_len + 8,
                                      feat_map="quad2", feat_n2=FEAT_N2)).to(DEV)
 
 
 # --------------------------------- per-model-size sweep ---------------------------------- #
 def run_size(res, size_key, d, L, H, ns, reps, warmup):
-    """Run the TF-vs-PRISM decode sweep over `ns` for one model size; stream every cell to the
+    """Run the TF-vs-Prizma decode sweep over `ns` for one model size; stream every cell to the
     ledger; build the per-size summary (per-step curves, crossover, OOM ceiling, measured peak mem)."""
     print(f"\n==== MODEL SIZE {size_key}: d{d} L{L} H{H}  (V={V}, feat_n2={FEAT_N2}) ====", flush=True)
     cells = res.setdefault("cells", {})
@@ -199,7 +199,7 @@ def run_size(res, size_key, d, L, H, ns, reps, warmup):
 
     # Build models once per size; the TF KV-cache is freed by reallocating init_state each rep.
     tf = build_tf(d, L, H, max(ns)); tf.train(False)
-    ps = build_prism(d, L, H, max(ns)); ps.train(False)
+    ps = build_prizma(d, L, H, max(ns)); ps.train(False)
     d_phi = ps.cfg.d_phi
     window = ps.cfg.window
 
@@ -234,20 +234,20 @@ def run_size(res, size_key, d, L, H, ns, reps, warmup):
         elif cells[tkey].get("oom") and tf_oom_ceiling is None:
             tf_oom_ceiling = n   # resume: re-learn the ceiling from the ledger
 
-        # ---- PRISM-quad2 (constant state, O(1)/step, O(1) memory) ---- #
-        pkey = f"PRISM-quad2.{base}"
+        # ---- Prizma-quad2 (constant state, O(1)/step, O(1) memory) ---- #
+        pkey = f"Prizma-quad2.{base}"
         if pkey not in cells:
             try:
                 rec = decode_latency(ps, n, reps, warmup, measure_mem=True)
-                rec["state_floats"] = prism_state_floats(L, H, dh, d_phi, window)
+                rec["state_floats"] = prizma_state_floats(L, H, dh, d_phi, window)
                 cells[pkey] = rec
                 pm = rec["peak_bytes"]
-                print(f"  n={n:<6} PRISM    per-step={rec['per_step_ms']:.3f}ms  "
+                print(f"  n={n:<6} Prizma    per-step={rec['per_step_ms']:.3f}ms  "
                       f"total={rec['total_s']:.3f}s  peak={_fmt_mb(pm)}", flush=True)
             except Exception as e:   # noqa: BLE001
                 cells[pkey] = ({"oom": True, "note": str(e)[:200]} if _is_oom(e)
                                else {"error": str(e)[:200]})
-                print(f"  n={n:<6} PRISM    {'OOM' if _is_oom(e) else 'ERROR'}: {str(e)[:120]}", flush=True)
+                print(f"  n={n:<6} Prizma    {'OOM' if _is_oom(e) else 'ERROR'}: {str(e)[:120]}", flush=True)
             _save(res)
 
     # free this size's models before the next (bigger) size
@@ -262,7 +262,7 @@ def run_size(res, size_key, d, L, H, ns, reps, warmup):
 
 def _summarize_size(cells, size_key, d, L, H, dh, d_phi, window, ns, tf_oom_ceiling):
     """Build the per-step ms curves for both models, find the crossover n (first n where TF per-step
-    ms strictly exceeds PRISM per-step ms), and assemble the measured + analytic memory curves."""
+    ms strictly exceeds Prizma per-step ms), and assemble the measured + analytic memory curves."""
     tf_ps_ms, ps_ps_ms = {}, {}
     tf_total, ps_total = {}, {}
     tf_peak, ps_peak = {}, {}
@@ -270,9 +270,9 @@ def _summarize_size(cells, size_key, d, L, H, dh, d_phi, window, ns, tf_oom_ceil
     crossover = "no crossover in tested range"
     for n in ns:
         tf_rec = cells.get(f"TF.{size_key}.n{n}", {})
-        ps_rec = cells.get(f"PRISM-quad2.{size_key}.n{n}", {})
+        ps_rec = cells.get(f"Prizma-quad2.{size_key}.n{n}", {})
         kv_fl[n] = kv_floats(L, H, dh, n)
-        st_fl[n] = prism_state_floats(L, H, dh, d_phi, window)
+        st_fl[n] = prizma_state_floats(L, H, dh, d_phi, window)
         if "per_step_ms" in tf_rec:
             tf_ps_ms[n] = round(tf_rec["per_step_ms"], 4)
             tf_total[n] = round(tf_rec["total_s"], 4)
@@ -283,12 +283,12 @@ def _summarize_size(cells, size_key, d, L, H, dh, d_phi, window, ns, tf_oom_ceil
             ps_total[n] = round(ps_rec["total_s"], 4)
             if ps_rec.get("peak_bytes") is not None:
                 ps_peak[n] = int(ps_rec["peak_bytes"])
-        # crossover: first n where BOTH measured and TF per-step > PRISM per-step.
+        # crossover: first n where BOTH measured and TF per-step > Prizma per-step.
         if (crossover == "no crossover in tested range"
                 and n in tf_ps_ms and n in ps_ps_ms and tf_ps_ms[n] > ps_ps_ms[n]):
             crossover = n
 
-    # measured memory crossover (first n where measured TF peak > PRISM peak), CUDA-meaningful.
+    # measured memory crossover (first n where measured TF peak > Prizma peak), CUDA-meaningful.
     mem_crossover = "no measured-memory crossover in tested range"
     for n in ns:
         if n in tf_peak and n in ps_peak and tf_peak[n] > ps_peak[n]:
@@ -300,16 +300,16 @@ def _summarize_size(cells, size_key, d, L, H, dh, d_phi, window, ns, tf_oom_ceil
                    "vocab": V, "feat_n2": FEAT_N2},
         "ns_tested": ns,
         "tf_per_step_ms": tf_ps_ms,
-        "prism_per_step_ms": ps_ps_ms,
+        "prizma_per_step_ms": ps_ps_ms,
         "tf_total_s": tf_total,
-        "prism_total_s": ps_total,
+        "prizma_total_s": ps_total,
         "latency_crossover_n": crossover,
         "tf_oom_ceiling_n": tf_oom_ceiling,
         "analytic_kv_floats": kv_fl,
-        "analytic_prism_state_floats": st_fl,
+        "analytic_prizma_state_floats": st_fl,
         "analytic_kv_over_state_ratio": {n: round(kv_fl[n] / st_fl[n], 3) for n in ns},
         "measured_tf_peak_bytes": tf_peak,
-        "measured_prism_peak_bytes": ps_peak,
+        "measured_prizma_peak_bytes": ps_peak,
         "measured_mem_crossover_n": mem_crossover,
         "mem_measure_kind": ("cuda_max_memory_allocated" if DEV.type == "cuda"
                              else ("mps_current_allocated_memory_bestEffort" if DEV.type == "mps"
@@ -333,17 +333,17 @@ def default_grid(smoke: bool):
         sizes = [("small", 128, 4, 4),          # the headline small model (overhead-bound at <=4k)
                  ("big",   512, 8, 8)]          # heavier per-step attention term -> crossover more likely
         reps, warmup = 5, 2
-    env_ns = os.environ.get("PRISM_LAT_NS")
+    env_ns = os.environ.get("PRIZMA_LAT_NS")
     if env_ns:
         ns = [int(x) for x in env_ns.split(",") if x.strip()]
-    env_reps = os.environ.get("PRISM_LAT_REPS")
+    env_reps = os.environ.get("PRIZMA_LAT_REPS")
     if env_reps:
         reps = int(env_reps)
     return ns, sizes, reps, warmup
 
 
 def main():
-    smoke = ("--smoke" in sys.argv) or (os.environ.get("PRISM_LAT_SMOKE", "0") == "1")
+    smoke = ("--smoke" in sys.argv) or (os.environ.get("PRIZMA_LAT_SMOKE", "0") == "1")
     ns, sizes, reps, warmup = default_grid(smoke)
     print(f"device={DEV} torch={torch.__version__} results={OUT}", flush=True)
     print(f"mode={'SMOKE' if smoke else 'FULL'} ns={ns} sizes={[s[0] for s in sizes]} "
@@ -354,7 +354,7 @@ def main():
     res = _load()
     res["meta"] = {"device": DEV.type, "torch": torch.__version__, "vocab": V, "feat_n2": FEAT_N2,
                    "mode": "smoke" if smoke else "full", "ns": ns, "reps": reps, "warmup": warmup,
-                   "fairness": "both models decode via model.step() (KV-cache for TF, O(1) state for PRISM)"}
+                   "fairness": "both models decode via model.step() (KV-cache for TF, O(1) state for Prizma)"}
     _save(res)
 
     for (size_key, d, L, H) in sizes:
@@ -367,11 +367,11 @@ def main():
         latency_summary[size_key] = {
             "config": s["config"],
             "tf_per_step_ms": s["tf_per_step_ms"],
-            "prism_per_step_ms": s["prism_per_step_ms"],
+            "prizma_per_step_ms": s["prizma_per_step_ms"],
             "latency_crossover_n": s["latency_crossover_n"],
             "tf_oom_ceiling_n": s["tf_oom_ceiling_n"],
             "measured_tf_peak_bytes": s["measured_tf_peak_bytes"],
-            "measured_prism_peak_bytes": s["measured_prism_peak_bytes"],
+            "measured_prizma_peak_bytes": s["measured_prizma_peak_bytes"],
             "measured_mem_crossover_n": s["measured_mem_crossover_n"],
             "analytic_kv_over_state_ratio": s["analytic_kv_over_state_ratio"],
         }
@@ -383,7 +383,7 @@ def main():
     for size_key, s in latency_summary.items():
         c = s["latency_crossover_n"]
         if isinstance(c, int):
-            verdicts.append(f"{size_key}: latency crossover at n={c} (PRISM O(1) wins wall-clock beyond it)")
+            verdicts.append(f"{size_key}: latency crossover at n={c} (Prizma O(1) wins wall-clock beyond it)")
         else:
             verdicts.append(f"{size_key}: NO latency crossover in {ns} (overhead-bound; memory advantage stands)")
         if s["tf_oom_ceiling_n"] is not None:

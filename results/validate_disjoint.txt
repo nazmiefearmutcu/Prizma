@@ -5,9 +5,9 @@ VALIDATE disjoint MQAR(V=64,keys<32,pairs=16,q=96,gap=0) seq 128
     step  3000  loss 0.0003  acc 1.0000  lr 2.39e-04
     step  4000  loss 0.0000  acc 1.0000  lr 1.00e-04
 >>> Transformer: best=1.000 118s
---- PRISM-Seq ---
+--- Prizma-Seq ---
     step  1000  loss 2.5335  acc 0.1405  lr 8.87e-04
     step  2000  loss 2.5274  acc 0.1441  lr 5.68e-04
     step  3000  loss 2.4979  acc 0.1430  lr 2.39e-04
     step  4000  loss 2.4648  acc 0.1487  lr 1.00e-04
->>> PRISM-Seq: best=0.149 415s
+>>> Prizma-Seq: best=0.149 415s

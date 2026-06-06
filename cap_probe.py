@@ -1,7 +1,7 @@
 """Decisive capacity validation (committee R1 first_build).
 
 Question: does the parameter-free quadratic feature map (feat_map='quad2', d_phi=128) lift MQAR
-associative recall at HIGH D toward the Transformer, while matched PRISM-Seq (d_h=32) hits its
+associative recall at HIGH D toward the Transformer, while matched Prizma-Seq (d_h=32) hits its
 pre-registered ~D*=32 ceiling? Runs the decisive rungs under the FIXED fair protocol (frozen eval
 + per-model plateau early-stop from common.py, best of a small shared LR set). Also doubles as the
 fairness check: does the Transformer now reach near-ceiling when trained to its own plateau?
@@ -24,7 +24,7 @@ import torch  # noqa: F401
 from seq.common import TrainConfig, train_model, param_count, get_device
 from seq.tasks import MQAR
 from seq.transformer import Transformer, TFConfig
-from seq.prism_seq import PRISMSeqLM, PRISMSeqConfig
+from seq.prizma_seq import PrizmaSeqLM, PrizmaSeqConfig
 
 DEV = get_device()
 RES = os.path.join(os.path.dirname(__file__), "results")
@@ -40,15 +40,15 @@ def tf(V, T):
 
 
 def ps(V, T):
-    return PRISMSeqLM(PRISMSeqConfig(vocab=V, d_model=64, n_layers=2, n_heads=2, max_len=T + 8))
+    return PrizmaSeqLM(PrizmaSeqConfig(vocab=V, d_model=64, n_layers=2, n_heads=2, max_len=T + 8))
 
 
 def ps_quad(V, T):
-    return PRISMSeqLM(PRISMSeqConfig(vocab=V, d_model=64, n_layers=2, n_heads=2, max_len=T + 8,
+    return PrizmaSeqLM(PrizmaSeqConfig(vocab=V, d_model=64, n_layers=2, n_heads=2, max_len=T + 8,
                                      feat_map="quad2", feat_n2=96))   # d_phi = 32 + 96 = 128
 
 
-MODELS = {"Transformer": tf, "PRISM-none": ps, "PRISM-quad2": ps_quad}
+MODELS = {"Transformer": tf, "Prizma-none": ps, "Prizma-quad2": ps_quad}
 
 
 def cap_for(D):

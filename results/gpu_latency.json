@@ -14,7 +14,7 @@
     ],
     "reps": 5,
     "warmup": 2,
-    "fairness": "both models decode via model.step() (KV-cache for TF, O(1) state for PRISM)"
+    "fairness": "both models decode via model.step() (KV-cache for TF, O(1) state for Prizma)"
   },
   "cells": {
     "TF.small.n4096": {
@@ -23,7 +23,7 @@
       "peak_bytes": 49508352,
       "kv_floats": 4194304
     },
-    "PRISM-quad2.small.n4096": {
+    "Prizma-quad2.small.n4096": {
       "total_s": 28.524472951889038,
       "per_step_ms": 6.963982654269785,
       "peak_bytes": 17933824,
@@ -35,7 +35,7 @@
       "peak_bytes": 84868608,
       "kv_floats": 8388608
     },
-    "PRISM-quad2.small.n8192": {
+    "Prizma-quad2.small.n8192": {
       "total_s": 56.90288496017456,
       "per_step_ms": 6.946152949240059,
       "peak_bytes": 17933824,
@@ -47,7 +47,7 @@
       "peak_bytes": 152783360,
       "kv_floats": 16777216
     },
-    "PRISM-quad2.small.n16384": {
+    "Prizma-quad2.small.n16384": {
       "total_s": 113.92068672180176,
       "per_step_ms": 6.953166914172471,
       "peak_bytes": 17933824,
@@ -59,7 +59,7 @@
       "peak_bytes": 289100288,
       "kv_floats": 33554432
     },
-    "PRISM-quad2.small.n32768": {
+    "Prizma-quad2.small.n32768": {
       "total_s": 227.82110357284546,
       "per_step_ms": 6.952548326808028,
       "peak_bytes": 17933824,
@@ -71,7 +71,7 @@
       "peak_bytes": 561732096,
       "kv_floats": 67108864
     },
-    "PRISM-quad2.small.n65536": {
+    "Prizma-quad2.small.n65536": {
       "total_s": 462.43513917922974,
       "per_step_ms": 7.056200243823696,
       "peak_bytes": 17933824,
@@ -83,7 +83,7 @@
       "peak_bytes": 491055616,
       "kv_floats": 33554432
     },
-    "PRISM-quad2.big.n4096": {
+    "Prizma-quad2.big.n4096": {
       "total_s": 57.49813961982727,
       "per_step_ms": 14.037631743121892,
       "peak_bytes": 232396288,
@@ -95,7 +95,7 @@
       "peak_bytes": 759523840,
       "kv_floats": 67108864
     },
-    "PRISM-quad2.big.n8192": {
+    "Prizma-quad2.big.n8192": {
       "total_s": 114.837575674057,
       "per_step_ms": 14.018258749274537,
       "peak_bytes": 232396288,
@@ -107,7 +107,7 @@
       "peak_bytes": 1298508288,
       "kv_floats": 134217728
     },
-    "PRISM-quad2.big.n16384": {
+    "Prizma-quad2.big.n16384": {
       "total_s": 230.91724920272827,
       "per_step_ms": 14.094070385908708,
       "peak_bytes": 232396288,
@@ -119,7 +119,7 @@
       "peak_bytes": 2377476608,
       "kv_floats": 268435456
     },
-    "PRISM-quad2.big.n32768": {
+    "Prizma-quad2.big.n32768": {
       "total_s": 458.70594358444214,
       "per_step_ms": 13.998594469740056,
       "peak_bytes": 232396288,
@@ -131,7 +131,7 @@
       "peak_bytes": 4532316672,
       "kv_floats": 536870912
     },
-    "PRISM-quad2.big.n65536": {
+    "Prizma-quad2.big.n65536": {
       "total_s": 909.096762418747,
       "per_step_ms": 13.871715735149337,
       "peak_bytes": 232396288,
@@ -164,7 +164,7 @@
         "32768": 8.9523,
         "65536": 16.947
       },
-      "prism_per_step_ms": {
+      "prizma_per_step_ms": {
         "4096": 6.964,
         "8192": 6.9462,
         "16384": 6.9532,
@@ -178,7 +178,7 @@
         "32768": 293.3504,
         "65536": 1110.6403
       },
-      "prism_total_s": {
+      "prizma_total_s": {
         "4096": 28.5245,
         "8192": 56.9029,
         "16384": 113.9207,
@@ -194,7 +194,7 @@
         "32768": 33554432,
         "65536": 67108864
       },
-      "analytic_prism_state_floats": {
+      "analytic_prizma_state_floats": {
         "4096": 147456,
         "8192": 147456,
         "16384": 147456,
@@ -215,7 +215,7 @@
         "32768": 289100288,
         "65536": 561732096
       },
-      "measured_prism_peak_bytes": {
+      "measured_prizma_peak_bytes": {
         "4096": 17933824,
         "8192": 17933824,
         "16384": 17933824,
@@ -250,7 +250,7 @@
         "32768": 20.7946,
         "65536": 38.8954
       },
-      "prism_per_step_ms": {
+      "prizma_per_step_ms": {
         "4096": 14.0376,
         "8192": 14.0183,
         "16384": 14.0941,
@@ -264,7 +264,7 @@
         "32768": 681.3979,
         "65536": 2549.0467
       },
-      "prism_total_s": {
+      "prizma_total_s": {
         "4096": 57.4981,
         "8192": 114.8376,
         "16384": 230.9172,
@@ -280,7 +280,7 @@
         "32768": 268435456,
         "65536": 536870912
       },
-      "analytic_prism_state_floats": {
+      "analytic_prizma_state_floats": {
         "4096": 1310720,
         "8192": 1310720,
         "16384": 1310720,
@@ -301,7 +301,7 @@
         "32768": 2377476608,
         "65536": 4532316672
       },
-      "measured_prism_peak_bytes": {
+      "measured_prizma_peak_bytes": {
         "4096": 232396288,
         "8192": 232396288,
         "16384": 232396288,
@@ -331,7 +331,7 @@
         "32768": 8.9523,
         "65536": 16.947
       },
-      "prism_per_step_ms": {
+      "prizma_per_step_ms": {
         "4096": 6.964,
         "8192": 6.9462,
         "16384": 6.9532,
@@ -347,7 +347,7 @@
         "32768": 289100288,
         "65536": 561732096
       },
-      "measured_prism_peak_bytes": {
+      "measured_prizma_peak_bytes": {
         "4096": 17933824,
         "8192": 17933824,
         "16384": 17933824,
@@ -381,7 +381,7 @@
         "32768": 20.7946,
         "65536": 38.8954
       },
-      "prism_per_step_ms": {
+      "prizma_per_step_ms": {
         "4096": 14.0376,
         "8192": 14.0183,
         "16384": 14.0941,
@@ -397,7 +397,7 @@
         "32768": 2377476608,
         "65536": 4532316672
       },
-      "measured_prism_peak_bytes": {
+      "measured_prizma_peak_bytes": {
         "4096": 232396288,
         "8192": 232396288,
         "16384": 232396288,
@@ -415,7 +415,7 @@
     }
   },
   "verdict": [
-    "small: latency crossover at n=32768 (PRISM O(1) wins wall-clock beyond it)",
-    "big: latency crossover at n=32768 (PRISM O(1) wins wall-clock beyond it)"
+    "small: latency crossover at n=32768 (Prizma O(1) wins wall-clock beyond it)",
+    "big: latency crossover at n=32768 (Prizma O(1) wins wall-clock beyond it)"
   ]
 }

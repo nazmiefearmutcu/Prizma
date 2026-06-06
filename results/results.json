@@ -42,7 +42,7 @@
           0.0
         ]
       },
-      "PRISM(DFA,no W^T)": {
+      "Prizma(DFA,no W^T)": {
         "ACC": [
           0.8335666666666667,
           0.014911354334827062
@@ -52,7 +52,7 @@
           0.0
         ]
       },
-      "PRISM_exactW^T": {
+      "PRIZMA_exactW^T": {
         "ACC": [
           0.7075166666666668,
           0.020704611628008567
@@ -62,7 +62,7 @@
           0.0
         ]
       },
-      "PRISM_noRoute(ablation)": {
+      "PRIZMA_noRoute(ablation)": {
         "ACC": [
           0.4463666666666667,
           0.02405792993773338
@@ -75,7 +75,7 @@
     },
     "params": {
       "mlp": 20744,
-      "prism": 22144
+      "prizma": 22144
     },
     "n_seeds": 10,
     "K": 5
@@ -83,40 +83,40 @@
   "E2_separability": [
     {
       "noise": 0.0,
-      "PRISM_FGT": 0.0,
-      "PRISM_ACC": 0.8272666666666668,
+      "PRIZMA_FGT": 0.0,
+      "PRIZMA_ACC": 0.8272666666666668,
       "backprop_FGT": 0.5619583333333333,
       "backprop_ACC": 0.4325333333333333,
       "experts_committed": 5
     },
     {
       "noise": 0.3,
-      "PRISM_FGT": 0.016249999999999997,
-      "PRISM_ACC": 0.7207666666666667,
+      "PRIZMA_FGT": 0.016249999999999997,
+      "PRIZMA_ACC": 0.7207666666666667,
       "backprop_FGT": 0.6084583333333333,
       "backprop_ACC": 0.29883333333333334,
       "experts_committed": 5
     },
     {
       "noise": 0.6,
-      "PRISM_FGT": 0.051875000000000004,
-      "PRISM_ACC": 0.5569666666666666,
+      "PRIZMA_FGT": 0.051875000000000004,
+      "PRIZMA_ACC": 0.5569666666666666,
       "backprop_FGT": 0.507875,
       "backprop_ACC": 0.2608,
       "experts_committed": 5
     },
     {
       "noise": 0.9,
-      "PRISM_FGT": 0.07341666666666666,
-      "PRISM_ACC": 0.43013333333333337,
+      "PRIZMA_FGT": 0.07341666666666666,
+      "PRIZMA_ACC": 0.43013333333333337,
       "backprop_FGT": 0.42054166666666665,
       "backprop_ACC": 0.2393,
       "experts_committed": 5
     },
     {
       "noise": 1.2,
-      "PRISM_FGT": 0.07745833333333335,
-      "PRISM_ACC": 0.3438,
+      "PRIZMA_FGT": 0.07745833333333335,
+      "PRIZMA_ACC": 0.3438,
       "backprop_FGT": 0.34987500000000005,
       "backprop_ACC": 0.22226666666666667,
       "experts_committed": 5
@@ -161,7 +161,7 @@
   },
   "E5_impossible": {
     "ceiling": 0.7796833333333333,
-    "PRISM_ACC": 0.5697333333333333,
+    "PRIZMA_ACC": 0.5697333333333333,
     "backprop_ACC": 0.6937
   }
 }

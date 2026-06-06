@@ -1,5 +1,5 @@
 """
-The falsifiable-bar driver: runs PRISM-Seq vs the param-matched Transformer over the agreed
+The falsifiable-bar driver: runs Prizma-Seq vs the param-matched Transformer over the agreed
 suite and writes results/bar_results.json with per-seed numbers + CIs + param ledger.
 
 Usage:
@@ -24,7 +24,7 @@ import torch
 from .common import TrainConfig, train_model, param_count, get_device, autoregressive_latency
 from .tasks import MQAR, SelectiveCopy, Induction
 from .transformer import Transformer, TFConfig
-from .prism_seq import PRISMSeqLM, PRISMSeqConfig
+from .prizma_seq import PrizmaSeqLM, PrizmaSeqConfig
 
 RES = os.path.join(os.path.dirname(__file__), "..", "results")
 os.makedirs(RES, exist_ok=True)
@@ -43,7 +43,7 @@ def tf_factory(d, L, H):
 
 
 def ps_factory(d, L, H, **kw):
-    return lambda V, T: PRISMSeqLM(PRISMSeqConfig(vocab=V, d_model=d, n_layers=L, n_heads=H,
+    return lambda V, T: PrizmaSeqLM(PrizmaSeqConfig(vocab=V, d_model=d, n_layers=L, n_heads=H,
                                                   max_len=T + 8, **kw))
 
 
@@ -95,7 +95,7 @@ def B1(dev, seeds=(0, 1, 2)):
         task_fac = lambda tkw=tkw: MQAR(**tkw)
         T = MQAR(**tkw).seq_len
         cfg = TrainConfig(steps=steps, batch_size=64, lr=2e-3, eval_every=steps // 4, log=False)
-        models = {"Transformer": tf_factory(64, 2, 2), "PRISM-Seq": ps_factory(64, 2, 2)}
+        models = {"Transformer": tf_factory(64, 2, 2), "Prizma-Seq": ps_factory(64, 2, 2)}
         print(f"\n== B1 {rname}: {MQAR(**tkw).name} (seq={T}, steps={steps}) ==", flush=True)
         res[rname] = run_pair(f"B1-{rname}", task_fac, models, cfg, seeds, dev)
     json.dump(res, open(os.path.join(RES, "b1_mqar.json"), "w"), indent=2)
@@ -104,7 +104,7 @@ def B1(dev, seeds=(0, 1, 2)):
 
 # ------------------------------- B1b: MQAR capacity sweep --------------------------------- #
 def B1b(dev, seeds=(0, 1, 2)):
-    res = {"transformer": {}, "prism_by_dh": {}}
+    res = {"transformer": {}, "prizma_by_dh": {}}
     Ds = [8, 16, 32, 64, 128]
     cfg = lambda: TrainConfig(steps=6000, batch_size=64, lr=2e-3, eval_every=1500, log=False)
     for D in Ds:
@@ -113,11 +113,11 @@ def B1b(dev, seeds=(0, 1, 2)):
         # transformer reference (d=64) — unbounded recall, expected near-ceiling across all D
         r = run_pair(f"B1b-D{D}", task_fac, {"Transformer": tf_factory(64, 2, 2)}, cfg(), seeds, dev)
         res["transformer"][D] = r["Transformer"]
-        # PRISM-Seq at two recall ranks: d_h=32 (the param-matched config) and d_h=64 (more state).
+        # Prizma-Seq at two recall ranks: d_h=32 (the param-matched config) and d_h=64 (more state).
         for dh in [32, 64]:
             d = 2 * dh
-            r = run_pair(f"B1b-D{D}-dh{dh}", task_fac, {"PRISM-Seq": ps_factory(d, 2, 2)}, cfg(), seeds, dev)
-            res["prism_by_dh"].setdefault(dh, {})[D] = r["PRISM-Seq"]
+            r = run_pair(f"B1b-D{D}-dh{dh}", task_fac, {"Prizma-Seq": ps_factory(d, 2, 2)}, cfg(), seeds, dev)
+            res["prizma_by_dh"].setdefault(dh, {})[D] = r["Prizma-Seq"]
     json.dump(res, open(os.path.join(RES, "b1b_capacity.json"), "w"), indent=2)
     return res
 
@@ -128,8 +128,8 @@ def B3(dev, seeds=(0, 1, 2)):
     cfg = TrainConfig(steps=5000, batch_size=64, lr=2e-3, eval_every=1250, log=False)
     for variant, fixed in [("selective", False), ("fixed", True)]:
         task_fac = lambda fixed=fixed: SelectiveCopy(vocab=32, mem_len=64, n_data=16, fixed=fixed)
-        models = {"Transformer": tf_factory(64, 2, 2), "PRISM-Seq": ps_factory(64, 2, 2),
-                  "PRISM-noGate": ps_factory(64, 2, 2, precision_gate="uniform")}
+        models = {"Transformer": tf_factory(64, 2, 2), "Prizma-Seq": ps_factory(64, 2, 2),
+                  "Prizma-noGate": ps_factory(64, 2, 2, precision_gate="uniform")}
         print(f"\n== B3 {variant}: {task_fac().name} ==", flush=True)
         res[variant] = run_pair(f"B3-{variant}", task_fac, models, cfg, seeds, dev)
     json.dump(res, open(os.path.join(RES, "b3_selcopy.json"), "w"), indent=2)
@@ -167,8 +167,8 @@ def B5(dev):
     d, L, H = 192, 3, 4
     dh = d // H
     tf = Transformer(TFConfig(vocab=V, d_model=d, n_layers=L, n_heads=H, max_len=4200, rope=True))
-    ps = PRISMSeqLM(PRISMSeqConfig(vocab=V, d_model=d, n_layers=L, n_heads=H, max_len=4200, gated=True))
-    # both via their honest streaming path: Transformer = KV-cache (O(t)/step); PRISM-Seq = O(1)/step
+    ps = PrizmaSeqLM(PrizmaSeqConfig(vocab=V, d_model=d, n_layers=L, n_heads=H, max_len=4200, gated=True))
+    # both via their honest streaming path: Transformer = KV-cache (O(t)/step); Prizma-Seq = O(1)/step
     tf_lat = autoregressive_latency(tf, V, ns, dev, reps=3, step_api=True)
     ps_lat = autoregressive_latency(ps, V, ns, dev, reps=3, step_api=True)
     # MEASURED peak decode-state memory (bytes) via torch.mps (not analytic)
@@ -177,14 +177,14 @@ def B5(dev):
     # analytic reference (floats) for cross-check
     tf_mem_an = {n: 2 * L * H * dh * n for n in ns}
     ps_mem_an = {n: L * H * dh * dh + 2 * L * H * 16 * dh for n in ns}   # state + window ring (w=16)
-    res = {"seq_lens": ns, "transformer_kvcache_s": tf_lat, "prism_step_s": ps_lat,
-           "transformer_state_bytes_measured": tf_mem, "prism_state_bytes_measured": ps_mem,
-           "transformer_state_floats_analytic": tf_mem_an, "prism_state_floats_analytic": ps_mem_an,
+    res = {"seq_lens": ns, "transformer_kvcache_s": tf_lat, "prizma_step_s": ps_lat,
+           "transformer_state_bytes_measured": tf_mem, "prizma_state_bytes_measured": ps_mem,
+           "transformer_state_floats_analytic": tf_mem_an, "prizma_state_floats_analytic": ps_mem_an,
            "tf_params": param_count(tf), "ps_params": param_count(ps)}
     print("\n== B5 inference: per-call latency + MEASURED decode-state memory (MPS bytes) ==")
     for n in ns:
         print(f"  n={n:<5} TF(KV)={tf_lat[n]:.3f}s mem={tf_mem[n]} | "
-              f"PRISM(step)={ps_lat[n]:.3f}s mem={ps_mem[n]}", flush=True)
+              f"Prizma(step)={ps_lat[n]:.3f}s mem={ps_mem[n]}", flush=True)
     json.dump(res, open(os.path.join(RES, "b5_latency.json"), "w"), indent=2, default=float)
     return res
 
@@ -203,7 +203,7 @@ def B4(dev, seeds=(0, 1)):
     models = {
         "Transformer": lambda: Transformer(TFConfig(vocab=V, d_model=192, n_layers=3, n_heads=4,
                                                     max_len=300, rope=True)),
-        "PRISM-Seq": lambda: PRISMSeqLM(PRISMSeqConfig(vocab=V, d_model=192, n_layers=3, n_heads=4,
+        "Prizma-Seq": lambda: PrizmaSeqLM(PrizmaSeqConfig(vocab=V, d_model=192, n_layers=3, n_heads=4,
                                                       max_len=300, gated=True)),
     }
     steps, bs = 4000, 32
@@ -270,8 +270,8 @@ def val_bpc_on(model, charlm, dev, split="test", batches=40, bs=64):
 def B6(dev, seeds=(0, 1, 2)):
     from .baselines_seq import GRULM, LinAttnLM
     res = {}
-    # internal ablations (each removes ONE PRISM piece, param-matched within ±5%) + family controls.
-    # GRU sized to d=90 to land within ±5% of PRISM full (~102.6K) — NOT the old −47% strawman.
+    # internal ablations (each removes ONE Prizma piece, param-matched within ±5%) + family controls.
+    # GRU sized to d=90 to land within ±5% of Prizma full (~102.6K) — NOT the old −47% strawman.
     def common_models():
         return {
             "full":          ps_factory(64, 2, 2),
@@ -301,7 +301,7 @@ def B6(dev, seeds=(0, 1, 2)):
 def B2(dev, seeds=(0, 1, 2)):
     task_fac = lambda: Induction(vocab=40, seq_len=256)
     cfg = TrainConfig(steps=6000, batch_size=128, eval_every=1500, log=False)
-    models = {"Transformer": tf_factory(64, 2, 2), "PRISM-Seq": ps_factory(64, 2, 2)}
+    models = {"Transformer": tf_factory(64, 2, 2), "Prizma-Seq": ps_factory(64, 2, 2)}
     print(f"\n== B2 induction: {task_fac().name} ==", flush=True)
     res = run_pair("B2", task_fac, models, cfg, seeds, dev)
     json.dump(res, open(os.path.join(RES, "b2_induction.json"), "w"), indent=2)

@@ -1,5 +1,5 @@
 """
-Family-control sequence baselines for B6 (is PRISM-Seq more than 'a bigger RNN'?).
+Family-control sequence baselines for B6 (is Prizma-Seq more than 'a bigger RNN'?).
   * GRULM        — a plain gated RNN (no associative state, no attention).
   * LinAttnLM    — a minimal (non-delta) linear-attention block: additive S = sum phi(k) v^T,
                    read phi(q) S. This is the 'no targeted erase' memory family.

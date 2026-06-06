@@ -1,20 +1,20 @@
-"""PRISM-Seq vs Transformer — the rigorous, scaled D=128 benchmark, for a CUDA GPU (Colab).
+"""Prizma-Seq vs Transformer — the rigorous, scaled D=128 benchmark, for a CUDA GPU (Colab).
 
 Answers, with multi-seed + fair protocol, the questions the committee R2 verdict demands:
   PHASE 1  Find the SMALLEST Transformer scale that genuinely SOLVES MQAR D=128 (the fair arena);
            this is also the committee rank-1 flip-test (does attention solve D=128 with enough
            scale/budget?). Multi-config x recipe x seed -> solve-rate.
-  PHASE 2  At that scale S*: matched + FLOP-comparable head-to-head at D=128 (TF vs PRISM-none vs
-           PRISM-quad2), >=5 seeds -> solve-rate + median + 95% CI. The headline fair comparison.
-  PHASE 3  D-frontier {16,32,64,128,256} at a fixed scale: TF vs PRISM-quad2 vs none (capacity curve).
+  PHASE 2  At that scale S*: matched + FLOP-comparable head-to-head at D=128 (TF vs Prizma-none vs
+           Prizma-quad2), >=5 seeds -> solve-rate + median + 95% CI. The headline fair comparison.
+  PHASE 3  D-frontier {16,32,64,128,256} at a fixed scale: TF vs Prizma-quad2 vs none (capacity curve).
   PHASE 4  Ablations at D=128: quad2 vs none vs rand_linear control; window on/off (causal attribution).
   PHASE 5  FLOP ledger + MEASURED O(1) decode latency & memory vs sequence length.
 
 All training uses MixedMQAR (mixed-difficulty -> high-D is learnable) + gen-warm + per-model plateau.
-Results stream incrementally to $PRISM_RESULTS/gpu_bench.json (resumable: completed cells are skipped),
+Results stream incrementally to $PRIZMA_RESULTS/gpu_bench.json (resumable: completed cells are skipped),
 so a Colab disconnect never loses progress. Designed to finish in a few hours on an A100/L4.
 
-Env: set PRISM_RESULTS to a Drive-mounted dir for persistence (default ./results).
+Env: set PRIZMA_RESULTS to a Drive-mounted dir for persistence (default ./results).
 Run: python3 gpu_bench.py            # all phases
      python3 gpu_bench.py 1 2        # only listed phases
 """
@@ -32,10 +32,10 @@ import torch
 from seq.common import TrainConfig, train_model, param_count, get_device
 from seq.tasks import MixedMQAR, MQAR
 from seq.transformer import Transformer, TFConfig
-from seq.prism_seq import PRISMSeqLM, PRISMSeqConfig
+from seq.prizma_seq import PrizmaSeqLM, PrizmaSeqConfig
 
 DEV = torch.device("cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu"))
-RES = os.environ.get("PRISM_RESULTS", os.path.join(os.path.dirname(__file__), "results"))
+RES = os.environ.get("PRIZMA_RESULTS", os.path.join(os.path.dirname(__file__), "results"))
 os.makedirs(RES, exist_ok=True)
 OUT = os.path.join(RES, "gpu_bench.json")
 GENWARM = dict(lr=1e-3, warmup=2000, warmup_frac=0.0, min_lr_frac=0.1)
@@ -68,7 +68,7 @@ def tf_factory(d, L, H):
 
 
 def ps_factory(d, L, H, **kw):
-    return lambda V, T: PRISMSeqLM(PRISMSeqConfig(vocab=V, d_model=d, n_layers=L, n_heads=H, max_len=T + 8, **kw))
+    return lambda V, T: PrizmaSeqLM(PrizmaSeqConfig(vocab=V, d_model=d, n_layers=L, n_heads=H, max_len=T + 8, **kw))
 
 
 def run_cell(res, cellkey, model_fac, task_fac, cap, seed, recipe=GENWARM, eval_every=2000):
@@ -112,14 +112,14 @@ def phase1(res):
     return summary
 
 
-def phase2(res, scale=(128, 4, 4), feat_n2=224, seeds=(0, 1, 2)):  # 3 seeds: PRISM ~57min/run on A100
-    """Head-to-head @ D=128 at scale S*: TF vs PRISM-none vs PRISM-quad2 (>=5 seeds, CI)."""
+def phase2(res, scale=(128, 4, 4), feat_n2=224, seeds=(0, 1, 2)):  # 3 seeds: Prizma ~57min/run on A100
+    """Head-to-head @ D=128 at scale S*: TF vs Prizma-none vs Prizma-quad2 (>=5 seeds, CI)."""
     d, L, H = scale
     print(f"\n==== PHASE 2: head-to-head @ D=128, scale d{d}L{L}H{H} ({len(seeds)} seeds) ====", flush=True)
     V = 512
     task_fac = lambda: MixedMQAR(vocab=V, max_pairs=128, num_queries=128, gap=0, min_pairs=1)
-    arms = {"TF": tf_factory(d, L, H), "PRISM-none": ps_factory(d, L, H),
-            "PRISM-quad2": ps_factory(d, L, H, feat_map="quad2", feat_n2=feat_n2)}
+    arms = {"TF": tf_factory(d, L, H), "Prizma-none": ps_factory(d, L, H),
+            "Prizma-quad2": ps_factory(d, L, H, feat_map="quad2", feat_n2=feat_n2)}
     summary = {}
     for aname, fac in arms.items():
         recs = [run_cell(res, f"p2.{aname}.s{s}", fac, task_fac, 80000, s) for s in seeds]
@@ -130,11 +130,11 @@ def phase2(res, scale=(128, 4, 4), feat_n2=224, seeds=(0, 1, 2)):  # 3 seeds: PR
 
 
 def phase3(res, scale=(128, 4, 4), feat_n2=224, seeds=(0, 1, 2)):
-    """D-frontier {16,32,64,128,256}: TF vs PRISM-quad2 vs none at a fixed scale."""
+    """D-frontier {16,32,64,128,256}: TF vs Prizma-quad2 vs none at a fixed scale."""
     d, L, H = scale
     print(f"\n==== PHASE 3: D-frontier @ scale d{d}L{L}H{H} ====", flush=True)
-    arms = {"TF": tf_factory(d, L, H), "PRISM-none": ps_factory(d, L, H),
-            "PRISM-quad2": ps_factory(d, L, H, feat_map="quad2", feat_n2=feat_n2)}
+    arms = {"TF": tf_factory(d, L, H), "Prizma-none": ps_factory(d, L, H),
+            "Prizma-quad2": ps_factory(d, L, H, feat_map="quad2", feat_n2=feat_n2)}
     summary = {}
     for D in (16, 32, 64, 128, 256):
         V = max(64, 4 * D)
@@ -175,7 +175,7 @@ def phase5(res, scale=(128, 4, 4), feat_n2=224):
     print(f"\n==== PHASE 5: measured O(1) decode latency + memory vs T, scale d{d}L{L}H{H} ====", flush=True)
     V = 512
     tf = Transformer(TFConfig(vocab=V, d_model=d, n_layers=L, n_heads=H, max_len=4200, rope=True)).to(DEV)
-    ps = PRISMSeqLM(PRISMSeqConfig(vocab=V, d_model=d, n_layers=L, n_heads=H, max_len=4200,
+    ps = PrizmaSeqLM(PrizmaSeqConfig(vocab=V, d_model=d, n_layers=L, n_heads=H, max_len=4200,
                                    feat_map="quad2", feat_n2=feat_n2)).to(DEV)
     tf.train(False); ps.train(False)
     ns = [128, 256, 512, 1024, 2048, 4096]
@@ -193,15 +193,15 @@ def phase5(res, scale=(128, 4, 4), feat_n2=224):
             if r >= warmup: lat.append(time.time() - t0)
         return float(np.median(lat))
 
-    out = {"seq_lens": ns, "tf_decode_s": {}, "prism_decode_s": {}}
+    out = {"seq_lens": ns, "tf_decode_s": {}, "prizma_decode_s": {}}
     for n in ns:
         out["tf_decode_s"][n] = round(decode_latency(tf, n), 4)
-        out["prism_decode_s"][n] = round(decode_latency(ps, n), 4)
-        print(f"  n={n:<5} TF(KV)={out['tf_decode_s'][n]:.4f}s  PRISM(O(1))={out['prism_decode_s'][n]:.4f}s", flush=True)
-    # state size (floats): TF KV-cache grows O(n); PRISM state constant
+        out["prizma_decode_s"][n] = round(decode_latency(ps, n), 4)
+        print(f"  n={n:<5} TF(KV)={out['tf_decode_s'][n]:.4f}s  Prizma(O(1))={out['prizma_decode_s'][n]:.4f}s", flush=True)
+    # state size (floats): TF KV-cache grows O(n); Prizma state constant
     dh = d // H
     out["tf_kv_floats"] = {n: 2 * L * H * dh * n for n in ns}
-    out["prism_state_floats"] = {n: L * H * dh * (dh + feat_n2) + 2 * L * H * 16 * dh for n in ns}  # state + window ring
+    out["prizma_state_floats"] = {n: L * H * dh * (dh + feat_n2) + 2 * L * H * 16 * dh for n in ns}  # state + window ring
     res["p5_latency"] = out; _save(res)
     return out
 

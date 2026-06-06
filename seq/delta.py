@@ -1,6 +1,6 @@
 """
-The PRISM-Seq workspace recurrence: a precision-gated delta rule (targeted erase-and-write),
-derived as ONE gradient step on PRISM's per-token free energy  F_t(S) = 1/2 ||v_t - S k_t||^2.
+The Prizma-Seq workspace recurrence: a precision-gated delta rule (targeted erase-and-write),
+derived as ONE gradient step on Prizma's per-token free energy  F_t(S) = 1/2 ||v_t - S k_t||^2.
 
     S_t = alpha_t * S_{t-1} + u_t k_t^T ,   u_t = beta_t (v_t - alpha_t S_{t-1} k_t)   (||k_t||=1)
     read (PRE-write, strictly causal):  o_t = S_{t-1} q_t
@@ -69,7 +69,7 @@ def _solve_unit_lower(Amat, RHS):
 def chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode="delta"):
     """WY/UT chunk-parallel delta rule. Same semantics as _delta_reference, O(T d^2/C + T C d).
     alpha=None -> pure delta (no decay). write_mode='additive' -> linear-attn ablation (no erase:
-    u=beta*v, used for B6 PRISM_noDelta). Returns O:[B,H,T,d], S_end:[B,H,d,d]."""
+    u=beta*v, used for B6 PRIZMA_noDelta). Returns O:[B,H,T,d], S_end:[B,H,d,d]."""
     B, H, T, d = q.shape
     dv = v.shape[-1]                     # value-dim-aware init -> RECTANGULAR state S in R^{d_v x d_k}
     if S0 is None:                       #   (d_k=d). Byte-identical when d_v == d_k (every existing

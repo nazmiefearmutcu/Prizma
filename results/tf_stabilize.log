@@ -21,4 +21,4 @@ device=mps MixedMQAR(V=256,pairs=1-64,q=128,gap=0) eval@D=64 seq=256 (TF stabili
     step 12000  loss 2.0544  acc 0.0330  lr 3.00e-05
 >>> TF vlowlr     best@D64=0.033 plateau@12000 (503.0s, 113984p) -> no
 
-saved -> /Users/nazmi/Desktop/Projeler/proje/PRISM/results/tf_stabilize.json
+saved -> /Users/nazmi/Desktop/Projeler/proje/Prizma/results/tf_stabilize.json

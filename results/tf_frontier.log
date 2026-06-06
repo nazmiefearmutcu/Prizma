@@ -19,4 +19,4 @@ device=mps D=[64] recipes=['punchy', 'hi-floor', 'lowlr'] seeds=(0, 1, 2) (match
   D=64   hi-floor solve 0/3 best=0.035
   D=64   lowlr    solve 0/3 best=0.041
 
-saved -> /Users/nazmi/Desktop/Projeler/proje/PRISM/results/tf_frontier.json
+saved -> /Users/nazmi/Desktop/Projeler/proje/Prizma/results/tf_frontier.json

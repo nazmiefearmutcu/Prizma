@@ -7,7 +7,7 @@ Only the LEARNING RULE differs:
   BackpropNet  -- exact backprop (for this 2-layer net, == local PC with W2^T feedback).
   EWC          -- backprop + Fisher penalty; consolidates AT TASK BOUNDARIES (privileged).
   VanillaPC    -- modular substrate, local errors, CONSTANT gate (always plastic). Anchor.
-  PRISM        -- modular substrate + surprise-gated metaplasticity (PGM). Three modes:
+  Prizma        -- modular substrate + surprise-gated metaplasticity (PGM). Three modes:
                     "taskfree"  : consolidation ratchets continuously from running surprise
                                   + usage; NO task-boundary signal anywhere (the honest bar).
                     "boundary"  : consolidation snapshot triggered between tasks (reproduces the
@@ -119,7 +119,7 @@ class EWC:
 
 
 # --------------------------------------------------------------------------- #
-class PRISM(Net):
+class Prizma(Net):
     """Modular surprise-gated metaplastic learner."""
 
     def __init__(self, d_feat, H, K, seed, M=12, feedback="exact",

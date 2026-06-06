@@ -1,7 +1,7 @@
 """
 A clean, properly-implemented decoder-only Transformer baseline (NOT a strawman).
 Causal multi-head self-attention via scaled_dot_product_attention, RMSNorm pre-norm,
-SwiGLU MLP, learned absolute positions. This is the honest reference PRISM-Seq must match
+SwiGLU MLP, learned absolute positions. This is the honest reference Prizma-Seq must match
 at equal parameter count.
 """
 from __future__ import annotations

@@ -1,4 +1,4 @@
-PRISM-Seq conv+NoRoPE on MQAR(V=64,keys<32,pairs=16,q=96,gap=0)
+Prizma-Seq conv+NoRoPE on MQAR(V=64,keys<32,pairs=16,q=96,gap=0)
     step   250  loss 3.3380  acc 0.0836  lr 9.91e-04
     step   500  loss 2.9933  acc 0.1261  lr 9.40e-04
     step   750  loss 2.7636  acc 0.1397  lr 8.47e-04
@@ -9,4 +9,4 @@ PRISM-Seq conv+NoRoPE on MQAR(V=64,keys<32,pairs=16,q=96,gap=0)
     step  2000  loss 2.5388  acc 0.1421  lr 1.93e-04
     step  2250  loss 2.5183  acc 0.1436  lr 1.24e-04
     step  2500  loss 2.4930  acc 0.1428  lr 1.00e-04
->>> PRISM-Seq conv+NoRoPE: best=0.144 295s
+>>> Prizma-Seq conv+NoRoPE: best=0.144 295s

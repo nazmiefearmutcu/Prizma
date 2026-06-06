@@ -31,7 +31,7 @@ device=mps MixedMQAR(V=512,pairs=1-128,q=128,gap=0) eval@D=128 seq=384 protocol=
     step 27000  loss 0.0002  acc 0.9988  lr 3.36e-04
     step 30000  loss 0.0017  acc 0.9991  lr 2.45e-04
     step 33000  loss 0.0004  acc 0.9995  lr 1.73e-04
->>> PRISM-quad2-256  best@D128=0.999 plateau@33000 (12969.0s, 131400p)
+>>> Prizma-quad2-256  best@D128=0.999 plateau@33000 (12969.0s, 131400p)
     step  3000  loss 4.8973  acc 0.0193  lr 9.98e-04
     step  6000  loss 1.2378  acc 0.1866  lr 9.76e-04
     step  9000  loss 0.0022  acc 0.2438  lr 9.27e-04
@@ -46,6 +46,6 @@ device=mps MixedMQAR(V=512,pairs=1-128,q=128,gap=0) eval@D=128 seq=384 protocol=
     step 36000  loss 2.4204  acc 0.3572  lr 1.24e-04
     step 39000  loss 2.6356  acc 0.3656  lr 1.02e-04
     step 40000  loss 0.1385  acc 0.3688  lr 1.00e-04
->>> PRISM-none       best@D128=0.369 plateau@40000 (8712.1s, 131400p)
+>>> Prizma-none       best@D128=0.369 plateau@40000 (8712.1s, 131400p)
 
-saved -> /Users/nazmi/Desktop/Projeler/proje/PRISM/results/d128_sweep.json
+saved -> /Users/nazmi/Desktop/Projeler/proje/Prizma/results/d128_sweep.json

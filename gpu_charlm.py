@@ -1,21 +1,21 @@
-"""PRISM-quad2 vs a tuned Transformer on a small char-LM — the "small LM" leg of the §4 bar.
+"""Prizma-quad2 vs a tuned Transformer on a small char-LM — the "small LM" leg of the §4 bar.
 
 This is bar item #4 (real-data language modeling). Unlike the synthetic MQAR arena in
 `gpu_bench.py`, this is *standard autoregressive next-char prediction* on a real corpus, and the
 headline metric is **test bits-per-char (BPC)** = mean test cross-entropy in bits/char = CE_nats/ln2.
 
-It param-matches PRISM-Seq-quad2 against an honest decoder-only Transformer (RMSNorm + SwiGLU +
+It param-matches Prizma-Seq-quad2 against an honest decoder-only Transformer (RMSNorm + SwiGLU +
 RoPE, the same one in `seq/transformer.py`) at a small scale and asks the falsifiable question:
 
-    Is PRISM's test BPC within +0.05 of the Transformer's?  (PASS iff  PRISM_BPC <= TF_BPC + 0.05)
+    Is Prizma's test BPC within +0.05 of the Transformer's?  (PASS iff  PRIZMA_BPC <= TF_BPC + 0.05)
 
 Fairness mirrors gpu_bench:
   * IDENTICAL optimizer / schedule / step-budget / batch / context for both arms.
   * Per-arm best-LR from a small SHARED grid is allowed (each architecture trains at its own best LR
     on the SAME grid; disclosed) — the standard fair protocol for cross-architecture LM comparison.
   * The param-match is enforced by giving the Transformer a slightly larger SwiGLU d_ff so its
-    param count lands within ~1% of PRISM-quad2 (the feature map is buffers => 0 trainable params,
-    so PRISM's param count cannot be tuned via feat_n2). If anything this favors the TF baseline.
+    param count lands within ~1% of Prizma-quad2 (the feature map is buffers => 0 trainable params,
+    so Prizma's param count cannot be tuned via feat_n2). If anything this favors the TF baseline.
 
 Corpus:
   * default = tiny-shakespeare (~1.1 MB). Reused from seq/data/shakespeare.txt if present, else
@@ -24,9 +24,9 @@ Corpus:
     stays the default/primary.
 
 Crash-safe + resumable (Colab disconnects): every (arm x seed) record streams to
-$PRISM_RESULTS/gpu_charlm.json via an atomic write; completed cells are skipped on restart.
+$PRIZMA_RESULTS/gpu_charlm.json via an atomic write; completed cells are skipped on restart.
 
-Env: set PRISM_RESULTS to a Drive-mounted dir for persistence (default ./results).
+Env: set PRIZMA_RESULTS to a Drive-mounted dir for persistence (default ./results).
 Run: python3 gpu_charlm.py             # tiny-shakespeare (default)
      python3 gpu_charlm.py text8       # text8 subset frontier
      python3 gpu_charlm.py --smoke     # fast 1-seed tiny-config sanity check
@@ -47,7 +47,7 @@ import torch.nn.functional as F
 
 from seq.common import param_count, set_seed
 from seq.transformer import Transformer, TFConfig
-from seq.prism_seq import PRISMSeqLM, PRISMSeqConfig
+from seq.prizma_seq import PrizmaSeqLM, PrizmaSeqConfig
 
 # --------------------------------------------------------------------------------------------- #
 # Device + crash-safe JSON ledger (mirrors gpu_bench._load/_save; SEPARATE file so we never clobber
@@ -55,7 +55,7 @@ from seq.prism_seq import PRISMSeqLM, PRISMSeqConfig
 # --------------------------------------------------------------------------------------------- #
 DEV = torch.device("cuda" if torch.cuda.is_available()
                    else ("mps" if torch.backends.mps.is_available() else "cpu"))
-RES = os.environ.get("PRISM_RESULTS", os.path.join(os.path.dirname(__file__), "results"))
+RES = os.environ.get("PRIZMA_RESULTS", os.path.join(os.path.dirname(__file__), "results"))
 os.makedirs(RES, exist_ok=True)
 OUT = os.path.join(RES, "gpu_charlm.json")
 
@@ -97,7 +97,7 @@ def _fetch_bytes(url, timeout):
     allowed = (_SHAKES_URL, _TEXT8_ZIP_URL)
     if url not in allowed or not url.lower().startswith("https://"):
         raise ValueError(f"refusing non-allowlisted/non-https URL: {url!r}")
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (PRISM-charlm)"})
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Prizma-charlm)"})
     with urllib.request.urlopen(req, timeout=timeout) as r:  # nosec B310 # nosemgrep
         return r.read()
 
@@ -188,10 +188,10 @@ def load_corpus(which: str, seq_len: int):
 
 
 # --------------------------------------------------------------------------------------------- #
-# Model factories. PRISM-quad2 is the model under test; the Transformer is the baseline. For char-LM
-# PRISM needs learned_pos=True (its delta path is deliberately position-free, so absolute positions
+# Model factories. Prizma-quad2 is the model under test; the Transformer is the baseline. For char-LM
+# Prizma needs learned_pos=True (its delta path is deliberately position-free, so absolute positions
 # come from a learned embedding here, the standard char-LM parity setting).
-# The TF gets a slightly larger d_ff to param-match PRISM-quad2 within ~1% (see module docstring).
+# The TF gets a slightly larger d_ff to param-match Prizma-quad2 within ~1% (see module docstring).
 # --------------------------------------------------------------------------------------------- #
 def tf_factory(d, L, H, T, d_ff=None):
     return lambda V: Transformer(TFConfig(vocab=V, d_model=d, n_layers=L, n_heads=H,
@@ -200,13 +200,13 @@ def tf_factory(d, L, H, T, d_ff=None):
 
 def ps_factory(d, L, H, T, **kw):
     kw.setdefault("learned_pos", True)
-    return lambda V: PRISMSeqLM(PRISMSeqConfig(vocab=V, d_model=d, n_layers=L, n_heads=H,
+    return lambda V: PrizmaSeqLM(PrizmaSeqConfig(vocab=V, d_model=d, n_layers=L, n_heads=H,
                                                max_len=T + 8, **kw))
 
 
 def _match_tf_dff(d, L, H, T, target_params, V_probe=65):
     """Pick the TF SwiGLU d_ff (multiple of 8) whose param count is closest to `target_params`
-    (PRISM-quad2's count). Returns (d_ff, tf_params)."""
+    (Prizma-quad2's count). Returns (d_ff, tf_params)."""
     base = TFConfig(vocab=V_probe, d_model=d, n_layers=L, n_heads=H, max_len=T + 8, rope=True).d_ff
     best = (base, None, 1e18)
     for dff in range(max(8, base - 64), base + 320, 8):
@@ -349,18 +349,18 @@ def smoke_config():
 def build_arms(d, L, H, T, feat_n2, tf_dff):
     return {
         "TF":          tf_factory(d, L, H, T, d_ff=tf_dff),
-        "PRISM-quad2": ps_factory(d, L, H, T, feat_map="quad2", feat_n2=feat_n2),
-        "PRISM-none":  ps_factory(d, L, H, T, feat_map="none"),   # ablation: state w/o the feature map
+        "Prizma-quad2": ps_factory(d, L, H, T, feat_map="quad2", feat_n2=feat_n2),
+        "Prizma-none":  ps_factory(d, L, H, T, feat_map="none"),   # ablation: state w/o the feature map
     }
 
 
 def _print_param_match(arms, V, label):
     print(f"\n  param-match @ {label} (V={V}):", flush=True)
     counts = {a: param_count(f(V)) for a, f in arms.items()}
-    ref = counts["PRISM-quad2"]
+    ref = counts["Prizma-quad2"]
     for a, p in counts.items():
-        diff = (p - ref) / ref * 100 if a != "PRISM-quad2" else 0.0
-        print(f"    {a:<12} {p:>10,} params   ({diff:+.2f}% vs PRISM-quad2)", flush=True)
+        diff = (p - ref) / ref * 100 if a != "Prizma-quad2" else 0.0
+        print(f"    {a:<12} {p:>10,} params   ({diff:+.2f}% vs Prizma-quad2)", flush=True)
     return counts
 
 
@@ -375,13 +375,13 @@ def run(corpus="shakespeare", smoke=False):
     data, src = load_corpus(corpus, T)
     print(f"corpus: {data.name}  (source={src}, random-baseline BPC={data.rand_bpc:.3f})", flush=True)
 
-    # param-match: size the TF d_ff to PRISM-quad2's count, then confirm + print.
+    # param-match: size the TF d_ff to Prizma-quad2's count, then confirm + print.
     ps_target = param_count(ps_factory(d, L, H, T, feat_map="quad2", feat_n2=feat_n2)(data.vocab))
     tf_dff, tf_p = _match_tf_dff(d, L, H, T, ps_target, V_probe=data.vocab)
     arms = build_arms(d, L, H, T, feat_n2, tf_dff)
     counts = _print_param_match(arms, data.vocab, f"d{d}L{L}H{H} ctx{T} (TF d_ff={tf_dff})")
-    match_pct = (counts["TF"] - counts["PRISM-quad2"]) / counts["PRISM-quad2"] * 100
-    print(f"  -> TF vs PRISM-quad2 param-match: {match_pct:+.2f}% "
+    match_pct = (counts["TF"] - counts["Prizma-quad2"]) / counts["Prizma-quad2"] * 100
+    print(f"  -> TF vs Prizma-quad2 param-match: {match_pct:+.2f}% "
           f"({'OK <=1%' if abs(match_pct) <= 1.0 else 'WARN >1%'})", flush=True)
 
     res = _load()
@@ -397,17 +397,17 @@ def run(corpus="shakespeare", smoke=False):
         summary[arm] = run_arm(res, arm, fac, data, hp, lr_grid, seeds, lr_seed=seeds[0])
 
     tf_bpc = summary["TF"]["mean_bpc"]
-    ps_bpc = summary["PRISM-quad2"]["mean_bpc"]
-    margin = round(ps_bpc - tf_bpc, 4)                 # PRISM - TF (lower is better)
+    ps_bpc = summary["Prizma-quad2"]["mean_bpc"]
+    margin = round(ps_bpc - tf_bpc, 4)                 # Prizma - TF (lower is better)
     passed = bool(ps_bpc <= tf_bpc + 0.05)
     charlm_summary = {
         "corpus": corpus, "metric": "test_bits_per_char",
         "per_arm": summary,
-        "TF_mean_bpc": tf_bpc, "PRISM_quad2_mean_bpc": ps_bpc,
-        "margin_prism_minus_tf": margin, "threshold": 0.05,
+        "TF_mean_bpc": tf_bpc, "PRIZMA_quad2_mean_bpc": ps_bpc,
+        "margin_prizma_minus_tf": margin, "threshold": 0.05,
         "PASS": passed, "param_match_pct": round(match_pct, 3),
-        "verdict": ("PASS: PRISM within +0.05 of TF" if passed
-                    else "FAIL: PRISM more than +0.05 worse than TF"),
+        "verdict": ("PASS: Prizma within +0.05 of TF" if passed
+                    else "FAIL: Prizma more than +0.05 worse than TF"),
     }
     res["charlm_summary"] = charlm_summary
     _save(res)
@@ -416,7 +416,7 @@ def run(corpus="shakespeare", smoke=False):
     for arm, s in summary.items():
         print(f"  {arm:<12} test_bpc mean={s['mean_bpc']:.4f} +/- {s['range']:.4f}  "
               f"(seeds={s['test_bpc_per_seed']}, bestLR={s['best_lr']:.0e}, {s['params']:,}p)", flush=True)
-    print(f"  margin (PRISM - TF) = {margin:+.4f}  threshold +0.05  -> "
+    print(f"  margin (Prizma - TF) = {margin:+.4f}  threshold +0.05  -> "
           f"{'PASS' if passed else 'FAIL'}", flush=True)
     print("\n===CHARLM_RESULTS===", flush=True)
     print(json.dumps(charlm_summary), flush=True)
