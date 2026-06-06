@@ -1,0 +1,19 @@
+TINY AR MQAR(V=32,keys<16,pairs=4,q=16,gap=0) seq 24
+    step   400  loss 0.0776  acc 0.9734  lr 1.89e-03
+    step   800  loss 0.0615  acc 0.9926  lr 1.46e-03
+    step  1200  loss 0.0235  acc 0.9979  lr 8.81e-04
+    step  1600  loss 0.0051  acc 0.9995  lr 3.91e-04
+    step  2000  loss 0.0003  acc 0.9993  lr 2.00e-04
+>>> full: best=1.000
+    step   400  loss 0.0300  acc 0.9847  lr 1.89e-03
+    step   800  loss 0.0183  acc 0.9988  lr 1.46e-03
+    step  1200  loss 0.0002  acc 0.9999  lr 8.81e-04
+    step  1600  loss 0.0001  acc 0.9999  lr 3.91e-04
+    step  2000  loss 0.0000  acc 1.0000  lr 2.00e-04
+>>> noConv: best=1.000
+    step   400  loss 0.0694  acc 0.9750  lr 1.89e-03
+    step   800  loss 0.0109  acc 0.9946  lr 1.46e-03
+    step  1200  loss 0.0031  acc 0.9991  lr 8.81e-04
+    step  1600  loss 0.0001  acc 0.9998  lr 3.91e-04
+    step  2000  loss 0.0000  acc 0.9999  lr 2.00e-04
+>>> noWindow: best=1.000

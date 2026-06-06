@@ -1,0 +1,12 @@
+PRISM-Seq conv+NoRoPE on MQAR(V=64,keys<32,pairs=16,q=96,gap=0)
+    step   250  loss 3.3380  acc 0.0836  lr 9.91e-04
+    step   500  loss 2.9933  acc 0.1261  lr 9.40e-04
+    step   750  loss 2.7636  acc 0.1397  lr 8.47e-04
+    step  1000  loss 2.6186  acc 0.1393  lr 7.23e-04
+    step  1250  loss 2.5622  acc 0.1392  lr 5.80e-04
+    step  1500  loss 2.5347  acc 0.1387  lr 4.34e-04
+    step  1750  loss 2.5340  acc 0.1426  lr 3.00e-04
+    step  2000  loss 2.5388  acc 0.1421  lr 1.93e-04
+    step  2250  loss 2.5183  acc 0.1436  lr 1.24e-04
+    step  2500  loss 2.4930  acc 0.1428  lr 1.00e-04
+>>> PRISM-Seq conv+NoRoPE: best=0.144 295s

@@ -1,0 +1,32 @@
+{
+  "gen-warm": {
+    "best": 0.24195480346679688,
+    "plateau": 12000,
+    "params": 113984,
+    "sec": 589.6,
+    "lr": 0.001,
+    "warmup": 2000,
+    "warmup_frac": 0.0,
+    "min_lr_frac": 0.1
+  },
+  "lowlr-gen": {
+    "best": 0.03299713134765625,
+    "plateau": 12000,
+    "params": 113984,
+    "sec": 504.6,
+    "lr": 0.0005,
+    "warmup": 1500,
+    "warmup_frac": 0.0,
+    "min_lr_frac": 0.1
+  },
+  "vlowlr": {
+    "best": 0.032989501953125,
+    "plateau": 12000,
+    "params": 113984,
+    "sec": 503.0,
+    "lr": 0.0003,
+    "warmup": 1000,
+    "warmup_frac": 0.0,
+    "min_lr_frac": 0.1
+  }
+}

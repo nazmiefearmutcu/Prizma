@@ -1,0 +1,12 @@
+PRISM-Seq +conv on MQAR(V=64,keys<32,pairs=16,q=96,gap=0)
+    step   300  loss 3.2718  acc 0.0941  lr 9.90e-04
+    step   600  loss 2.8159  acc 0.1424  lr 9.36e-04
+    step   900  loss 2.6570  acc 0.1383  lr 8.42e-04
+    step  1200  loss 2.5691  acc 0.1396  lr 7.17e-04
+    step  1500  loss 2.5387  acc 0.1388  lr 5.75e-04
+    step  1800  loss 2.5156  acc 0.1455  lr 4.30e-04
+    step  2100  loss 2.4899  acc 0.1456  lr 2.98e-04
+    step  2400  loss 2.5110  acc 0.1499  lr 1.92e-04
+    step  2700  loss 2.4915  acc 0.1499  lr 1.24e-04
+    step  3000  loss 2.5043  acc 0.1495  lr 1.00e-04
+>>> PRISM-Seq +conv: best=0.150 344s

@@ -1,0 +1,13 @@
+device=mps MixedMQAR(V=256,pairs=1-64,q=128,gap=0) eval@D=64 seq=256 TF gen-warm cap=40000
+    step  2000  loss 4.5591  acc 0.0300  lr 1.00e-03
+    step  4000  loss 0.8685  acc 0.0312  lr 9.94e-04
+    step  6000  loss 4.4781  acc 0.0325  lr 9.76e-04
+    step  8000  loss 0.0512  acc 0.9719  lr 9.46e-04
+    step 10000  loss 0.0006  acc 0.9964  lr 9.05e-04
+    step 12000  loss 0.0000  acc 0.9998  lr 8.55e-04
+    step 14000  loss 0.0001  acc 0.9996  lr 7.96e-04
+    step 16000  loss 0.0211  acc 0.9986  lr 7.31e-04
+    step 18000  loss 0.0000  acc 0.9996  lr 6.61e-04
+    step 20000  loss 0.0007  acc 0.9999  lr 5.87e-04
+    step 22000  loss 0.0000  acc 0.9999  lr 5.13e-04
+>>> TF gen-warm LONG: best@D64=1.000 plateau@22000 (924s, 113984p) -> SOLVES

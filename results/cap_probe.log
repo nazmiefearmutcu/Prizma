@@ -1,0 +1,5 @@
+device=mps D=[64, 128] LRs=(0.001, 0.002) seed=0 (plateau early-stop; frozen eval)
+
+==== CAP D=64 (V=256, seq=256, cap=16000) ====
+  [D64] Transformer  lr=1e-03: best=0.035 final=0.035 plateau@16000 (906.0s, 113984p)
+  [D64] Transformer  lr=2e-03: best=0.037 final=0.037 plateau@16000 (898.4s, 113984p)

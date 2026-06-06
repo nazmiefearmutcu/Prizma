@@ -1,0 +1,3 @@
+device=mps seeds=(0,)
+  [Transformer] induction    seed0: acc=0.079 params=408832 110s
+  [Transformer] induction    => 0.079 ± 0.000 (params 408832)

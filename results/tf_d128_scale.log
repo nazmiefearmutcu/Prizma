@@ -1,0 +1,6 @@
+device=mps MixedMQAR(V=512,pairs=1-128,q=128,gap=0) eval@D=128 seq=384 gen-warm cap=60000
+    step  3000  loss 4.8787  acc 0.0173  lr 9.99e-04
+    step  6000  loss 4.8387  acc 0.0182  lr 9.89e-04
+    step  9000  loss 1.3319  acc 0.0180  lr 9.68e-04
+    step 12000  loss 4.8441  acc 0.0236  lr 9.36e-04
+    step 15000  loss 0.0110  acc 0.1932  lr 8.93e-04

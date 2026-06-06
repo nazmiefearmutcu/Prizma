@@ -1,0 +1,4 @@
+device=mps rungs=['rung2', 'rung3'] steps=12000 lrs=(0.001, 0.002, 0.003) seed=0
+
+==== CALIB rung2: MQAR{'vocab': 96, 'num_pairs': 32, 'num_queries': 160, 'gap': 0} (seq=224) ====
+  [rung2] Transformer  lr=1e-03: best=0.096 final=0.096 solve@0.9=None (1476.3s, 103744p)

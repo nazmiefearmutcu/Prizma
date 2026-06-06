@@ -1,0 +1,575 @@
+{
+  "param_match": {
+    "scale": "d128L2H4",
+    "vocab": 32,
+    "counts": {
+      "TF": 400000,
+      "PRISM-quad2": 402576,
+      "PRISM-none": 402576
+    },
+    "max_spread_frac": 0.0064
+  },
+  "diag.ind.TF.s0": {
+    "best": 0.998046875,
+    "plateau": 60000,
+    "params": 400000,
+    "sec": 706.5,
+    "seed": 0,
+    "cap": 60000,
+    "per_len": {
+      "64": 0.9907,
+      "128": 0.9971,
+      "256": 0.998
+    }
+  },
+  "diag.ind.TF.s1": {
+    "best": 0.99560546875,
+    "plateau": 58000,
+    "params": 400000,
+    "sec": 679.6,
+    "seed": 1,
+    "cap": 60000,
+    "per_len": {
+      "64": 0.9912,
+      "128": 0.9961,
+      "256": 0.9951
+    }
+  },
+  "diag.ind.TF.s2": {
+    "best": 0.90283203125,
+    "plateau": 56000,
+    "params": 400000,
+    "sec": 654.4,
+    "seed": 2,
+    "cap": 60000,
+    "per_len": {
+      "64": 0.9077,
+      "128": 0.9019,
+      "256": 0.9028
+    }
+  },
+  "diag.ind.PRISM-quad2.s0": {
+    "best": 0.99951171875,
+    "plateau": 18000,
+    "params": 402576,
+    "sec": 1662.8,
+    "seed": 0,
+    "cap": 60000,
+    "per_len": {
+      "64": 1.0,
+      "128": 0.9995,
+      "256": 0.9995
+    }
+  },
+  "diag.ind.PRISM-quad2.s1": {
+    "best": 1.0,
+    "plateau": 18000,
+    "params": 402576,
+    "sec": 1671.1,
+    "seed": 1,
+    "cap": 60000,
+    "per_len": {
+      "64": 1.0,
+      "128": 0.9995,
+      "256": 1.0
+    }
+  },
+  "diag.ind.PRISM-quad2.s2": {
+    "best": 0.99951171875,
+    "plateau": 18000,
+    "params": 402576,
+    "sec": 1674.0,
+    "seed": 2,
+    "cap": 60000,
+    "per_len": {
+      "64": 1.0,
+      "128": 0.9985,
+      "256": 0.9995
+    }
+  },
+  "diag.ind.PRISM-none.s0": {
+    "best": 1.0,
+    "plateau": 22000,
+    "params": 402576,
+    "sec": 584.9,
+    "seed": 0,
+    "cap": 60000,
+    "per_len": {
+      "64": 0.9995,
+      "128": 0.9995,
+      "256": 1.0
+    }
+  },
+  "diag.ind.PRISM-none.s1": {
+    "best": 1.0,
+    "plateau": 22000,
+    "params": 402576,
+    "sec": 591.0,
+    "seed": 1,
+    "cap": 60000,
+    "per_len": {
+      "64": 0.9995,
+      "128": 1.0,
+      "256": 0.9995
+    }
+  },
+  "diag.ind.PRISM-none.s2": {
+    "best": 0.9990234375,
+    "plateau": 20000,
+    "params": 402576,
+    "sec": 534.5,
+    "seed": 2,
+    "cap": 60000,
+    "per_len": {
+      "64": 0.9995,
+      "128": 0.999,
+      "256": 0.999
+    }
+  },
+  "diag_induction_summary": {
+    "TF": {
+      "solve_rate": "3/3",
+      "median": 0.9956,
+      "mean_ci95": [
+        0.9655,
+        0.0614
+      ],
+      "bests": [
+        0.998,
+        0.996,
+        0.903
+      ],
+      "solve_rate_098": "2/3",
+      "per_len_median": {
+        "64": 0.9907,
+        "128": 0.9961,
+        "256": 0.9951
+      },
+      "per_len_min": {
+        "64": 0.9077,
+        "128": 0.9019,
+        "256": 0.9028
+      }
+    },
+    "PRISM-quad2": {
+      "solve_rate": "3/3",
+      "median": 0.9995,
+      "mean_ci95": [
+        0.9997,
+        0.0003
+      ],
+      "bests": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "solve_rate_098": "3/3",
+      "per_len_median": {
+        "64": 1.0,
+        "128": 0.9995,
+        "256": 0.9995
+      },
+      "per_len_min": {
+        "64": 1.0,
+        "128": 0.9985,
+        "256": 0.9995
+      }
+    },
+    "PRISM-none": {
+      "solve_rate": "3/3",
+      "median": 1.0,
+      "mean_ci95": [
+        0.9997,
+        0.0006
+      ],
+      "bests": [
+        1.0,
+        1.0,
+        0.999
+      ],
+      "solve_rate_098": "3/3",
+      "per_len_median": {
+        "64": 0.9995,
+        "128": 0.9995,
+        "256": 0.9995
+      },
+      "per_len_min": {
+        "64": 0.9995,
+        "128": 0.999,
+        "256": 0.999
+      }
+    },
+    "_bar": {
+      "rule": "PRISM-quad2 median>=0.98 AND per-len-median@256>=0.95",
+      "pass": true
+    }
+  },
+  "diag.sc.selective.TF.s0": {
+    "best": 0.999420166015625,
+    "plateau": 14000,
+    "params": 400000,
+    "sec": 137.6,
+    "seed": 0,
+    "cap": 60000
+  },
+  "diag.sc.selective.TF.s1": {
+    "best": 0.999725341796875,
+    "plateau": 16000,
+    "params": 400000,
+    "sec": 157.1,
+    "seed": 1,
+    "cap": 60000
+  },
+  "diag.sc.selective.TF.s2": {
+    "best": 0.998870849609375,
+    "plateau": 16000,
+    "params": 400000,
+    "sec": 156.8,
+    "seed": 2,
+    "cap": 60000
+  },
+  "diag.sc.selective.PRISM-quad2.s0": {
+    "best": 0.999053955078125,
+    "plateau": 14000,
+    "params": 402576,
+    "sec": 593.4,
+    "seed": 0,
+    "cap": 60000
+  },
+  "diag.sc.selective.PRISM-quad2.s1": {
+    "best": 0.999053955078125,
+    "plateau": 14000,
+    "params": 402576,
+    "sec": 593.4,
+    "seed": 1,
+    "cap": 60000
+  },
+  "diag.sc.selective.PRISM-quad2.s2": {
+    "best": 0.999237060546875,
+    "plateau": 14000,
+    "params": 402576,
+    "sec": 593.4,
+    "seed": 2,
+    "cap": 60000
+  },
+  "diag.sc.selective.PRISM-none.s0": {
+    "best": 0.999359130859375,
+    "plateau": 16000,
+    "params": 402576,
+    "sec": 307.1,
+    "seed": 0,
+    "cap": 60000
+  },
+  "diag.sc.selective.PRISM-none.s1": {
+    "best": 0.99932861328125,
+    "plateau": 16000,
+    "params": 402576,
+    "sec": 306.6,
+    "seed": 1,
+    "cap": 60000
+  },
+  "diag.sc.selective.PRISM-none.s2": {
+    "best": 0.99951171875,
+    "plateau": 16000,
+    "params": 402576,
+    "sec": 305.9,
+    "seed": 2,
+    "cap": 60000
+  },
+  "diag.sc.fixed.TF.s0": {
+    "best": 1.0,
+    "plateau": 14000,
+    "params": 400000,
+    "sec": 137.2,
+    "seed": 0,
+    "cap": 60000
+  },
+  "diag.sc.fixed.TF.s1": {
+    "best": 1.0,
+    "plateau": 12000,
+    "params": 400000,
+    "sec": 117.6,
+    "seed": 1,
+    "cap": 60000
+  },
+  "diag.sc.fixed.TF.s2": {
+    "best": 1.0,
+    "plateau": 14000,
+    "params": 400000,
+    "sec": 137.2,
+    "seed": 2,
+    "cap": 60000
+  },
+  "diag.sc.fixed.PRISM-quad2.s0": {
+    "best": 0.999908447265625,
+    "plateau": 14000,
+    "params": 402576,
+    "sec": 593.3,
+    "seed": 0,
+    "cap": 60000
+  },
+  "diag.sc.fixed.PRISM-quad2.s1": {
+    "best": 0.99993896484375,
+    "plateau": 14000,
+    "params": 402576,
+    "sec": 593.3,
+    "seed": 1,
+    "cap": 60000
+  },
+  "diag.sc.fixed.PRISM-quad2.s2": {
+    "best": 1.0,
+    "plateau": 14000,
+    "params": 402576,
+    "sec": 593.2,
+    "seed": 2,
+    "cap": 60000
+  },
+  "diag.sc.fixed.PRISM-none.s0": {
+    "best": 1.0,
+    "plateau": 14000,
+    "params": 402576,
+    "sec": 267.6,
+    "seed": 0,
+    "cap": 60000
+  },
+  "diag.sc.fixed.PRISM-none.s1": {
+    "best": 0.999969482421875,
+    "plateau": 14000,
+    "params": 402576,
+    "sec": 267.5,
+    "seed": 1,
+    "cap": 60000
+  },
+  "diag.sc.fixed.PRISM-none.s2": {
+    "best": 0.999908447265625,
+    "plateau": 14000,
+    "params": 402576,
+    "sec": 267.6,
+    "seed": 2,
+    "cap": 60000
+  },
+  "diag_selcopy_summary": {
+    "selective": {
+      "TF": {
+        "solve_rate": "3/3",
+        "median": 0.9994,
+        "mean_ci95": [
+          0.9993,
+          0.0005
+        ],
+        "bests": [
+          0.999,
+          1.0,
+          0.999
+        ],
+        "solve_rate_097": "3/3"
+      },
+      "PRISM-quad2": {
+        "solve_rate": "3/3",
+        "median": 0.9991,
+        "mean_ci95": [
+          0.9991,
+          0.0001
+        ],
+        "bests": [
+          0.999,
+          0.999,
+          0.999
+        ],
+        "solve_rate_097": "3/3"
+      },
+      "PRISM-none": {
+        "solve_rate": "3/3",
+        "median": 0.9994,
+        "mean_ci95": [
+          0.9994,
+          0.0001
+        ],
+        "bests": [
+          0.999,
+          0.999,
+          1.0
+        ],
+        "solve_rate_097": "3/3"
+      }
+    },
+    "fixed": {
+      "TF": {
+        "solve_rate": "3/3",
+        "median": 1.0,
+        "mean_ci95": [
+          1.0,
+          0.0
+        ],
+        "bests": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "solve_rate_097": "3/3"
+      },
+      "PRISM-quad2": {
+        "solve_rate": "3/3",
+        "median": 0.9999,
+        "mean_ci95": [
+          0.9999,
+          0.0001
+        ],
+        "bests": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "solve_rate_097": "3/3"
+      },
+      "PRISM-none": {
+        "solve_rate": "3/3",
+        "median": 1.0,
+        "mean_ci95": [
+          1.0,
+          0.0001
+        ],
+        "bests": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "solve_rate_097": "3/3"
+      }
+    },
+    "_bar": {
+      "rule": "selective PRISM-quad2 median>=0.97 AND >= TF_median-0.02; fixed control ~equal",
+      "selective_quad2_median": 0.9991,
+      "selective_tf_median": 0.9994,
+      "fixed_medians": {
+        "TF": 1.0,
+        "PRISM-quad2": 0.9999,
+        "PRISM-none": 1.0
+      },
+      "fixed_spread": 0.0001,
+      "pass": true
+    }
+  },
+  "diag_summary": {
+    "induction": {
+      "TF": {
+        "solve_rate_098": "2/3",
+        "median": 0.9956,
+        "bests": [
+          0.998,
+          0.996,
+          0.903
+        ],
+        "per_len_median": {
+          "64": 0.9907,
+          "128": 0.9961,
+          "256": 0.9951
+        }
+      },
+      "PRISM-quad2": {
+        "solve_rate_098": "3/3",
+        "median": 0.9995,
+        "bests": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "per_len_median": {
+          "64": 1.0,
+          "128": 0.9995,
+          "256": 0.9995
+        }
+      },
+      "PRISM-none": {
+        "solve_rate_098": "3/3",
+        "median": 1.0,
+        "bests": [
+          1.0,
+          1.0,
+          0.999
+        ],
+        "per_len_median": {
+          "64": 0.9995,
+          "128": 0.9995,
+          "256": 0.9995
+        }
+      },
+      "_bar": {
+        "rule": "PRISM-quad2 median>=0.98 AND per-len-median@256>=0.95",
+        "pass": true
+      }
+    },
+    "selcopy": {
+      "selective": {
+        "TF": {
+          "solve_rate_097": "3/3",
+          "median": 0.9994,
+          "bests": [
+            0.999,
+            1.0,
+            0.999
+          ]
+        },
+        "PRISM-quad2": {
+          "solve_rate_097": "3/3",
+          "median": 0.9991,
+          "bests": [
+            0.999,
+            0.999,
+            0.999
+          ]
+        },
+        "PRISM-none": {
+          "solve_rate_097": "3/3",
+          "median": 0.9994,
+          "bests": [
+            0.999,
+            0.999,
+            1.0
+          ]
+        }
+      },
+      "fixed": {
+        "TF": {
+          "solve_rate_097": "3/3",
+          "median": 1.0,
+          "bests": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "PRISM-quad2": {
+          "solve_rate_097": "3/3",
+          "median": 0.9999,
+          "bests": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "PRISM-none": {
+          "solve_rate_097": "3/3",
+          "median": 1.0,
+          "bests": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "_bar": {
+        "rule": "selective PRISM-quad2 median>=0.97 AND >= TF_median-0.02; fixed control ~equal",
+        "selective_quad2_median": 0.9991,
+        "selective_tf_median": 0.9994,
+        "fixed_medians": {
+          "TF": 1.0,
+          "PRISM-quad2": 0.9999,
+          "PRISM-none": 1.0
+        },
+        "fixed_spread": 0.0001,
+        "pass": true
+      }
+    }
+  }
+}

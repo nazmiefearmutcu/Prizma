@@ -1,0 +1,24 @@
+device=mps MixedMQAR(V=256,pairs=1-64,q=128,gap=0) eval@D=64 seq=256 protocol=gen-warm cap=30000 (TF=1.000)
+    step  3000  loss 0.2058  acc 0.8719  lr 9.97e-04
+    step  6000  loss 0.0093  acc 0.9847  lr 9.55e-04
+    step  9000  loss 0.0002  acc 0.9936  lr 8.68e-04
+    step 12000  loss 0.0000  acc 0.9972  lr 7.45e-04
+    step 15000  loss 0.0000  acc 0.9977  lr 6.00e-04
+    step 18000  loss 0.0000  acc 0.9983  lr 4.50e-04
+    step 21000  loss 0.0000  acc 0.9990  lr 3.11e-04
+    step 24000  loss 0.0008  acc 0.9994  lr 1.98e-04
+    step 27000  loss 0.0000  acc 0.9995  lr 1.25e-04
+>>> PRISM-quad2  best@D64=1.000 plateau@27000 (5892.1s, 115016p) vs TF=1.000
+    step  3000  loss 2.0665  acc 0.3142  lr 9.97e-04
+    step  6000  loss 0.2867  acc 0.7691  lr 9.55e-04
+    step  9000  loss 0.0013  acc 0.8466  lr 8.68e-04
+    step 12000  loss 0.0023  acc 0.8821  lr 7.45e-04
+    step 15000  loss 0.0000  acc 0.8937  lr 6.00e-04
+    step 18000  loss 0.0020  acc 0.9120  lr 4.50e-04
+    step 21000  loss 0.0006  acc 0.9198  lr 3.11e-04
+    step 24000  loss 0.1088  acc 0.9241  lr 1.98e-04
+    step 27000  loss 0.0024  acc 0.9287  lr 1.25e-04
+    step 30000  loss 0.0104  acc 0.9310  lr 1.00e-04
+>>> PRISM-none   best@D64=0.931 plateau@30000 (5155.1s, 115016p) vs TF=1.000
+
+saved -> /Users/nazmi/Desktop/Projeler/proje/PRISM/results/parity_d64.json

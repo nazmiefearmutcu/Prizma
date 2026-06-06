@@ -1,0 +1,40 @@
+device=mps MixedMQAR(V=256,pairs=1-64,q=128,gap=0) eval@D=64 seq=256
+    step  1000  loss 1.8047  acc 0.0294  lr 9.90e-04
+    step  2000  loss 4.5350  acc 0.0306  lr 9.49e-04
+    step  3000  loss 4.5191  acc 0.0312  lr 8.81e-04
+    step  4000  loss 0.8262  acc 0.0324  lr 7.89e-04
+    step  5000  loss 3.9630  acc 0.0320  lr 6.80e-04
+    step  6000  loss 4.4627  acc 0.0321  lr 5.62e-04
+    step  7000  loss 4.4946  acc 0.0326  lr 4.43e-04
+    step  8000  loss 3.2730  acc 0.0325  lr 3.32e-04
+    step  9000  loss 1.2057  acc 0.0327  lr 2.36e-04
+    step 10000  loss 3.8864  acc 0.0328  lr 1.62e-04
+    step 11000  loss 4.4845  acc 0.0331  lr 1.16e-04
+    step 12000  loss 1.8521  acc 0.0335  lr 1.00e-04
+>>> Transformer  best@D64=0.033 plateau@12000 (526s, 113984p)
+    step  1000  loss 2.8407  acc 0.0256  lr 9.90e-04
+    step  2000  loss 3.6092  acc 0.0935  lr 9.49e-04
+    step  3000  loss 3.2551  acc 0.1171  lr 8.81e-04
+    step  4000  loss 0.1211  acc 0.1239  lr 7.89e-04
+    step  5000  loss 1.2323  acc 0.1789  lr 6.80e-04
+    step  6000  loss 2.4834  acc 0.1825  lr 5.62e-04
+    step  7000  loss 2.6330  acc 0.1861  lr 4.43e-04
+    step  8000  loss 0.5064  acc 0.1909  lr 3.32e-04
+    step  9000  loss 0.0415  acc 0.2456  lr 2.36e-04
+    step 10000  loss 0.6505  acc 0.2579  lr 1.62e-04
+    step 11000  loss 2.1059  acc 0.2625  lr 1.16e-04
+    step 12000  loss 0.0601  acc 0.2640  lr 1.00e-04
+>>> PRISM-none   best@D64=0.264 plateau@12000 (1992s, 115016p)
+    step  1000  loss 2.8925  acc 0.0255  lr 9.90e-04
+    step  2000  loss 3.0950  acc 0.1687  lr 9.49e-04
+    step  3000  loss 1.0167  acc 0.5892  lr 8.81e-04
+    step  4000  loss 0.0557  acc 0.7209  lr 7.89e-04
+    step  5000  loss 0.0367  acc 0.7823  lr 6.80e-04
+    step  6000  loss 0.2370  acc 0.8418  lr 5.62e-04
+    step  7000  loss 0.2212  acc 0.8726  lr 4.43e-04
+    step  8000  loss 0.0060  acc 0.8858  lr 3.32e-04
+    step  9000  loss 0.0111  acc 0.8955  lr 2.36e-04
+    step 10000  loss 0.0084  acc 0.9002  lr 1.62e-04
+    step 11000  loss 0.1539  acc 0.9028  lr 1.16e-04
+    step 12000  loss 0.0063  acc 0.9063  lr 1.00e-04
+>>> PRISM-quad2  best@D64=0.906 plateau@12000 (2737s, 115016p)

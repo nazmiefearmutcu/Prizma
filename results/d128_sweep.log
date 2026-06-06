@@ -1,0 +1,51 @@
+device=mps MixedMQAR(V=512,pairs=1-128,q=128,gap=0) eval@D=128 seq=384 protocol=gen-warm
+    step  3000  loss 5.2038  acc 0.0124  lr 9.99e-04
+    step  6000  loss 5.1647  acc 0.0133  lr 9.89e-04
+    step  9000  loss 1.4666  acc 0.0133  lr 9.68e-04
+    step 12000  loss 5.2910  acc 0.0138  lr 9.36e-04
+    step 15000  loss 0.0015  acc 0.0139  lr 8.93e-04
+    step 18000  loss 5.2780  acc 0.0141  lr 8.41e-04
+    step 21000  loss 2.7127  acc 0.0143  lr 7.82e-04
+    step 24000  loss 5.1024  acc 0.0148  lr 7.17e-04
+    step 27000  loss 4.6019  acc 0.0152  lr 6.47e-04
+    step 30000  loss 5.2976  acc 0.0149  lr 5.74e-04
+    step 33000  loss 4.4828  acc 0.0155  lr 5.01e-04
+    step 36000  loss 5.3124  acc 0.0156  lr 4.30e-04
+    step 39000  loss 5.3425  acc 0.0155  lr 3.61e-04
+    step 42000  loss 4.5324  acc 0.0160  lr 2.97e-04
+    step 45000  loss 2.3681  acc 0.0159  lr 2.41e-04
+    step 48000  loss 5.0900  acc 0.0159  lr 1.92e-04
+    step 51000  loss 3.5009  acc 0.0162  lr 1.52e-04
+    step 54000  loss 0.0003  acc 0.0161  lr 1.24e-04
+    step 57000  loss 5.2412  acc 0.0161  lr 1.06e-04
+    step 60000  loss 5.2287  acc 0.0159  lr 1.00e-04
+>>> Transformer      best@D128=0.016 plateau@60000 (4176.2s, 130368p)
+    step  3000  loss 0.9980  acc 0.2821  lr 9.98e-04
+    step  6000  loss 0.0187  acc 0.8550  lr 9.76e-04
+    step  9000  loss 0.0026  acc 0.9500  lr 9.27e-04
+    step 12000  loss 0.0146  acc 0.9591  lr 8.55e-04
+    step 15000  loss 0.0000  acc 0.9747  lr 7.64e-04
+    step 18000  loss 0.0032  acc 0.9960  lr 6.61e-04
+    step 21000  loss 0.0011  acc 0.9941  lr 5.50e-04
+    step 24000  loss 0.0017  acc 0.9984  lr 4.40e-04
+    step 27000  loss 0.0002  acc 0.9988  lr 3.36e-04
+    step 30000  loss 0.0017  acc 0.9991  lr 2.45e-04
+    step 33000  loss 0.0004  acc 0.9995  lr 1.73e-04
+>>> PRISM-quad2-256  best@D128=0.999 plateau@33000 (12969.0s, 131400p)
+    step  3000  loss 4.8973  acc 0.0193  lr 9.98e-04
+    step  6000  loss 1.2378  acc 0.1866  lr 9.76e-04
+    step  9000  loss 0.0022  acc 0.2438  lr 9.27e-04
+    step 12000  loss 1.5969  acc 0.2677  lr 8.55e-04
+    step 15000  loss 0.0018  acc 0.2948  lr 7.64e-04
+    step 18000  loss 1.5152  acc 0.3012  lr 6.61e-04
+    step 21000  loss 0.0009  acc 0.3178  lr 5.50e-04
+    step 24000  loss 0.4620  acc 0.3204  lr 4.40e-04
+    step 27000  loss 0.0253  acc 0.3273  lr 3.36e-04
+    step 30000  loss 2.1449  acc 0.3349  lr 2.45e-04
+    step 33000  loss 0.0238  acc 0.3453  lr 1.73e-04
+    step 36000  loss 2.4204  acc 0.3572  lr 1.24e-04
+    step 39000  loss 2.6356  acc 0.3656  lr 1.02e-04
+    step 40000  loss 0.1385  acc 0.3688  lr 1.00e-04
+>>> PRISM-none       best@D128=0.369 plateau@40000 (8712.1s, 131400p)
+
+saved -> /Users/nazmi/Desktop/Projeler/proje/PRISM/results/d128_sweep.json

@@ -1,0 +1,7 @@
+device=mps D=[64] configs=['d128L2H4', 'd128L4H4'] seeds=(0,) recipe=punchy
+
+==== SCALE FRONTIER D=64 (V=256, seq=256, cap=12000) ====
+  [D64] d128L2H4   seed0: best=0.041 plateau@12000 (1391.3s, 428672p)  -> no
+  [D64] d128L4H4   seed0: best=0.041 plateau@12000 (2642.5s, 824448p)  -> no
+
+saved -> /Users/nazmi/Desktop/Projeler/proje/PRISM/results/scale_frontier.json

@@ -1,0 +1,14 @@
+######## CORRECTED MATRIX START (04:20:47) — symmetric LR sweep + measured mem + fair ablations ########
+######## RUN_BAR b1 seeds=3 (04:20:47) ########
+device=mps which=b1 seeds=(0, 1, 2)
+
+== B1 rung1: MQAR(V=64,keys<32,pairs=16,q=96,gap=0) (seq=128, steps=6000) ==
+  [B1-rung1] Transformer    lr=1e-03: med=1.000 accs=[1.0, 1.0, 0.99] (101696p)
+  [B1-rung1] Transformer    lr=2e-03: med=0.149 accs=[0.149, 0.747, 0.149] (101696p)
+  [B1-rung1] Transformer    => best_lr=1e-03 median=1.000 solved=3/3
+  [B1-rung1] PRISM-Seq      lr=1e-03: med=0.998 accs=[0.994, 0.999, 0.998] (102728p)
+  [B1-rung1] PRISM-Seq      lr=2e-03: med=0.998 accs=[0.991, 1.0, 0.998] (102728p)
+  [B1-rung1] PRISM-Seq      => best_lr=2e-03 median=0.998 solved=3/3
+
+== B1 rung2: MQAR(V=96,keys<48,pairs=32,q=160,gap=0) (seq=224, steps=7000) ==
+  [B1-rung2] Transformer    lr=1e-03: med=0.095 accs=[0.095, 0.094, 0.095] (103744p)

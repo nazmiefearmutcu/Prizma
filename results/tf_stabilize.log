@@ -1,0 +1,24 @@
+device=mps MixedMQAR(V=256,pairs=1-64,q=128,gap=0) eval@D=64 seq=256 (TF stabilization sweep)
+    step  2000  loss 4.5373  acc 0.0307  lr 1.00e-03
+    step  4000  loss 0.8240  acc 0.0310  lr 9.14e-04
+    step  6000  loss 4.5130  acc 0.0313  lr 6.89e-04
+    step  8000  loss 2.7659  acc 0.0981  lr 4.11e-04
+    step 10000  loss 2.9397  acc 0.2151  lr 1.86e-04
+    step 12000  loss 1.3135  acc 0.2420  lr 1.00e-04
+>>> TF gen-warm   best@D64=0.242 plateau@12000 (589.6s, 113984p) -> no
+    step  2000  loss 4.5575  acc 0.0305  lr 4.97e-04
+    step  4000  loss 0.8404  acc 0.0309  lr 4.40e-04
+    step  6000  loss 4.4871  acc 0.0324  lr 3.25e-04
+    step  8000  loss 3.3386  acc 0.0327  lr 1.93e-04
+    step 10000  loss 3.8793  acc 0.0326  lr 8.91e-05
+    step 12000  loss 1.9319  acc 0.0330  lr 5.00e-05
+>>> TF lowlr-gen  best@D64=0.033 plateau@12000 (504.6s, 113984p) -> no
+    step  2000  loss 4.5717  acc 0.0306  lr 2.95e-04
+    step  4000  loss 0.9109  acc 0.0313  lr 2.53e-04
+    step  6000  loss 4.4985  acc 0.0325  lr 1.84e-04
+    step  8000  loss 3.4043  acc 0.0329  lr 1.09e-04
+    step 10000  loss 3.8917  acc 0.0329  lr 5.15e-05
+    step 12000  loss 2.0544  acc 0.0330  lr 3.00e-05
+>>> TF vlowlr     best@D64=0.033 plateau@12000 (503.0s, 113984p) -> no
+
+saved -> /Users/nazmi/Desktop/Projeler/proje/PRISM/results/tf_stabilize.json
