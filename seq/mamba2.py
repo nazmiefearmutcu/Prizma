@@ -113,8 +113,9 @@ class Mamba2Block(nn.Module):
         # per-(head,channel) D skip
         self.D = nn.Parameter(torch.ones(H, cfg.head_dim))
         # SHORT DEPTHWISE CAUSAL CONV on xin: depthwise conv1d over the d=H*P channels, kernel k.
-        # groups = channels -> per-channel (depthwise). No bias (Mamba's conv is biased; we keep it
-        # bias-free here so the conv adds exactly k params/channel — documented; immaterial to faithfulness).
+        # groups = channels -> per-channel (depthwise). BIASED (bias=True), matching the real Mamba/
+        # Mamba-2 short conv (its conv has a bias) -> +(k+1) params/channel. The bias is applied in BOTH
+        # the parallel conv and the streaming step() path, so the step==forward<1e-4 O(1) guard holds.
         self.conv = nn.Conv1d(d, d, kernel_size=self.k, groups=d, bias=True, padding=0)
         # output projection d -> d
         self.W_o = nn.Linear(d, d, bias=False)
@@ -206,12 +207,19 @@ class Mamba2Block(nn.Module):
             # within-chunk INCLUSIVE cumulative log-decay L_i = sum_{s<=i} dt_s*A
             L = torch.cumsum(la, dim=2)                              # [B,H,Cc]
             # --- intra-chunk causal decayed attention ---
-            # scores[i,s] = (C_i . B_s) ; decay[i,s] = exp(L_i - L_s) for s<=i ; weight by dt_s.
+            # scores[i,s] = (C_i . B_s) ; decay[i,s] = exp(L_i - L_s) ; keep only s<=i (causal), weight by dt_s.
+            # NUMERICAL STABILITY (cf. seq/gla.py's sibling caveat): `decay` is the FULL matrix and its
+            # UPPER triangle (s>i) is exp(L_i - L_s) with L_i > L_s -> exp(positive), which CAN overflow
+            # to +inf under reachable large-decay settings (extreme A_log/dt). That is safe ONLY because
+            # masked_fill(~tri, 0.0) OVERWRITES those entries with a literal 0.0 (the inf is discarded,
+            # never propagated). Do NOT refactor to a multiplicative mask `w * tri`: inf*0 = nan. The
+            # CAUSAL entries (s<=i) are exp(L_i - L_s) with L_i <= L_s (L = cumsum of dt*A, A<0) so they
+            # are <= 1 and stable.
             scores = torch.einsum("bhin,bhsn->bhis", Cq, Bq)        # [B,H,Cc,Cc]  C_i . B_s
-            decay = torch.exp(L[:, :, :, None] - L[:, :, None, :])  # [B,H,Cc,Cc] exp(L_i - L_s)
+            decay = torch.exp(L[:, :, :, None] - L[:, :, None, :])  # [B,H,Cc,Cc] exp(L_i - L_s); upper-tri may be +inf
             tri = torch.tril(torch.ones(Cc, Cc, dtype=torch.bool, device=xc.device))  # s<=i incl diag
             w = scores * decay * dtc[:, :, None, :]                 # weight source s by dt_s
-            w = w.masked_fill(~tri, 0.0)
+            w = w.masked_fill(~tri, 0.0)                            # OVERWRITE upper-tri (discards any inf) — not a multiply
             y_intra = torch.einsum("bhis,bhsp->bhip", w, xq)        # sum_s w[i,s] * xin_s -> [B,H,Cc,P]
             # --- inter-chunk: read carried state Hst (from end of previous chunks) ---
             # y_inter_i = exp(L_i) * (Hst @ C_i)   (L_i = within-chunk cumulative decay applied to carry)
