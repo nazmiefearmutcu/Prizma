@@ -73,6 +73,8 @@ import torch.nn.functional as F
 from seq.common import param_count, set_seed
 from seq.transformer import Transformer, TFConfig
 from seq.prizma_seq import PrizmaSeqLM, PrizmaSeqConfig
+from seq.hybrid import hybrid_factory
+from seq.stats import margin_superiority, tost_equivalence
 
 # --------------------------------------------------------------------------------------------- #
 # Device + crash-safe JSON ledger (mirrors gpu_charlm._load/_save; SEPARATE file gpu_charlm2.json
@@ -110,6 +112,24 @@ def _save(d):
     os.replace(tmp, OUT)
 
 
+def _jsonable(o):
+    """Recursively coerce numpy scalars/bools/arrays (e.g. from seq.stats) to native Python so the
+    plain (default-less) json.dump in _save never raises. Pure; only used on the v2 verdict block."""
+    if isinstance(o, dict):
+        return {k: _jsonable(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [_jsonable(v) for v in o]
+    if isinstance(o, np.bool_):
+        return bool(o)
+    if isinstance(o, np.integer):
+        return int(o)
+    if isinstance(o, np.floating):
+        return float(o)
+    if isinstance(o, np.ndarray):
+        return _jsonable(o.tolist())
+    return o
+
+
 def _median(xs):
     return float(np.median(np.asarray(xs, float)))
 
@@ -118,6 +138,75 @@ def _rng_range(xs):
     """(mean, half-range) so the summary can print mean +/- range across seeds."""
     xs = np.asarray(xs, float)
     return float(xs.mean()), float((xs.max() - xs.min()) / 2.0)
+
+
+# --------------------------------------------------------------------------------------------- #
+# POWERED verdict (pure, training-free). Operates on per-seed TEST-BPC arrays and seq.stats.
+#
+# BPC is LOWER-is-better, so the sign convention is delegated to seq.stats.margin_superiority:
+#   margin_superiority(candidate, baseline, margin) tests  mean(baseline) - mean(candidate) > margin
+#   => 'candidate beats baseline by >= margin' (positive delta = candidate has lower/better BPC).
+# We pass Prizma-v2 as the candidate (a) and TF as the baseline (b), so a POSITIVE significant
+# delta means Prizma is genuinely better. tost_equivalence(candidate, baseline, margin) gives the
+# fallback parity claim. Kept pure so tests exercise it on synthetic arrays without any training.
+# --------------------------------------------------------------------------------------------- #
+def charlm_v2_verdict(per_arm_bpcs, margins, *, candidate="Prizma-v2", baseline="TF", hybrid="Hybrid"):
+    """Compute the powered char-LM v2 verdict from per-seed TEST-BPC arrays.
+
+    Args:
+      per_arm_bpcs: dict {arm_name: list-of-per-seed-test-BPC}. Must contain `candidate` and
+                    `baseline`; `hybrid` is optional (Pareto-competitive check).
+      margins:      dict {"superiority": float (e.g. 0.03), "parity": float (e.g. 0.05)}.
+
+    Returns a dict with:
+      verdict: "BEATS" | "PARITY" | "WORSE"
+        BEATS  iff margin_superiority(candidate, baseline, superiority_margin).significant
+        else PARITY iff tost_equivalence(candidate, baseline, parity_margin).equivalent
+        else WORSE
+      superiority: margin_superiority(candidate, baseline, m_sup) record (delta = baseline-candidate)
+      parity:      tost_equivalence(candidate, baseline, m_par) record
+      vs_hybrid_superiority / vs_hybrid_parity: same tests vs the hybrid arm (None if absent)
+      per_arm:     {arm: {"mean_bpc", "median_bpc", "n_seeds", "bpcs"}}
+      margins, candidate, baseline: echoed for the JSON ledger
+    """
+    m_sup = float(margins["superiority"])
+    m_par = float(margins["parity"])
+    cand = list(per_arm_bpcs[candidate])
+    base = list(per_arm_bpcs[baseline])
+
+    superiority = margin_superiority(cand, base, m_sup)   # a=candidate (lower better), b=baseline
+    parity = tost_equivalence(cand, base, m_par)
+
+    if superiority["significant"]:
+        verdict = "BEATS"
+    elif parity["equivalent"]:
+        verdict = "PARITY"
+    else:
+        verdict = "WORSE"
+
+    vs_hyb_sup = vs_hyb_par = None
+    if hybrid in per_arm_bpcs:
+        hyb = list(per_arm_bpcs[hybrid])
+        vs_hyb_sup = margin_superiority(cand, hyb, m_sup)
+        vs_hyb_par = tost_equivalence(cand, hyb, m_par)
+
+    per_arm = {}
+    for arm, bpcs in per_arm_bpcs.items():
+        a = np.asarray(bpcs, float)
+        per_arm[arm] = {"mean_bpc": float(a.mean()), "median_bpc": float(np.median(a)),
+                        "n_seeds": int(a.size), "bpcs": [float(x) for x in a]}
+
+    return {
+        "verdict": verdict,
+        "superiority": superiority,
+        "parity": parity,
+        "vs_hybrid_superiority": vs_hyb_sup,
+        "vs_hybrid_parity": vs_hyb_par,
+        "per_arm": per_arm,
+        "margins": {"superiority": m_sup, "parity": m_par},
+        "candidate": candidate,
+        "baseline": baseline,
+    }
 
 
 # --------------------------------------------------------------------------------------------- #
@@ -477,6 +566,58 @@ def build_arms(d, L, H, T, feat_n2, tf_dff):
     }
 
 
+# --------------------------------------------------------------------------------------------- #
+# v2 arm set (behind --v2). The v2 Prizma config turns ON the trainable gates (out_gate, state_norm,
+# decoupled_gate, gated); these ADD params, so Prizma-v2 is the param REFERENCE for the v2 run and the
+# TF d_ff is matched against IT (not the quad2 count). The Hybrid arm wraps seq.hybrid.hybrid_factory
+# (which is a (V,T) factory) into the single-arg char-LM signature by baking T in.
+# --------------------------------------------------------------------------------------------- #
+# Trainable v2 gate knobs shared by the Prizma-v2 and Hybrid arms (single source of truth).
+V2_GATE_KW = dict(out_gate=True, state_norm=True, decoupled_gate=True, gated=True)
+
+
+def ps_v2_factory(d, L, H, T, **kw):
+    """Prizma-v2: ps_factory with the trainable v2 gates ON (single-arg V factory)."""
+    merged = dict(V2_GATE_KW)
+    merged.update(kw)
+    return ps_factory(d, L, H, T, **merged)
+
+
+def hybrid_v2_factory(d, L, H, T, n_attn=1, **kw):
+    """Adapt seq.hybrid.hybrid_factory (a (V,T) factory) to the char-LM single-arg V factory by
+    baking the context length T in, with the v2 gates ON. Council-3 (Pareto-competitive) arm."""
+    merged = dict(V2_GATE_KW)
+    merged.update(kw)
+    merged.setdefault("learned_pos", True)
+    f2 = hybrid_factory(d, L, H, n_attn=n_attn, **merged)   # f2(V, T) -> HybridSeqLM
+    return lambda V: f2(V, T)
+
+
+def build_v2_arms(d, L, H, T, tf_dff, feat_n2):
+    """v2 arm set: Prizma-v2 (param reference) + param-matched TF-v2 + Hybrid-v2 (Council-3).
+
+    Arm names carry a `-v2` suffix so the run_arm cache keys NEVER collide with the legacy (non-v2)
+    arms: the v2 TF is param-matched to Prizma-v2 (different d_ff -> different params), so reusing a
+    legacy `TF` cell would silently mix mismatched-param results. Distinct names keep cells separate.
+    """
+    return {
+        "TF-v2":     tf_factory(d, L, H, T, d_ff=tf_dff),
+        "Prizma-v2": ps_v2_factory(d, L, H, T, feat_map="quad2", feat_n2=feat_n2),
+        "Hybrid-v2": hybrid_v2_factory(d, L, H, T, n_attn=1, feat_map="quad2", feat_n2=feat_n2),
+    }
+
+
+def _print_param_match_v2(arms, V, label):
+    """Print v2 arm param counts relative to the Prizma-v2 reference (the param target)."""
+    print(f"\n  param-match @ {label} (V={V}):", flush=True)
+    counts = {a: param_count(f(V)) for a, f in arms.items()}
+    ref = counts["Prizma-v2"]
+    for a, p in counts.items():
+        diff = (p - ref) / ref * 100 if a != "Prizma-v2" else 0.0
+        print(f"    {a:<12} {p:>10,} params   ({diff:+.2f}% vs Prizma-v2)", flush=True)
+    return counts
+
+
 def _print_param_match(arms, V, label):
     print(f"\n  param-match @ {label} (V={V}):", flush=True)
     counts = {a: param_count(f(V)) for a, f in arms.items()}
@@ -488,7 +629,138 @@ def _print_param_match(arms, V, label):
 
 
 # --------------------------------------------------------------------------------------------- #
+# v2 orchestrator (behind --v2). Reuses load_corpus, _match_tf_dff, run_arm, charlm_v2_verdict.
+# Prizma-v2 (trainable gates ON) is the param REFERENCE; the TF d_ff is matched to ITS count.
+# --------------------------------------------------------------------------------------------- #
+def run_v2(args):
+    smoke = args.smoke
+    corpus = args.corpus
+    # SMOKE plumbing should be network-free + fast: if the user did not explicitly pick a corpus,
+    # the v2 smoke uses the bundled tiny-shakespeare (no 100MB text8 download) so the documented
+    # `--smoke --v2` guard runs offline end-to-end. A real (non-smoke) v2 run keeps the text8 default.
+    if smoke and not getattr(args, "_corpus_explicit", False) and corpus == "text8":
+        corpus = "shakespeare"
+        print("  *** SMOKE --v2: corpus defaulted to bundled tiny-shakespeare (network-free); pass "
+              "--corpus text8 to force the big download. ***", flush=True)
+    print(f"device={DEV} torch={torch.__version__} corpus={corpus} smoke={smoke} [V2]", flush=True)
+    if DEV.type == "cuda":
+        print(f"GPU: {torch.cuda.get_device_name(0)}", flush=True)
+    print(f"results -> {OUT}", flush=True)
+    if smoke:
+        print("  *** SMOKE --v2: PLUMBING-ONLY. The BPC numbers + verdict below are from a tiny CPU "
+              "config (few steps/seeds) and are NOT a scientific result. ***", flush=True)
+
+    d, L, H, T, feat_n2, hp, lr_grid, seeds = (smoke_hp(args) if smoke else primary_hp(args))
+    data, src = load_corpus(corpus, T, text8_train_chars=args.text8_train_chars,
+                            text8_val_chars=args.text8_val_chars, text8_test_chars=args.text8_test_chars)
+    print(f"corpus: {data.name}  (source={src}, random-baseline BPC={data.rand_bpc:.3f})", flush=True)
+
+    # param-match: size the TF d_ff to PRIZMA-V2's count (the gates add params -> v2 is the reference).
+    ps_v2_target = param_count(ps_v2_factory(d, L, H, T, feat_map="quad2", feat_n2=feat_n2)(data.vocab))
+    tf_dff, tf_p = _match_tf_dff(d, L, H, T, ps_v2_target, V_probe=data.vocab)
+    arms = build_v2_arms(d, L, H, T, tf_dff, feat_n2)
+    counts = _print_param_match_v2(arms, data.vocab, f"d{d}L{L}H{H} ctx{T} (TF d_ff={tf_dff})")
+    ref = counts["Prizma-v2"]
+    tf_match_pct = (counts["TF-v2"] - ref) / ref * 100
+    hyb_match_pct = (counts["Hybrid-v2"] - ref) / ref * 100
+    print(f"  -> TF vs Prizma-v2 param-match:     {tf_match_pct:+.2f}% "
+          f"({'OK <=1%' if abs(tf_match_pct) <= 1.0 else 'NOTE >1% (documented)'})", flush=True)
+    print(f"  -> Hybrid vs Prizma-v2 param spread: {hyb_match_pct:+.2f}% (Hybrid param count differs by "
+          f"construction; reported, not matched)", flush=True)
+
+    res = _load()
+    res["_config_v2"] = {
+        "runner": "gpu_charlm2.py --v2", "corpus": corpus, "d": d, "L": L, "H": H, "ctx": T,
+        "feat_n2": feat_n2, "tf_dff": tf_dff, "steps": hp["steps"], "batch_size": hp["batch_size"],
+        "warmup": hp["warmup"], "grad_clip": hp["grad_clip"], "weight_decay": hp["weight_decay"],
+        "betas": list(hp["betas"]), "eval_every": hp["eval_every"], "eval_batches": hp["eval_batches"],
+        "lr_grid": list(lr_grid), "seeds": list(seeds), "device": DEV.type,
+        "v2_gates": V2_GATE_KW, "params": counts,
+        "param_ref": "Prizma-v2", "tf_param_match_pct": round(tf_match_pct, 3),
+        "hybrid_param_spread_pct": round(hyb_match_pct, 3),
+        "random_baseline_bpc": round(data.rand_bpc, 4),
+        "smoke": smoke,
+        "smoke_disclaimer": ("PLUMBING-ONLY: smoke BPC + verdict are from a tiny CPU config and are "
+                             "NOT a scientific result." if smoke else None),
+        "dropout_used": False,
+        "early_stop_policy": ("headline best_bpc = TEST BPC at the min-VAL checkpoint (unbiased); "
+                              "corpora without val fall back to min-over-test."),
+    }
+    _save(res)
+
+    summary = {}
+    for arm, fac in arms.items():
+        summary[arm] = run_arm(res, arm, fac, data, hp, lr_grid, seeds, lr_seed=seeds[0], log=args.log)
+
+    rand_bpc = data.rand_bpc
+    for arm, s in summary.items():
+        if s["median_bpc"] > rand_bpc:
+            print(f"  *** WARNING: {arm} median best_bpc {s['median_bpc']:.4f} EXCEEDS random "
+                  f"baseline {rand_bpc:.4f} — this arm did not learn. ***", flush=True)
+
+    # ---- POWERED verdict via seq.stats (margin_superiority 0.03 + TOST 0.05) -------------------- #
+    per_arm_bpcs = {arm: summary[arm]["test_bpc_per_seed"] for arm in arms}
+    margins = {"superiority": args.sup_margin, "parity": args.parity_margin}
+    verdict = charlm_v2_verdict(per_arm_bpcs, margins, candidate="Prizma-v2", baseline="TF-v2",
+                                hybrid="Hybrid-v2")
+    verdict["scope_rider"] = ("Scope: <=2M params, char-LM (text8/shakespeare) ONLY. Not a claim at "
+                              "scale or on other modalities.")
+    verdict["param_ref"] = "Prizma-v2"
+    verdict["tf_param_match_pct"] = round(tf_match_pct, 3)
+    verdict["hybrid_param_spread_pct"] = round(hyb_match_pct, 3)
+    verdict["random_baseline_bpc"] = round(rand_bpc, 4)
+    verdict["smoke"] = smoke
+    if smoke:
+        verdict["smoke_disclaimer"] = ("PLUMBING-ONLY: tiny CPU config; the verdict above is NOT a "
+                                       "scientific result.")
+
+    verdict = _jsonable(verdict)               # coerce numpy types (seq.stats) -> JSON-safe natives
+    v2_summary = {"corpus": corpus, "metric": "test_bits_per_char", "per_arm": summary,
+                  "v2_verdict": verdict}
+    res["v2_verdict"] = verdict
+    res["charlm_v2_summary"] = v2_summary
+    _save(res)
+
+    # ---- print a clear summary --------------------------------------------------------------- #
+    print("\n=== V2 RESULTS ===", flush=True)
+    if smoke:
+        print("  *** PLUMBING-ONLY SMOKE — NOT a scientific result ***", flush=True)
+    print(f"corpus={corpus}  device={DEV.type}  steps={hp['steps']}  eval_every={hp['eval_every']}  "
+          f"weight_decay={hp['weight_decay']}  v2_gates={V2_GATE_KW}", flush=True)
+    print(f"random-baseline BPC = {rand_bpc:.4f}   TF-vs-Prizma-v2 param-match = {tf_match_pct:+.2f}%   "
+          f"Hybrid spread = {hyb_match_pct:+.2f}%", flush=True)
+    for arm, s in summary.items():
+        flag = "  <-- > random!" if s["median_bpc"] > rand_bpc else ""
+        print(f"  {arm:<12} best_bpc/seed={s['test_bpc_per_seed']}  median={s['median_bpc']:.4f}  "
+              f"mean={s['mean_bpc']:.4f} +/-{s['range']:.4f}  ({s['params']:,}p){flag}", flush=True)
+    sup, par = verdict["superiority"], verdict["parity"]
+    print(f"\n  superiority (Prizma-v2 vs TF, margin {margins['superiority']}): "
+          f"delta(TF-Prizma)={sup['delta']:+.4f}  t={sup['t']:.3f}  p={sup['p_value']:.4g}  "
+          f"significant={bool(sup['significant'])}", flush=True)
+    print(f"  parity/TOST (margin {margins['parity']}): equivalent={bool(par['equivalent'])}  "
+          f"ci90=({par['ci90'][0]:+.4f},{par['ci90'][1]:+.4f})", flush=True)
+    if verdict["vs_hybrid_superiority"] is not None:
+        hs = verdict["vs_hybrid_superiority"]
+        print(f"  vs Hybrid (Pareto-competitive, margin {margins['superiority']}): "
+              f"delta(Hyb-Prizma)={hs['delta']:+.4f}  p={hs['p_value']:.4g}  "
+              f"significant={bool(hs['significant'])}", flush=True)
+    print(f"\n  >>> VERDICT: {verdict['verdict']}  "
+          f"(BEATS = Prizma-v2 beats TF by >= {margins['superiority']} BPC; "
+          f"PARITY = TOST-equivalent within {margins['parity']}; else WORSE)", flush=True)
+    print(f"  scope rider: {verdict['scope_rider']}", flush=True)
+    print("\n===CHARLM2_V2_VERDICT===", flush=True)
+    print(json.dumps({k: verdict[k] for k in
+                      ("verdict", "superiority", "parity", "vs_hybrid_superiority", "vs_hybrid_parity",
+                       "per_arm", "margins", "tf_param_match_pct", "hybrid_param_spread_pct",
+                       "random_baseline_bpc", "smoke")}, default=float), flush=True)
+    print(f"saved -> {OUT}", flush=True)
+    return v2_summary
+
+
+# --------------------------------------------------------------------------------------------- #
 def run(args):
+    if getattr(args, "v2", False):
+        return run_v2(args)
     smoke = args.smoke
     corpus = args.corpus
     print(f"device={DEV} torch={torch.__version__} corpus={corpus} smoke={smoke}", flush=True)
@@ -645,11 +917,24 @@ def build_parser():
                         "the feat_map causal-ablation is already covered by the MQAR B6 control)")
     p.add_argument("--smoke", action="store_true", help="fast tiny-config 1-seed sanity check")
     p.add_argument("--log", action="store_true", help="verbose per-eval logging")
+    # v2 arm set (Prizma-v2 trainable gates + param-matched TF + Hybrid) + POWERED verdict
+    p.add_argument("--v2", action="store_true",
+                   help="run the v2 arm set (Prizma-v2 gates ON + param-matched TF + Hybrid) with the "
+                        "powered margin_superiority(0.03)+TOST(0.05) verdict (default path unchanged)")
+    p.add_argument("--sup_margin", type=float, default=0.03,
+                   help="v2 superiority margin in BPC (Prizma beats TF by >= this; default 0.03)")
+    p.add_argument("--parity_margin", type=float, default=0.05,
+                   help="v2 TOST equivalence margin in BPC (parity fallback claim; default 0.05)")
     return p
 
 
 def main():
-    args = build_parser().parse_args()
+    import sys
+    argv = sys.argv[1:]
+    args = build_parser().parse_args(argv)
+    # record whether the user explicitly chose a corpus (so the v2 smoke can default to shakespeare
+    # ONLY when they did not) — purely a smoke convenience; non-smoke runs are unaffected.
+    args._corpus_explicit = "--corpus" in argv
     run(args)
 
 
