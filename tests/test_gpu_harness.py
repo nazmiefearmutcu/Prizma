@@ -60,6 +60,38 @@ def test_h2h_lower_is_better_uses_margin_superiority():
     assert "WIN" in r["verdict"].upper()
 
 
+def test_h2h_holm_reject_overrides_raw_significance_for_verdict():
+    # A RAW-significant superiority that the family-wise Holm correction REJECTS must NOT read 'WIN'.
+    # This is the verdict/holm reconciliation: verdict is computed from the corrected decision.
+    cand = [0.99, 0.98, 0.99, 1.0, 0.97]
+    base = [0.50, 0.52, 0.48, 0.51, 0.49]
+    raw = h.h2h(cand, base, margin=0.05)
+    assert bool(raw["superiority"]["significant"]) is True      # raw test IS significant
+    corrected = h.h2h(cand, base, margin=0.05, holm_reject=False)
+    # raw test object is preserved verbatim ...
+    assert bool(corrected["superiority"]["significant"]) is True
+    # ... but the verdict reflects the (failed) family-wise decision, never 'WIN'.
+    assert "WIN" not in corrected["verdict"].upper()
+    assert corrected["win_basis"] == "holm"
+
+
+def test_h2h_holm_reject_true_yields_corrected_win():
+    cand = [0.99, 0.98, 0.99, 1.0, 0.97]
+    base = [0.50, 0.52, 0.48, 0.51, 0.49]
+    r = h.h2h(cand, base, margin=0.05, holm_reject=True)
+    assert "WIN" in r["verdict"].upper()
+    assert "HOLM" in r["verdict"].upper()
+    assert r["win_basis"] == "holm"
+
+
+def test_h2h_default_verdict_is_labelled_uncorrected():
+    cand = [0.99, 0.98, 0.99, 1.0, 0.97]
+    base = [0.50, 0.52, 0.48, 0.51, 0.49]
+    r = h.h2h(cand, base, margin=0.05)            # no holm_reject -> standalone single-test basis
+    assert r["win_basis"] == "uncorrected"
+    assert "UNCORRECTED" in r["verdict"].upper()
+
+
 # --------------------------------------------------- negative-control canary LOGIC --
 def test_negative_control_logic_two_near_identical_arrays_not_significant():
     a = [0.90, 0.91, 0.89, 0.905, 0.895]
@@ -68,6 +100,35 @@ def test_negative_control_logic_two_near_identical_arrays_not_significant():
     st = superiority_test(a, b)
     assert bool(st["significant"]) is False
     assert st["p_value"] > 0.05         # canary direction: identical-ish -> NOT a win
+
+
+def test_negative_control_draws_different_seeds_for_arm_b():
+    # The canary must keep the architecture identical but VARY the seeds for arm B, otherwise the
+    # two arms are bit-identical (delta=0, p=0.5) and the test is a tautology. Use a real (tiny)
+    # MixedMQAR task so per-seed init genuinely diverges -> non-degenerate within-arm variance.
+    from seq.tasks import MixedMQAR
+    dev = get_device()
+    task_fac = lambda: MixedMQAR(vocab=32, max_pairs=8, num_queries=16, gap=0, min_pairs=1)
+    seeds = (0, 1, 2)
+    cfg = TrainConfig(steps=60, eval_every=60, min_steps=0, batch_size=16, log=False)
+    with tempfile.TemporaryDirectory() as td:
+        out = os.path.join(td, "nc.json")
+        res = {}
+        nc = h.negative_control(res, (64, 2, 2), task_fac, cfg, dev, seeds, out, seed_offset=100)
+    # arm B drew DIFFERENT seeds than arm A — this is the whole fix (no longer a tautology).
+    assert nc["seeds_a"] == [0, 1, 2]
+    assert nc["seeds_b"] == [100, 101, 102]
+    assert nc["seeds_a"] != nc["seeds_b"]
+    # the ledger recorded arm B's cells under the OFFSET seeds (not arm A's seeds).
+    assert res["negctrl.B.s100"]["seed"] == 100
+    assert res["negctrl.A.s0"]["seed"] == 0
+    # because the seeds differ, the two arms are NOT bit-identical: the per-seed accs are not the
+    # frozen, exactly-equal pair the old degenerate control produced (accs_a == accs_b, delta 0.0).
+    assert nc["accs_a"] != nc["accs_b"]
+    assert nc["delta"] != 0.0
+    # the canary still must NOT manufacture a 'win' from identical-architecture seed noise.
+    assert nc["pass"] is True
+    assert nc["p_value"] > 0.05
 
 
 # --------------------------------------------------------------------- make_arm --

@@ -180,7 +180,7 @@ def powered_summary(accs, solve_thresh=0.9):
 
 
 # ===================================================================== h2h ======
-def h2h(cand_accs, base_accs, *, margin, lower_is_better=False):
+def h2h(cand_accs, base_accs, *, margin, lower_is_better=False, holm_reject=None):
     """Powered head-to-head of a candidate arm vs a baseline arm.
 
     Always reports BOTH a superiority test AND a TOST equivalence test, plus a plain verdict string:
@@ -193,7 +193,16 @@ def h2h(cand_accs, base_accs, *, margin, lower_is_better=False):
 
     `margin` doubles as the TOST equivalence band: equivalent when |mean(cand)-mean(base)| < margin.
 
-    Returns a dict with: superiority OR margin_superiority, tost, delta, lower_is_better, verdict.
+    `holm_reject` (optional): the family-wise Holm-corrected rejection decision for THIS comparison.
+    When supplied, it OVERRIDES the raw uncorrected `significant` flag as the basis for the 'WIN'
+    verdict, so the persisted `verdict` string can never read 'WIN' for a comparison the family
+    correction rejects (the footgun this resolves). When None (a standalone comparison not part of a
+    correction family, e.g. control-vs-control legs), the verdict falls back to the raw single-test
+    significance and the verdict is tagged 'WIN (uncorrected ...)' so the basis is explicit. Either
+    way the raw test object (superiority / margin_superiority) is preserved verbatim in the output.
+
+    Returns a dict with: superiority OR margin_superiority, tost, delta, lower_is_better, margin,
+    win_basis ('holm'|'uncorrected'), and verdict.
     """
     tost = tost_equivalence(cand_accs, base_accs, margin)
     out = {"lower_is_better": lower_is_better, "tost": tost, "margin": margin}
@@ -201,16 +210,26 @@ def h2h(cand_accs, base_accs, *, margin, lower_is_better=False):
     if lower_is_better:
         ms = margin_superiority(cand_accs, base_accs, margin)
         out["margin_superiority"] = ms
-        win = ms["significant"]
+        raw_win = bool(ms["significant"])
         out["delta"] = ms["delta"]                 # = mean(base) - mean(cand) (positive = cand better)
     else:
         sup = superiority_test(cand_accs, base_accs)
         out["superiority"] = sup
-        win = sup["significant"]
+        raw_win = bool(sup["significant"])
         out["delta"] = sup["delta"]                # = mean(cand) - mean(base)
 
+    # Win basis: prefer the family-wise Holm-corrected decision when it is available; otherwise fall
+    # back to the raw single-test significance and label the verdict so the basis is never ambiguous.
+    if holm_reject is not None:
+        win = bool(holm_reject)
+        out["win_basis"] = "holm"
+    else:
+        win = raw_win
+        out["win_basis"] = "uncorrected"
+
     if win:
-        out["verdict"] = f"WIN (margin>={margin})"
+        basis = "Holm-corrected" if out["win_basis"] == "holm" else "uncorrected"
+        out["verdict"] = f"WIN (margin>={margin}, {basis})"
     elif tost["equivalent"]:
         out["verdict"] = f"EQUIVALENT (within +/-{margin})"
     else:
@@ -268,20 +287,37 @@ def make_arm(kind, d, L, H, **knobs):
 
 
 # ============================================================ negative_control ==
-def negative_control(res, scale, task_fac, base_cfg: TrainConfig, device, seeds, out_path):
-    """The INTEGRITY CANARY. Build TWO byte-IDENTICAL Prizma arms (same config, only the cellkey
-    differs), run sweep_then_seeds for each, and assert via superiority_test that they are NOT
-    significantly different (p should sit near ~0.5, definitely not < 0.05).
+NEGCTRL_SEED_OFFSET = 100
 
-    If two identical models show a 'significant win', the pipeline (stats, seeding, or eval) is
-    broken — so this MUST be present and pass before any real 'win' is trusted.
 
-    Returns {p_value, significant, pass, accs_a, accs_b, delta}.
+def negative_control(res, scale, task_fac, base_cfg: TrainConfig, device, seeds, out_path,
+                     seed_offset=NEGCTRL_SEED_OFFSET):
+    """The INTEGRITY CANARY. Build TWO arms with the SAME (byte-identical) Prizma config but draw
+    DIFFERENT per-seed seeds for arm B (seeds vs seeds+offset), run sweep_then_seeds for each, and
+    assert via superiority_test that they are NOT significantly different (p should sit comfortably
+    above alpha, not < 0.05).
+
+    Why DIFFERENT seeds: build_and_train is seed-pinned on `seed`, so if arm B reused arm A's seeds
+    the two arms would produce bit-identical per-seed accuracies (delta exactly 0.0, t=0, p=0.5) and
+    the canary would be a TAUTOLOGY — it could never fail and never exercise the pipeline's ability
+    to tell genuine seed-to-seed noise apart from a spurious win. By holding the ARCHITECTURE fixed
+    while VARYING the seeds, a non-significant result actually demonstrates that the stats / seeding /
+    eval machinery does not manufacture a 'win' out of ordinary run-to-run noise — exactly what the
+    strict integrity bar ('an identical-model negative control must pass before any win is trusted')
+    requires.
+
+    If two identical-architecture models trained on different seeds show a 'significant win', the
+    pipeline (stats, seeding, or eval) is broken — so this MUST be present and pass before any real
+    'win' is trusted.
+
+    Returns {p_value, significant, pass, accs_a, accs_b, delta, seeds_a, seeds_b}.
     """
     d, L, H = scale
     _, fac = make_arm("prizma", d, L, H)          # baseline Prizma, no knobs — identical config
-    ra = sweep_then_seeds(res, "negctrl.A", fac, task_fac, base_cfg, device, seeds, out_path=out_path)
-    rb = sweep_then_seeds(res, "negctrl.B", fac, task_fac, base_cfg, device, seeds, out_path=out_path)
+    seeds_a = tuple(seeds)
+    seeds_b = tuple(s + seed_offset for s in seeds)   # SAME arch, DIFFERENT seeds (the real canary)
+    ra = sweep_then_seeds(res, "negctrl.A", fac, task_fac, base_cfg, device, seeds_a, out_path=out_path)
+    rb = sweep_then_seeds(res, "negctrl.B", fac, task_fac, base_cfg, device, seeds_b, out_path=out_path)
     st = superiority_test(ra["accs"], rb["accs"])
     return {
         "p_value": st["p_value"],
@@ -290,4 +326,6 @@ def negative_control(res, scale, task_fac, base_cfg: TrainConfig, device, seeds,
         "delta": st["delta"],
         "accs_a": ra["accs"],
         "accs_b": rb["accs"],
+        "seeds_a": list(seeds_a),
+        "seeds_b": list(seeds_b),
     }

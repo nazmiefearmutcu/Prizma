@@ -45,6 +45,7 @@ from seq.gpu_harness import (
     make_arm, make_cfg, sweep_then_seeds, powered_summary, h2h,
     holm_family, negative_control, load_results, _save, get_device,
 )
+from seq.stats import superiority_test
 from seq.tasks import MixedMQAR
 
 
@@ -125,16 +126,24 @@ def run_ablation(*, scale, task_fac, device, seeds, grid, cap, eval_every, smoke
     base_accs = arm_results["baseline"]["accs"]
 
     # ---- h2h vs baseline (each RUNNABLE candidate arm) ------------------------------------------ #
+    # ORDER MATTERS: Holm-correct the whole vs-baseline comparison FAMILY *first*, then build each
+    # h2h dict WITH its Holm-corrected rejection threaded in, so the persisted `verdict` string is
+    # computed from the family-wise decision (not the raw uncorrected `significant` flag). This is
+    # what reconciles the verdict string with holm_reject/holm_p_adj — a comparison the family test
+    # rejects can never read 'WIN' in its verdict.
     cand_tags = [t for t in arms if t != "baseline" and t in arm_results]
+
+    # 1) raw superiority p per candidate (the p-value source for the family correction).
+    fam_pvals = [superiority_test(arm_results[tag]["accs"], base_accs)["p_value"] for tag in cand_tags]
+    holm = holm_family(fam_pvals) if fam_pvals else []
+    holm_by_tag = {tag: hr for tag, hr in zip(cand_tags, holm)}
+
+    # 2) build each h2h vs baseline WITH the family-wise Holm decision -> verdict reflects correction.
     h2h_results = {}
     for tag in cand_tags:
-        h2h_results[tag] = h2h(arm_results[tag]["accs"], base_accs, margin=MARGIN)
-
-    # ---- Holm-correct the whole comparison FAMILY ----------------------------------------------- #
-    # p-value source per arm: superiority p (higher-is-better accuracy).
-    fam_pvals = [h2h_results[tag]["superiority"]["p_value"] for tag in cand_tags]
-    holm = holm_family(fam_pvals) if fam_pvals else []
-    for tag, hr in zip(cand_tags, holm):
+        hr = holm_by_tag[tag]
+        h2h_results[tag] = h2h(arm_results[tag]["accs"], base_accs, margin=MARGIN,
+                               holm_reject=bool(hr["reject"]))
         h2h_results[tag]["holm_p_adj"] = hr["p_adj"]
         h2h_results[tag]["holm_reject"] = bool(hr["reject"])
 
@@ -151,13 +160,35 @@ def run_ablation(*, scale, task_fac, device, seeds, grid, cap, eval_every, smoke
         sn = arm_results["surprise_norm"]["accs"]
         have_random = "surprise_random" in arm_results
         have_const = "surprise_constant" in arm_results
-        vs_random = h2h(sn, arm_results["surprise_random"]["accs"], margin=MARGIN) if have_random else None
-        vs_const = h2h(sn, arm_results["surprise_constant"]["accs"], margin=MARGIN) if have_const else None
+        # Control legs: surprise_norm vs each control. To keep the gate's significance basis SYMMETRIC
+        # with the Holm-corrected vs-baseline leg (the asymmetry called out in review), Holm-correct
+        # the two control comparisons as their own small family and feed each leg's corrected decision
+        # into its h2h verdict. The gate below then ANDs three Holm-corrected decisions (vs baseline,
+        # vs random, vs constant) — no raw uncorrected significance enters the go/no-go.
+        ctrl_tags, ctrl_pairs = [], []
+        if have_random:
+            ctrl_tags.append("random")
+            ctrl_pairs.append(arm_results["surprise_random"]["accs"])
+        if have_const:
+            ctrl_tags.append("constant")
+            ctrl_pairs.append(arm_results["surprise_constant"]["accs"])
+        ctrl_pvals = [superiority_test(sn, b)["p_value"] for b in ctrl_pairs]
+        ctrl_holm = holm_family(ctrl_pvals) if ctrl_pvals else []
+        ctrl_reject = {t: bool(hr["reject"]) for t, hr in zip(ctrl_tags, ctrl_holm)}
+
+        vs_random = (h2h(sn, arm_results["surprise_random"]["accs"], margin=MARGIN,
+                         holm_reject=ctrl_reject["random"]) if have_random else None)
+        vs_const = (h2h(sn, arm_results["surprise_constant"]["accs"], margin=MARGIN,
+                        holm_reject=ctrl_reject["constant"]) if have_const else None)
         surprise_verdict["vs_random"] = vs_random["verdict"] if vs_random else "UNAVAILABLE (control unrunnable)"
         surprise_verdict["vs_constant"] = vs_const["verdict"] if vs_const else "UNAVAILABLE (control unrunnable)"
         surprise_verdict["vs_baseline_holm_reject"] = h2h_results["surprise_norm"]["holm_reject"]
+        surprise_verdict["significance_basis"] = (
+            "all legs Holm-corrected: vs-baseline within the candidate family; "
+            "vs-random/vs-constant within their own 2-test control family")
         if have_random and have_const:
-            beats = bool(vs_random["superiority"]["significant"] and vs_const["superiority"]["significant"])
+            # SYMMETRIC basis: every leg is Holm-corrected (control legs in their own family).
+            beats = bool(ctrl_reject["random"] and ctrl_reject["constant"])
             surprise_verdict["beats_both_controls"] = beats
             surprise_verdict["earns_novel_core_slot"] = bool(
                 beats and surprise_verdict["vs_baseline_holm_reject"])
