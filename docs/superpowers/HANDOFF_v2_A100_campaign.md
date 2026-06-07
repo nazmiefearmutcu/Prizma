@@ -34,8 +34,8 @@ O(1) guard before any accuracy number; honest borrowed-vs-new ledger; explicit s
 
 ## 2. Where the project lives
 - **Repo (note the SPACE in the path — always quote it in shell):**
-  `/Volumes/disk 2/Desktop_Migrate_2026-05-28/Projeler/proje/PRISM`
-  (The old `/Users/nazmi/Desktop/Projeler/proje/PRISM` path is GONE — the project was migrated.)
+  `/Volumes/disk 2/Desktop_Migrate_2026-05-28/Projeler/proje/Prizma`
+  (The old `/Users/nazmi/Desktop/Projeler/proje/Prizma` path is GONE — the project was migrated.)
 - **Branch:** `v2-pareto-dominance` (do NOT work on `main`; the v2 code lives here).
 - **Env:** system `python3.13`, torch 2.12 + MPS locally (CUDA/A100 only on Colab), numpy, scipy present.
   Run tests `python -m pytest tests/ -q` and module guards `python -m seq.delta` / `python -m seq.prizma_seq`

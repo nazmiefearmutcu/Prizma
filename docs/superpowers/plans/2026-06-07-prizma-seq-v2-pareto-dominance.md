@@ -8,7 +8,7 @@
 
 **Tech Stack:** Python 3.13 (system), PyTorch 2.12 (MPS locally for guards/smoke; CUDA/A100 via Colab for headline numbers), numpy. No autocast, float32.
 
-**Working dir (note — project was migrated):** `/Volumes/disk 2/Desktop_Migrate_2026-05-28/Projeler/proje/PRISM`. All commands below assume `cd` into it. Run module self-tests as `python -m seq.<module>` from repo root.
+**Working dir (note — project was migrated):** `/Volumes/disk 2/Desktop_Migrate_2026-05-28/Projeler/proje/Prizma`. All commands below assume `cd` into it. Run module self-tests as `python -m seq.<module>` from repo root.
 
 **Re-planning note:** Phases 2 (consolidate), 3 (scale-up ~10–50M), 4 (report + referee gate) are re-planned after Phase 1 results + council judgments — they depend on which levers win. This document covers Phase 0 + Phase 1 only.
 
@@ -42,7 +42,7 @@
 
 Run:
 ```bash
-cd "/Volumes/disk 2/Desktop_Migrate_2026-05-28/Projeler/proje/PRISM"
+cd "/Volumes/disk 2/Desktop_Migrate_2026-05-28/Projeler/proje/Prizma"
 python3.13 -c "import torch, numpy, sys; print(sys.version.split()[0], torch.__version__, torch.backends.mps.is_available())"
 ```
 Expected: prints `3.13.x 2.12.x True` (MPS available). If `python3.13` missing, fall back to `python3` and record the actual version in `docs/ENV.md`.
