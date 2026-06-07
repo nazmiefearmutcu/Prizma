@@ -134,7 +134,7 @@ def ledger(d, H, L, d_phi, T=T, label="", show_components=True):
             "ratio_ascoded": ps_total_ascoded / tf_total, "ratio_ideal": ps_total_ideal / tf_total}
 
 
-def flop_matched_tf_search(d, H, L, d_phi, target_ratio=None, T=T, verbose=True):
+def flop_matched_tf_search(d, H, L, d_phi, T=T, verbose=True):
     """Find a bigger TF (grow d_ff, then layers) whose forward FLOPs >= the Prizma as-coded cost.
     Returns the deeper + wider candidates (dict) so the headline FLOP-matched arm can be sized from
     the same analytical FLOPs and so the per-config ledger can record them machine-readably."""

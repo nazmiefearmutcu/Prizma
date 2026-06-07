@@ -4,7 +4,11 @@ can be grown in lockstep where the addition is a fair architectural comparison."
 from __future__ import annotations
 from .common import param_count
 
-def param_match_report(tf_model, pz_model, tol=0.02):
+# Single source of truth for the param-match tolerance (|TF-Prizma|/TF < this). Reused as the
+# param_match_report default AND by tests/test_flop_ledger.py so the bar is defined in exactly one place.
+PARAM_MATCH_TOL = 0.02
+
+def param_match_report(tf_model, pz_model, tol=PARAM_MATCH_TOL):
     pt, pp = param_count(tf_model), param_count(pz_model)
     added = 0
     for n, p in pz_model.named_parameters():

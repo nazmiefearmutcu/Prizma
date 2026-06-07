@@ -424,11 +424,16 @@ if __name__ == "__main__":
         v = torch.randn(B, H, T, d, device=dev)
         beta = torch.rand(B, H, T, device=dev) * 0.99
         alpha_surp = 0.5 + 0.5 * torch.rand(B, H, T, device=dev)
-        for smode in ('norm', 'constant'):
-            gen = torch.Generator().manual_seed(42) if smode == 'random' else None
+        # 'random' mode threads an explicit torch.Generator; reference + chunked are each given a
+        # generator on the COMPUTE device seeded IDENTICALLY (manual_seed(42)) so they draw the same
+        # per-token gates and must match to <1e-4 even on repeated keys (the R3/R9 binding the chunked
+        # path must honour). The generator must live on the tensors' device (a CPU generator cannot
+        # feed an MPS .normal_), so we build it per-device inside the loop.
+        for smode in ('norm', 'constant', 'random'):
+            gen = torch.Generator(device=dev).manual_seed(42) if smode == 'random' else None
             Oref_s, Sref_s = _delta_reference(q, k, v, beta, alpha_surp,
                                                surprise=True, surprise_mode=smode, surprise_gen=gen)
-            gen2 = torch.Generator().manual_seed(42) if smode == 'random' else None
+            gen2 = torch.Generator(device=dev).manual_seed(42) if smode == 'random' else None
             Och_s, Sch_s = chunked_delta(q, k, v, beta, alpha_surp, chunk=C,
                                           surprise=True, surprise_mode=smode, surprise_gen=gen2)
             do_s = (Oref_s - Och_s).abs().max().item()

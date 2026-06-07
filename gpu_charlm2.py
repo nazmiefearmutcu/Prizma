@@ -579,7 +579,7 @@ V2_GATE_KW = dict(out_gate=True, state_norm=True, decoupled_gate=True, gated=Tru
 def ps_v2_factory(d, L, H, T, **kw):
     """Prizma-v2: ps_factory with the trainable v2 gates ON (single-arg V factory)."""
     merged = dict(V2_GATE_KW)
-    merged.update(kw)
+    merged.update(kw)   # caller kwargs OVERRIDE V2_GATE_KW (kw wins on key collision, e.g. gated=False)
     return ps_factory(d, L, H, T, **merged)
 
 
@@ -587,7 +587,7 @@ def hybrid_v2_factory(d, L, H, T, n_attn=1, **kw):
     """Adapt seq.hybrid.hybrid_factory (a (V,T) factory) to the char-LM single-arg V factory by
     baking the context length T in, with the v2 gates ON. Council-3 (Pareto-competitive) arm."""
     merged = dict(V2_GATE_KW)
-    merged.update(kw)
+    merged.update(kw)   # caller kwargs OVERRIDE V2_GATE_KW (kw wins on key collision)
     merged.setdefault("learned_pos", True)
     f2 = hybrid_factory(d, L, H, n_attn=n_attn, **merged)   # f2(V, T) -> HybridSeqLM
     return lambda V: f2(V, T)
@@ -607,24 +607,15 @@ def build_v2_arms(d, L, H, T, tf_dff, feat_n2):
     }
 
 
-def _print_param_match_v2(arms, V, label):
-    """Print v2 arm param counts relative to the Prizma-v2 reference (the param target)."""
+def _print_param_match(arms, V, label, ref_arm="Prizma-quad2"):
+    """Print per-arm param counts relative to `ref_arm` (the param target). The legacy run uses
+    ref_arm='Prizma-quad2'; the v2 run passes ref_arm='Prizma-v2'. Single implementation for both."""
     print(f"\n  param-match @ {label} (V={V}):", flush=True)
     counts = {a: param_count(f(V)) for a, f in arms.items()}
-    ref = counts["Prizma-v2"]
+    ref = counts[ref_arm]
     for a, p in counts.items():
-        diff = (p - ref) / ref * 100 if a != "Prizma-v2" else 0.0
-        print(f"    {a:<12} {p:>10,} params   ({diff:+.2f}% vs Prizma-v2)", flush=True)
-    return counts
-
-
-def _print_param_match(arms, V, label):
-    print(f"\n  param-match @ {label} (V={V}):", flush=True)
-    counts = {a: param_count(f(V)) for a, f in arms.items()}
-    ref = counts["Prizma-quad2"]
-    for a, p in counts.items():
-        diff = (p - ref) / ref * 100 if a != "Prizma-quad2" else 0.0
-        print(f"    {a:<12} {p:>10,} params   ({diff:+.2f}% vs Prizma-quad2)", flush=True)
+        diff = (p - ref) / ref * 100 if a != ref_arm else 0.0
+        print(f"    {a:<12} {p:>10,} params   ({diff:+.2f}% vs {ref_arm})", flush=True)
     return counts
 
 
@@ -659,7 +650,8 @@ def run_v2(args):
     ps_v2_target = param_count(ps_v2_factory(d, L, H, T, feat_map="quad2", feat_n2=feat_n2)(data.vocab))
     tf_dff, tf_p = _match_tf_dff(d, L, H, T, ps_v2_target, V_probe=data.vocab)
     arms = build_v2_arms(d, L, H, T, tf_dff, feat_n2)
-    counts = _print_param_match_v2(arms, data.vocab, f"d{d}L{L}H{H} ctx{T} (TF d_ff={tf_dff})")
+    counts = _print_param_match(arms, data.vocab, f"d{d}L{L}H{H} ctx{T} (TF d_ff={tf_dff})",
+                                ref_arm="Prizma-v2")
     ref = counts["Prizma-v2"]
     tf_match_pct = (counts["TF-v2"] - ref) / ref * 100
     hyb_match_pct = (counts["Hybrid-v2"] - ref) / ref * 100

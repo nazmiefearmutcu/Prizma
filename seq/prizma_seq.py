@@ -99,6 +99,12 @@ class PrizmaSeqConfig:
         # Lever G is scoped to n_delta==1 (per-channel eta is not combined with DeltaProduct).
         assert not (self.inctx_lr and self.n_delta >= 2), \
             "inctx_lr (per-channel eta) is only implemented for n_delta==1, not n_delta>=2."
+        # inctx_lr (Lever G) and surprise_gate (Lever A) are the TWO novel-core CANDIDATES for the S3
+        # ablation; enabling both is a SILENT FOOTGUN — the delta kernel branch is
+        # `if eta is not None: ... elif surprise:`, so eta wins and surprise is silently ignored. Reject
+        # the invalid combo so each S3 arm enables exactly one novel-core lever.
+        assert not (self.inctx_lr and self.surprise_gate), \
+            "inctx_lr and surprise_gate are mutually exclusive novel-core candidates; enable exactly one."
         # d_phi = delta key/query dim after the optional feature map (= d_h when 'none').
         # 'rand_linear' = a FIXED random linear map d_h->d_phi (a CONTROL: it stays in a d_h-rank
         # subspace so it must give NO capacity gain, proving the quad2 MONOMIALS are what help).

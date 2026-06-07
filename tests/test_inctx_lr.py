@@ -100,3 +100,16 @@ def test_inctx_lr_model_step_equals_forward():
         outs.append(lg)
     d = (y - torch.cat(outs, 1)).abs().max().item()
     assert d < 1e-4, f"G1 guard failed: max|d|={d:.2e}"
+
+
+def test_inctx_lr_and_surprise_gate_mutually_exclusive():
+    """Footgun guard: inctx_lr (Lever G) and surprise_gate (Lever A) are the TWO novel-core S3
+    candidates. Enabling BOTH must raise — the delta kernel branch `if eta is not None: ... elif
+    surprise:` makes eta silently win, ignoring surprise. Each S3 arm enables exactly one lever."""
+    from seq.prizma_seq import PrizmaSeqConfig
+    with pytest.raises(AssertionError, match="mutually exclusive"):
+        PrizmaSeqConfig(vocab=64, d_model=64, n_layers=2, n_heads=2,
+                        inctx_lr=True, surprise_gate=True)
+    # each lever ALONE still constructs fine (the assert only rejects the invalid combo).
+    PrizmaSeqConfig(vocab=64, d_model=64, n_layers=2, n_heads=2, inctx_lr=True)
+    PrizmaSeqConfig(vocab=64, d_model=64, n_layers=2, n_heads=2, surprise_gate=True)

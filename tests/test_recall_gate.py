@@ -203,3 +203,35 @@ def test_verdict_uses_powered_stats():
     exp_tost = tost_equivalence(cand, tf, 0.05)
     assert v["delta"] == pytest.approx(exp_tost["delta"])
     assert v["equivalent"] == exp_tost["equivalent"]
+
+
+# --------------------------------------------------------------------------- #
+# (7) CLI arg-guard: an UNKNOWN arg must NOT trigger the multi-hour full gate.
+#     argparse rejects it (SystemExit, non-zero) before any run starts. --smoke
+#     and --full parse cleanly; no-arg defaults to the full gate (smoke=False).
+#     Training-free: we only exercise the parser, never run_recall_gate.
+# --------------------------------------------------------------------------- #
+def test_cli_unknown_arg_does_not_trigger_full_run():
+    from seq.recall_gate import _build_parser
+    parser = _build_parser()
+    # an unknown/typo'd flag -> SystemExit with a NON-ZERO code (never silently runs the full gate)
+    with pytest.raises(SystemExit) as ei:
+        parser.parse_args(["--full-gate"])     # typo of --full: must be rejected, not launched
+    assert ei.value.code != 0
+    with pytest.raises(SystemExit) as ei2:
+        parser.parse_args(["bogus"])           # stray positional: also rejected
+    assert ei2.value.code != 0
+
+
+def test_cli_known_flags_parse_and_select_mode():
+    from seq.recall_gate import _build_parser
+    parser = _build_parser()
+    assert parser.parse_args(["--smoke"]).smoke is True
+    full = parser.parse_args(["--full"])
+    assert full.smoke is False and full.full is True
+    # no-arg -> full gate (smoke False); main() runs the full gate in this case.
+    none = parser.parse_args([])
+    assert none.smoke is False and none.full is False
+    # --smoke and --full are mutually exclusive -> rejected together.
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--smoke", "--full"])

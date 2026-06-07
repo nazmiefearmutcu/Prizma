@@ -2,6 +2,7 @@
 canonical (feat_map, feat_n2/feat_rank, d_phi) configs and tie every FLOP number to a REAL
 param-matched PrizmaSeqLM/Transformer pair (not just an analytical d_phi)."""
 import flop_ledger
+from seq.ledger import PARAM_MATCH_TOL
 
 EXPECTED = {
     "none_d32": 32,
@@ -21,7 +22,7 @@ def test_emit_per_config_ledger_has_four_configs_and_param_match():
         assert rec["d_phi"] == exp_dphi, (label, rec["d_phi"])
         # constructed from REAL modules -> param-match within 2%
         assert rec["param_match"]["matched"], (label, rec["param_match"])
-        assert rec["param_match"]["rel"] < 0.02, (label, rec["param_match"])
+        assert rec["param_match"]["rel"] < PARAM_MATCH_TOL, (label, rec["param_match"])
         # the per-token FLOP figures + ratios are present and positive
         for k in ("tf_per_tok", "ps_ascoded_per_tok", "ps_ideal_per_tok",
                   "ratio_ascoded", "ratio_ideal"):
