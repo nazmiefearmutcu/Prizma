@@ -43,6 +43,7 @@ from .transformer import Transformer, TFConfig
 from .prizma_seq import PrizmaSeqLM, PrizmaSeqConfig
 from .hybrid import hybrid_factory
 from .gla import gla_factory
+from .mamba2 import mamba2_factory
 
 
 # =========================================================== recipe constants ====
@@ -254,7 +255,7 @@ def holm_family(pvals, alpha=0.05):
 def make_arm(kind, d, L, H, **knobs):
     """Declarative arm spec -> (name, factory).
 
-    kind in {'tf','prizma','hybrid','gla'}.
+    kind in {'tf','prizma','hybrid','gla','mamba2'}.
     factory has the (lambda V, T: nn.Module) signature so it drops into run_cell / sweep_then_seeds.
     For 'prizma' and 'hybrid', `knobs` forward the v2 PrizmaSeqConfig levers verbatim:
       out_gate, state_norm, decoupled_gate, surprise_gate, surprise_mode, n_delta,
@@ -297,7 +298,15 @@ def make_arm(kind, d, L, H, **knobs):
         fac = gla_factory(d, L, H, **knobs)      # returns lambda V, T: GLALM(...)
         return name, fac
 
-    raise ValueError(f"unknown arm kind {kind!r} (expected 'tf'|'prizma'|'hybrid'|'gla')")
+    if kind == "mamba2":
+        # Faithful Mamba-2 (SSD / state-space duality) SOTA baseline (seq.mamba2). knobs forward to
+        # Mamba2Config (d_state, d_conv, chunk, ...).
+        name = f"Mamba2.{scale}{_knob_tag()}"
+        fac = mamba2_factory(d, L, H, **knobs)   # returns lambda V, T: Mamba2LM(...)
+        return name, fac
+
+    raise ValueError(
+        f"unknown arm kind {kind!r} (expected 'tf'|'prizma'|'hybrid'|'gla'|'mamba2')")
 
 
 # ============================================================ negative_control ==
