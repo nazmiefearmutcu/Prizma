@@ -78,6 +78,10 @@ class PrizmaSeqConfig:
     # --- surprise-gated write (Lever A) ---
     surprise_gate: bool = False   # if True, scale write by g_t = 1+tanh(||eps_t||) (default OFF = identical)
     surprise_mode: str = 'norm'   # 'norm' | 'random' | 'constant' — controls for R9 ablation
+    surprise_seed: int = 1234     # deterministic seed for the surprise_mode='random' generator (R8/R9):
+                                  #   the block re-seeds an OWNED torch.Generator to this value each
+                                  #   forward, so the random control gates are reproducible across calls.
+                                  #   Ignored by 'norm'/'constant' (which need no generator).
     # --- in-context per-channel learning rate (Lever G, RWKV-7 "Goose" generalized delta) ---
     inctx_lr: bool = False        # if True, replace scalar write gate beta_t with a per-VALUE-channel
                                   #   rate eta_t = beta_cap * sigmoid(W_eta x_t) in R^{d_h}, modulating
@@ -324,11 +328,19 @@ class PrizmaSeqBlock(nn.Module):
             else:
                 # n_delta=1: standard path (byte-identical when surprise_gate=False, with phi and beta_e)
                 # Lever G: eta (per-value-channel LR) threads through; eta=None keeps the fast path.
+                # Lever A 'random' control needs an explicit torch.Generator (_surprise_gate asserts
+                # gen is not None for mode='random'). Own a reproducible one on the COMPUTE device,
+                # re-seeded each forward so two passes match byte-for-byte (R8/R9). 'norm'/'constant'
+                # need no generator -> surprise_gen stays None and the path is byte-identical to before.
+                surprise_gen = None
+                if self.cfg.surprise_gate and self.cfg.surprise_mode == 'random':
+                    surprise_gen = torch.Generator(device=q.device).manual_seed(self.cfg.surprise_seed)
                 o_delta, _ = chunked_delta(self._phi(q), self._phi(k), v, beta, alpha,
                                            chunk=self.cfg.chunk, write_mode=self.cfg.write_mode,
                                            beta_e=beta_e,
                                            surprise=self.cfg.surprise_gate,
                                            surprise_mode=self.cfg.surprise_mode,
+                                           surprise_gen=surprise_gen,
                                            eta=eta)   # [B,H,T,d_h]
             # delta state keyed by phi(q),phi(k) (dim d_phi); values stay d_h -> state [B,H,d_h,d_phi]
             if self.state_rms is not None:
