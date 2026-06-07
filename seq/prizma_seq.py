@@ -60,6 +60,7 @@ class PrizmaSeqConfig:
     feat_n2: int = 96               # number of quadratic monomials (d_phi = d_h + feat_n2)
     out_gate: bool = False      # per-token output gate g=sigma(W_g x); o = o * g before W_o (RWKV-7/GLA)
     state_norm: bool = False    # per-head RMSNorm on the delta-state read o_delta before merge
+    banded_window: bool = False # O(T*w) banded sliding-window kernel (exact-equal to _window, default off)
 
     def __post_init__(self):
         if self.d_ff is None:
@@ -188,6 +189,24 @@ class PrizmaSeqBlock(nn.Module):
         mask = torch.zeros(T, T, device=q.device, dtype=q.dtype).masked_fill(~band, float("-inf"))
         return F.scaled_dot_product_attention(q, k, v, attn_mask=mask)            # [B,H,T,dh]
 
+    def _window_banded(self, q, k, v):
+        """Sliding-window causal attention in O(T*w) via fixed-size chunks of size w. Each query in
+        chunk c attends keys in chunks {c-1, c} masked to [i-w+1, i]. Numerically equals _window."""
+        B, H, T, dh = q.shape
+        w = self.cfg.window
+        outs = []
+        for c0 in range(0, T, w):
+            c1 = min(c0 + w, T)
+            qc = q[:, :, c0:c1]                           # [B,H,Cq,dh]
+            k0 = max(0, c0 - w)
+            kc = k[:, :, k0:c1]; vc = v[:, :, k0:c1]     # span <= 2w
+            qi = torch.arange(c0, c1, device=q.device)[:, None]
+            ki = torch.arange(k0, c1, device=q.device)[None, :]
+            band = (ki <= qi) & (ki > qi - w)
+            mask = torch.zeros(c1 - c0, c1 - k0, device=q.device, dtype=q.dtype).masked_fill(~band, float("-inf"))
+            outs.append(F.scaled_dot_product_attention(qc, kc, vc, attn_mask=mask))
+        return torch.cat(outs, dim=2)
+
     def forward(self, h):
         B, T, d = h.shape
         x = self._apply_conv(self.norm1(h))
@@ -202,7 +221,8 @@ class PrizmaSeqBlock(nn.Module):
                 o_delta = self.state_rms(o_delta)    # per-head RMSNorm over d_h
             o = o + o_delta
         if self.cfg.use_window:
-            o = o + self._window(q, k, v)            # window head keeps the LINEAR L2 keys (dim d_h)
+            win_fn = self._window_banded if self.cfg.banded_window else self._window
+            o = o + win_fn(q, k, v)                  # window head keeps the LINEAR L2 keys (dim d_h)
         o = o.transpose(1, 2).reshape(B, T, d)                                     # merge heads
         if self.W_g is not None:
             o = o * torch.sigmoid(self.W_g(self.norm1(h)))   # gate on block input (pre-conv normed)
