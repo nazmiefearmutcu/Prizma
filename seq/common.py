@@ -186,6 +186,15 @@ def train_model(model, task, cfg: TrainConfig, device, seed=0):
                      params=param_count(model), steps_to_plateau=steps_to_plateau)
 
 
+def build_and_train(model_fac, task, cfg: TrainConfig, device, seed=0, **fac_kw):
+    """Reproducibility-correct entry point: seed BEFORE constructing the model so per-seed init is
+    pinned (fixes the run_cell init-before-set_seed defect), then train. `model_fac(**fac_kw)` must
+    return an nn.Module. Use this everywhere instead of (construct; set_seed; train_model)."""
+    set_seed(seed)
+    model = model_fac(**fac_kw)
+    return train_model(model, task, cfg, device, seed=seed)
+
+
 @torch.no_grad()
 def evaluate(model, sample_fn, cfg: TrainConfig, device):
     model.train(False)
