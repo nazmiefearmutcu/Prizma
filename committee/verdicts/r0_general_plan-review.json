@@ -1,0 +1,55 @@
+{
+  "round": 0,
+  "date": "2026-06-07",
+  "council": "general",
+  "decision_under_review": "v2 spec + Phase0/1 plan",
+  "verdict": "needs-experiments",
+  "rejection_causes": [
+    "STATS-CRITICAL: seq/stats.py _p_one_sided_from_t uses a normal tail (ignores df) -> anti-conservative at n=10: at df=9 a true-t p=0.05 result (t=1.833) is reported p=0.0334 (significant). Inflates Type-I error in the exact direction of a false 'we beat the TF' claim.",
+    "STATS-CRITICAL: TOST crit=t_{0.975,df}*0.84 is wrong twice: (1) 0.84 is the NORMAL ratio z0.95/z0.975; the t ratio is df-dependent (0.810 @df9, 0.827 @df20), (2) TOST is two one-sided tests at t_{0.95,df}, not a shrunk two-sided crit. Correct: crit = t_{0.95,df} (one-sided 95% / two-sided 90%).",
+    "INTEGRITY-CRITICAL: lever A surprise-gate chunked path freezes within-chunk surprise at chunk-entry S0; on repeated-key recall (the MQAR/induction signal) true ||eps|| collapses 1.0->0.1->0.01 while frozen stays 1.0 -> ~100% error in write gain on recall tokens. O(1) guard only certified at chunk=1; TRAINING runs chunk=64 -> train/inference compute different functions. The 5e-3 test uses random data and passes vacuously.",
+    "INTEGRITY-CRITICAL: d_phi is inconsistent across artifacts: round1_synthesis=128, REPORT=256 (the entire 2.14x FLOP claim), code default feat_n2=96 -> d_phi=128. The FLOP narrative and lever-D 'half d_phi' target rest on an unverified, contradictory d_phi.",
+    "STATS: 'beats by >=0.03 BPC' is tested as superiority-vs-zero, not a margin test on (diff-0.03); conflates point estimate with tested margin. BPC sign (lower-is-better) not enforced in the accuracy-oriented test helpers.",
+    "OPT: Stage-1 LR selected on 1 seed for bimodal phase-transition tasks (MQAR/induction) is itself noisy and can handicap either arm; 'optimal LR ~1/width / muP-aware' is asserted, never verified, and current _init is not muP.",
+    "REPRO: seed-before-build is necessary but incomplete - precision_gate='random' (lever-A control) draws torch.rand inside forward with no generator (non-reproducible); deterministic algorithms not set; guards on MPS but headline on CUDA; repro test only covers a TF, not quad2+levers.",
+    "STATS: ~15+ significance tests with no multiple-comparison control (FWER ~54%); causal-attribution discovery sub-claims need Holm correction.",
+    "INFO-THEORY: lever A is framed as 'add capacity' but is a per-token scalar write-gain = capacity REALLOCATION, not increase; the surprise-modulated forget can EVICT needed bindings; needs a constant-mean control, not only a random-scalar control.",
+    "BAR-INTEGRITY: §3 'faster at all n>=2k', 'abs >=0.70 @4x', 'per-FLOP <=1.0x' are pre-registered before their enabling levers exist; report's measured truth is ~1.5x slower below 16k, crossover n>=32k, abs 0.40 @8x with no mechanism targeting it."
+  ],
+  "required_remedies": [
+    "R1: Replace normal-tail p-value with a verified one-sided Student-t survival function (regularized incomplete beta / Lentz continued fraction); validate vs scipy.stats.t.sf at df in {5,9,15,30} to <1e-4. No superiority p-value quoted until done.",
+    "R2: Reimplement TOST as two explicit one-sided t-tests using df-correct t_{0.95,df}; delete the 0.84 constant; unit-test that the (1-2alpha) CI half-width = t_{0.95,df}*se exactly.",
+    "R3: Make lever A's chunked surprise path EXACT (two-pass: pass1 computes true per-row S_{i-1} surprise, pass2 applies it) OR scope A to inference-only OR force chunk=1 for the surprise arm. Add a REPEATED-KEY structured equivalence test at <1e-4 (not 5e-3 on random tensors).",
+    "R4: Reconcile d_phi across seq/prizma_seq.py, docs/PRIZMA_SEQ_REPORT.md, committee/round1_synthesis.md; re-emit the FLOP ledger from the actual config used for the recall results; no FLOP/per-FLOP claim until consistent.",
+    "R5: Add margin_superiority(a,b,margin) testing (mean(b)-mean(a))>margin with df-correct t; pre-register the sign per leg (BPC lower-is-better); '>=0.03 BPC' is 'won' only when this rejects.",
+    "R6: Adversarial baseline fairness - >=3-seed Stage-1 LR selection for bimodal legs (select on solve-rate then median, not best_acc@1seed); re-sweep LR per LEVER COMBINATION, not once for the base; drop the 'muP-aware' label unless a coordinate-check passes.",
+    "R7: Pre-register a negative control (Prizma == an identical TF/two identical models): any significant 'win' of an identical model is the stats canary -> pipeline rejected. Apply Holm-Bonferroni to the causal-attribution family; pre-register the leg->test map.",
+    "R8: Route every stochastic op through an explicit torch.Generator (esp. precision_gate='random' and any lever-A random control); set torch.use_deterministic_algorithms(True, warn_only=True) + CUBLAS_WORKSPACE_CONFIG and re-run the repro test on CUDA; extend test_repro to a quad2+levers Prizma model on the headline device.",
+    "R9: Lever A second control = constant-mean beta_eff (separates 'more average write' from 'surprise-targeted write'); lever D gate = end-to-end >=10-seed MQAR-D128 recall parity, not just the crosstalk<=0.085 probe; reframe A in the spec as capacity-reallocation/salience, not capacity-add.",
+    "R10: Re-mark §3 latency / abs-length-extrap / per-FLOP targets as CONDITIONAL on their enabling levers landing; declare abs-length-extrap a Pareto knob (no mechanism targets it); re-pre-register the §3 bar after Phase-1 kernels (E,F) exist and are measured."
+  ],
+  "members": [
+    {"lens": "statistics/experimental-design", "verdict": "reject", "key_findings": ["normal-tail p anti-conservative at n=10 (R1)", "TOST 0.84 CI factor wrong + wrong construction (R2)", "'>=0.03 BPC' is not a margin test (R5)", "no multiple-comparison control (R7)", "n=10 power unverified post seed-pinning"]},
+    {"lens": "optimization", "verdict": "needs-experiments", "key_findings": ["1-seed Stage-1 LR on bimodal tasks is noisy (R6)", "'1/width / muP' asserted not verified; _init is not muP (R6)", "lever combos shift the optimal recipe -> re-sweep per combo (R6)"]},
+    {"lens": "information-theory", "verdict": "needs-experiments", "key_findings": ["quad2 capacity result is sound, no objection", "lever A re-weights, does not add capacity; forget-release can evict bindings (R9)", "lever D gate must be end-to-end recall, not just crosstalk probe (R9)", "d_phi inconsistency breaks the lean-map premise (R4)"]},
+    {"lens": "reproducibility/integrity", "verdict": "reject", "key_findings": ["seed-before-build incomplete: random gate + MPS->CUDA nondeterminism (R8)", "O(1) guard does NOT certify the chunk-64 surprise training path; frozen-S0 breaks on repeated keys (R3)", "d_phi inconsistent across three docs (R4)", "§3 bar invites overclaiming (R10)"]},
+    {"lens": "ml-systems", "verdict": "needs-experiments", "key_findings": ["banded window correct but only fixes the T^2 head, not the Python delta loop (R10)", "Triton fused kernel under-specified + high-risk; prefer FLA or disclose (R10)", "latency 'all n>=2k' needs E AND F; 2k is a hypothesis not a bar (R10)", "Colab 4xA100 fragile but not a gate-blocker if checkpoints resume"]},
+    {"lens": "adversarial-skeptic", "verdict": "reject", "key_findings": ["stacked anti-conservative stats + repro leak + 1-seed TF LR handicap converts a true tie into a reported 0.03 win (R1,R6,R8)", "surprise-gate 'novelty' may be an accidental non-reproducible 2x write-LR hack the random control misses (R3,R9)", "gate = require t-test (not normal) p<0.05 + identical-model negative control + fair TF LR in the JSON (R1,R6,R7)"]}
+  ],
+  "evidence_refs": [
+    "seq/stats.py:_p_one_sided_from_t (plan §Task0.3) - normal tail ignores df",
+    "seq/stats.py:tost_equivalence (plan §Task0.3) - crit=_t_crit*0.84",
+    "seq/common.py:135,152 - set_seed(eval_seed) then set_seed(seed) ordering",
+    "seq/prizma_seq.py:167 - precision_gate=='random' torch.rand no generator",
+    "seq/prizma_seq.py:60 - feat_n2=96 -> d_phi=128 (code default)",
+    "seq/prizma_seq.py:123 - quad2 buffers Generator().manual_seed(1234)",
+    "docs/PRIZMA_SEQ_REPORT.md:46,143,161 - d_phi=256 and 2.14x FLOP claim",
+    "committee/round1_synthesis.md:53 - d_phi=128, crosstalk 0.076",
+    "plan:Task1.A Step4/6 - frozen-S0 within-chunk surprise; chunk=1 guard only; 5e-3 random-data test",
+    "docs/PRIZMA_SEQ_REPORT.md:223,231 - ~1.5x slower below 16k, crossover n>=32k",
+    "spec §2 lever A - 'novel core' / 'add capacity' claim",
+    "spec §3 - 'faster than TF at all n>=2k', 'abs >=0.70 @4x', per-FLOP <=1.0x"
+  ],
+  "raises_bar_to": null,
+  "notes": "Conditional reject of the ARTIFACTS, not the direction. Phase-0 primitives (build_and_train, sweep_lr, ledger, charters, verdict log) may be BUILT, but R1/R2/R8 must land in seq/stats.py + seq/common.py inside Phase 0 before any Phase-1 accuracy run consumes them. Levers C and E may implement after R1/R2/R8 (lowest integrity risk; C must grow the TF in lockstep for its trainable W_g). Lever A may NOT run any accuracy experiment until R3+R9. No FLOP/per-FLOP claim until R4. No significance claim until R1+R2+R5+R7. The existing quad2 capacity + causal-control result is credible and untouched. Unifying observation: every defect we found is anti-conservative (points toward an easier/falsely-significant win) - which is exactly what this gate exists to stop."
+}
