@@ -177,7 +177,15 @@ def test_plain_cpu_equals_chunked():
     assert _maxdiff(Sf, Sc) < 1e-6
 
 
-def test_compile_not_triggered_on_cpu():
+def test_unknown_backend_raises():
+    """An unknown backend value raises ValueError (a caller typo must NOT silently downgrade to
+    the eager fallback)."""
+    q, k, v, beta = _mk(dev="cpu", seed=15)
+    with pytest.raises(ValueError):
+        fused_chunked_delta(q, k, v, beta, chunk=64, backend="triton")
+
+
+def test_compile_not_triggered_on_cpu(monkeypatch):
     """A cpu call must NOT build the cached torch.compile handle: the private accessor stays None.
     Belt-and-braces: monkeypatch torch.compile to raise and assert the cpu call still succeeds."""
     import seq.delta_fused as df
@@ -189,17 +197,13 @@ def test_compile_not_triggered_on_cpu():
         "torch.compile was built on a non-cuda call (it must only build on the cuda fast path)"
 
     # Monkeypatch torch.compile to explode; the cpu fast-path predicate (q.is_cuda False) must
-    # never reach it, so the call still succeeds and equals chunked_delta.
-    orig = torch.compile
-
+    # never reach it, so the call still succeeds and equals chunked_delta. The monkeypatch fixture
+    # auto-restores torch.compile even if an assertion below fails.
     def _boom(*a, **kw):
         raise RuntimeError("torch.compile must NOT be invoked on a non-cuda call")
 
-    torch.compile = _boom
-    try:
-        Of, Sf = fused_chunked_delta(q, k, v, beta, chunk=64)
-    finally:
-        torch.compile = orig
+    monkeypatch.setattr(torch, "compile", _boom)
+    Of, Sf = fused_chunked_delta(q, k, v, beta, chunk=64)
     Oc, Sc = chunked_delta(q, k, v, beta, chunk=64)
     assert _maxdiff(Of, Oc) < 1e-6
     assert _maxdiff(Sf, Sc) < 1e-6
@@ -210,13 +214,19 @@ def test_compile_not_triggered_on_cpu():
 # 4) CUDA-GATED EQUIVALENCE (skips locally, runs on A100): forward + backward parity < 1e-4
 # ---------------------------------------------------------------------------------------------
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="fused CUDA path needs a GPU")
-@pytest.mark.parametrize("gated,dk,dv", [
-    (False, 16, 16),   # pure, square
-    (True, 16, 16),    # gated alpha, square
-    (False, 48, 16),   # rectangular state
+@pytest.mark.parametrize("gated,dk,dv,write_mode,decoupled", [
+    (False, 16, 16, "delta", False),     # pure, square
+    (True, 16, 16, "delta", False),      # gated alpha, square
+    (False, 48, 16, "delta", False),     # rectangular state
+    (False, 16, 16, "additive", False),  # additive (linear-attn) write — fast path, no erase term
+    (True, 16, 16, "delta", True),       # gated + decoupled erase gate beta_e (GDN-2)
 ])
-def test_cuda_forward_and_backward_parity(gated, dk, dv):
-    """On CUDA: fused == chunked_delta forward (< 1e-4) AND each input grad matches (< 1e-4)."""
+def test_cuda_forward_and_backward_parity(gated, dk, dv, write_mode, decoupled):
+    """On CUDA: fused == chunked_delta forward (< 1e-4) AND each input grad matches (< 1e-4).
+
+    The compiled fast path is taken for EVERY case here (none use surprise/eta/n_delta>=2), so this
+    grad-gates each branch the fused path can actually hit on a GPU: pure/gated, square/rectangular,
+    delta/additive write, and the decoupled erase gate beta_e."""
     dev = "cuda"
     B, H, T = 2, 3, 256
 
@@ -228,14 +238,19 @@ def test_cuda_forward_and_backward_parity(gated, dk, dv):
         v = torch.randn(B, H, T, dv, device=dev, generator=g, requires_grad=True)
         beta = (torch.rand(B, H, T, device=dev, generator=g) * 0.99).detach().requires_grad_(True)
         alpha = (0.5 + 0.5 * torch.rand(B, H, T, device=dev, generator=g)) if gated else None
-        return q, kk, v, beta, alpha
+        beta_e = None
+        if decoupled:
+            beta_e = (torch.rand(B, H, T, device=dev, generator=g) * 0.99).detach().requires_grad_(True)
+        return q, kk, v, beta, alpha, beta_e
 
     # Two identical input sets (so grads accumulate independently on each path).
-    qf, kf, vf, bf, af = _build(seed=0)
-    qc, kc, vc, bc, ac = _build(seed=0)
+    qf, kf, vf, bf, af, bef = _build(seed=0)
+    qc, kc, vc, bc, ac, bec = _build(seed=0)
 
-    Of, Sf = fused_chunked_delta(qf, kf, vf, bf, alpha=af, chunk=64)
-    Oc, Sc = chunked_delta(qc, kc, vc, bc, alpha=ac, chunk=64)
+    Of, Sf = fused_chunked_delta(qf, kf, vf, bf, alpha=af, chunk=64,
+                                 write_mode=write_mode, beta_e=bef)
+    Oc, Sc = chunked_delta(qc, kc, vc, bc, alpha=ac, chunk=64,
+                           write_mode=write_mode, beta_e=bec)
 
     assert _maxdiff(Of, Oc) < 1e-4, f"fwd dO={_maxdiff(Of, Oc):.2e}"
     assert _maxdiff(Sf, Sc) < 1e-4, f"fwd dS={_maxdiff(Sf, Sc):.2e}"
@@ -246,7 +261,10 @@ def test_cuda_forward_and_backward_parity(gated, dk, dv):
     (Of * W).sum().backward()
     (Oc * W).sum().backward()
 
-    for name, tf, tc in [("q", qf, qc), ("k", kf, kc), ("v", vf, vc), ("beta", bf, bc)]:
+    grad_pairs = [("q", qf, qc), ("k", kf, kc), ("v", vf, vc), ("beta", bf, bc)]
+    if decoupled:
+        grad_pairs.append(("beta_e", bef, bec))
+    for name, tf, tc in grad_pairs:
         assert tf.grad is not None and tc.grad is not None, f"{name} grad missing"
         gd = _maxdiff(tf.grad, tc.grad)
         assert gd < 1e-4, f"grad[{name}] mismatch {gd:.2e}"

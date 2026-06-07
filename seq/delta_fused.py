@@ -87,6 +87,9 @@ def fused_chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode
 
     backend: "auto" (compile on the cuda fast path) | "compile" (same as auto) | "eager" (force the
              exact eager fallback even on cuda). Default "auto"."""
+    if backend not in ("auto", "compile", "eager"):
+        raise ValueError(
+            f"Unknown backend {backend!r}. Choose 'auto', 'compile', or 'eager'.")
     use_fused = (
         q.is_cuda
         and (not surprise)
