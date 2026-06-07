@@ -758,3 +758,70 @@ SOTA landscape and sets the exact Phase-2 consolidation bar. **Then re-run writi
   config knobs `out_gate/state_norm/banded_window/surprise_gate/n_delta/feat_map='quad2_lowrank'/feat_rank`
   all defined on `PrizmaSeqConfig` before use; `_window_banded`, `surprise=`, `n_delta=` signatures match
   across tests and impls. ✓
+
+---
+
+## Council Round-0 amendments (2026-06-07, binding)
+Record: `committee/round0_v2_synthesis.md`. Council 1 (gate) CONDITIONAL-REJECT → remedies applied/queued.
+**Already landed:** R1/R2/R5/R7 in `seq/stats.py` (real Student-t, correct TOST, margin-superiority,
+identical-model canary, Holm — validated vs scipy to ~1e-16) and R8 (set_seed CUDA+python-random).
+
+**Revised Phase-1 sequence:** F → **C + E** (approved now) → **H** → **D** (MQAR-gated) → **B** →
+**{A vs G}** (novel-core ablation). New tasks below; lever-A task (1.A above) is amended by R3/R9.
+
+### Task 1.H: Decoupled channel-wise erase/write (Gated-DeltaNet-2) — promoted recall+LM win
+**Files:** Modify `seq/delta.py` (separate erase β_e and write β_w), `seq/prizma_seq.py`
+(config `decoupled_gate: bool = False`, project two gates), test `tests/test_decoupled.py`.
+- [ ] **Step 1: Contract** — today `u_t = β_t(v_t − αS k_t)`. Decouple: a key-side **erase** gate
+  `β_e=σ(W_e x)` scales the read-back `S k_t`, a value-side **write** gate `β_w=σ(W_w x)` scales the
+  new value: `u_t = β_w·v_t − β_e·(αS k_t)`. `decoupled_gate=False` must be byte-identical to today
+  (set β_e=β_w=β). Both gates are trainable → grow the TF in lockstep in the param ledger.
+- [ ] **Step 2: Failing test** — k-step reference vs chunked < 1e-4 for the decoupled form; and
+  `decoupled_gate=False` equals the current `chunked_delta` to < 1e-6.
+- [ ] **Step 3: Implement** in `_delta_reference` + `chunked_delta` (the `A`/`rhs` build uses β_e on the
+  KK/KS0 terms, β_w on the V term) and the streaming `step()`. Run G1 O(1) guard (must be OK).
+- [ ] **Step 4: Commit** `feat(H): decoupled channel-wise erase/write (GDN-2; off=identical, guarded)`.
+- [ ] **Step 5: A100** — MQAR multi-key + char-LM, decoupled on vs off, ≥10 seeds, FLOP ledger.
+
+### Task 1.G: RWKV-7-style in-context per-channel learning rate (A-alternative novel core)
+**Files:** `seq/delta.py` + `seq/prizma_seq.py` (config `inctx_lr: bool=False`), `tests/test_inctx_lr.py`.
+- [ ] **Step 1: Contract** — replace the scalar write gate with a **per-channel** in-context rate
+  vector `η_t=σ(W_η x_t) ∈ R^{d_h}` modulating the delta update per state channel (RWKV-7 "Goose"
+  generalized delta). `inctx_lr=False` = identical to today. Trainable `W_η` → grow TF in lockstep.
+- [ ] **Step 2–4:** chunked==reference < 1e-4 (off-path identical < 1e-6), G1 guard, commit
+  `feat(G): in-context per-channel learning rate (RWKV-7; off=identical, guarded)`.
+- [ ] **Step 5: A100** — head-to-head vs lever A on the SAME ablation; keep whichever wins the
+  novel-core slot (Council-1 sign-off on causal attribution).
+
+### Task 1.A amendment (Council-1 R3/R9 — BINDING before any lever-A accuracy run)
+- The chunked surprise approximation breaks on repeated keys. REQUIRED: an **exact two-pass chunked
+  form** (pass 1 computes per-token ε against the carried state; pass 2 applies the gated write) OR
+  inference-only OR chunk=1. Add `tests/test_surprise_repeatedkey.py`: a sequence with repeated keys
+  (the MQAR/induction signal) must match the sequential reference at **< 1e-4** (NOT the 5e-3
+  random-data tolerance). Add TWO controls in the A100 ablation: a **random-scalar** gate and a
+  **constant-mean β_eff** gate. Reframe A as capacity-*reallocation*. No lever-A accuracy number until
+  this passes.
+
+### Task 1.D amendment (Council-1 R9 + Council-2 caveat)
+- The lever-D gate is the **end-to-end ≥10-seed MQAR-D128 solve-rate at the reduced d_φ**, run BEFORE
+  any LM run — not just the crosstalk probe. Back off d_φ (160 / spiky Hedgehog map) if the solve
+  point regresses past 130K params. Also reconcile **d_φ (R4)** across code/report/synthesis and
+  re-emit the FLOP ledger before any FLOP statement.
+
+### Task 1.Recall-gate (Council-3): recall as a hard TOST-parity gate
+**Files:** `gpu_diag.py` / a new `seq/recall_gate.py` runner.
+- [ ] MQAR (hard rung) + induction + selective-copy must reach **≥ tuned-TF parity via TOST**
+  (`seq.stats.tost_equivalence`), with the optimization-vs-capacity **flip-test** on the hard rung
+  (a bigger TF must be shown to solve it, so a tiny-TF failure is under-capacity not "attention can't").
+  This is a pass/fail GATE for the "dominant" word; failing it downgrades the claim to "competitive".
+
+### Task 1.Hybrid-baseline (Council-3): matched tiny-hybrid arm
+**Files:** `seq/hybrid.py` (a Samba/GatedDeltaNet-H-style block: mostly Prizma layers + ~1 attention
+layer), wired into the head-to-head as a THIRD baseline alongside the pure TF.
+- [ ] Prizma must be at least **Pareto-competitive with a matched tiny hybrid**, else the honest
+  framing is "best pure-O(1) point", not "beats the Transformer". Param-matched; same harness.
+
+### §3 bar status (R10): latency / abs-length-extrap / per-FLOP targets are **conditional** on their
+enabling levers (E/D/F) landing and being measured; abs-length-extrap is a Pareto knob. "Dramatic"
+requires char-LM(iso-FLOP) + all-n latency + O(1) memory + recall-parity **simultaneously and powered**,
+with the scope rider stated; otherwise downgrade to "Pareto-efficient/-competitive in the tested regime".

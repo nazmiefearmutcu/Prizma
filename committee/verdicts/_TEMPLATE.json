@@ -1,0 +1,13 @@
+{
+  "round": 0,
+  "date": "YYYY-MM-DD",
+  "council": "general|quant|standards",
+  "decision_under_review": "",
+  "verdict": "approve|reject|needs-experiments",
+  "rejection_causes": [],
+  "required_remedies": [],
+  "members": [],
+  "evidence_refs": [],
+  "raises_bar_to": null,
+  "notes": ""
+}

@@ -152,3 +152,32 @@ attributed**, and **all three councils must sign off** that this is a credible, 
 dramatically Pareto-dominant non-Transformer architecture in the tested regime — with scale stated
 honestly. (No axis may be silently dropped; an axis that cannot be won is reported as a Pareto knob,
 not hidden.)
+
+## 11. Council Round-0 amendments (2026-06-07, binding)
+Full record: `committee/round0_v2_synthesis.md` + `committee/verdicts/r0_general_plan-review.md`. The
+three councils reviewed this spec; Council 1 (gate) returned CONDITIONAL-REJECT with binding remedies.
+The design direction is unchanged; the following amendments are now part of the spec:
+
+- **New levers (Council 2):** **H — decoupled channel-wise erase/write** (Gated-DeltaNet-2; split β
+  into key-side erase + value-side write; param-matched, ~5% train cost; highest-confidence recall+LM
+  win, **promoted ahead of A**). **G — RWKV-7 in-context per-channel learning rate** (a candidate
+  *novel core* that may subsume both gating C and surprise A; carried as the A-alternative). **I —
+  stochastic training window** (≈free, bolt onto E). Revised build sequence:
+  F → C+E → H → D(MQAR-gated) → B → {A vs G}.
+- **Lever A re-scoped (Council 1 R3/R9):** the chunked surprise gate breaks on *repeated keys* (the
+  recall signal). A's accuracy runs require an **exact two-pass chunked form OR inference-only OR
+  chunk=1**, a **repeated-key equivalence test < 1e-4**, and two controls (random-scalar + constant-
+  mean β_eff). A is reframed as capacity-*reallocation*, not capacity-add.
+- **Statistics hardened (Council 1 R1/R2/R5/R7):** real Student-t p-values, correct TOST, a
+  margin-superiority test (BPC lower-is-better, ≥0.03), an identical-model negative-control canary,
+  Holm correction. **No significance claim until merged + validated.**
+- **Bar raised (Council 3) — amends §3/§10:** (a) **recall is a hard TOST-parity GATE** (MQAR hard
+  rung + induction + selective-copy ≥ tuned-TF parity, hard rung protected by the optimization-vs-
+  capacity flip-test); (b) **per-FLOP ≤1.0× is currently UNMET → "dramatic" is conditional** on D/F
+  delivering it, and all axes must hold *simultaneously and powered* or the claim downgrades to
+  "Pareto-efficient/-competitive in the tested regime"; (c) **add a matched tiny-HYBRID baseline arm**
+  (Samba/GatedDeltaNet-H); (d) **mandatory scope rider** on every claim ("≤2M params +1 confirmation
+  10–50M, char-LM + diagnostics — NOT a frontier/MMLU/long-context claim").
+- **Other remedies:** d_φ reconciliation (R4: code default d_φ=128 vs report's d_φ=256) before any FLOP
+  statement; per-combination LR fairness with ≥3-seed Stage-1 on bimodal legs (R6); RNG-generator
+  hygiene + CUDA repro (R8); §3 latency/abs-length/per-FLOP targets marked conditional (R10).
