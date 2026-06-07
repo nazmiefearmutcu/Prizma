@@ -58,6 +58,8 @@ class PrizmaSeqConfig:
                                     #   trainable params (the indices are buffers, not Parameters)
                                     #   with O(1)/constant-in-n inference intact (state stays fixed).
     feat_n2: int = 96               # number of quadratic monomials (d_phi = d_h + feat_n2)
+    out_gate: bool = False      # per-token output gate g=sigma(W_g x); o = o * g before W_o (RWKV-7/GLA)
+    state_norm: bool = False    # per-head RMSNorm on the delta-state read o_delta before merge
 
     def __post_init__(self):
         if self.d_ff is None:
@@ -112,6 +114,8 @@ class PrizmaSeqBlock(nn.Module):
         self.q_fixed = nn.Parameter(torch.randn(H, dh) * 0.02)   # noRouteReadout fixed query, B6
         self.W_alpha = nn.Linear(d, H, bias=True) if cfg.gated else None
         self.W_o = nn.Linear(d, d, bias=False)
+        self.W_g = nn.Linear(d, d, bias=True) if cfg.out_gate else None
+        self.state_rms = RMSNorm(dh) if cfg.state_norm else None
         self.norm2 = RMSNorm(d)
         self.mlp = SwiGLU(TFConfig(d_model=d, d_ff=cfg.d_ff))
         self.win_scale = dh ** -0.5
@@ -194,10 +198,14 @@ class PrizmaSeqBlock(nn.Module):
             # delta state keyed by phi(q),phi(k) (dim d_phi); values stay d_h -> state [B,H,d_h,d_phi]
             o_delta, _ = chunked_delta(self._phi(q), self._phi(k), v, beta, alpha,
                                        chunk=self.cfg.chunk, write_mode=self.cfg.write_mode)  # [B,H,T,d_h]
+            if self.state_rms is not None:
+                o_delta = self.state_rms(o_delta)    # per-head RMSNorm over d_h
             o = o + o_delta
         if self.cfg.use_window:
             o = o + self._window(q, k, v)            # window head keeps the LINEAR L2 keys (dim d_h)
         o = o.transpose(1, 2).reshape(B, T, d)                                     # merge heads
+        if self.W_g is not None:
+            o = o * torch.sigmoid(self.W_g(self.norm1(h)))   # gate on block input (pre-conv normed)
         h = h + self.W_o(o)
         h = h + self.mlp(self.norm2(h))
         return h
@@ -227,6 +235,8 @@ class PrizmaSeqBlock(nn.Module):
         Sk = torch.einsum("bhij,bhj->bhi", S, k1p)               # [B,H,d_h]
         u = b1[..., None] * (v1 - a1[..., None] * Sk)            # [B,H,d_h]
         S = a1[..., None, None] * S + torch.einsum("bhi,bhj->bhij", u, k1p)   # [B,H,d_h,d_phi]
+        if self.state_rms is not None:
+            o_delta = self.state_rms(o_delta)    # per-head RMSNorm [B,H,d_h], mirrors forward
         # window ring
         rk = torch.cat([rk, k1[:, :, None]], dim=2)[:, :, -self.cfg.window:]
         rv = torch.cat([rv, v1[:, :, None]], dim=2)[:, :, -self.cfg.window:]
@@ -234,6 +244,8 @@ class PrizmaSeqBlock(nn.Module):
         aw = torch.softmax(sc, dim=-1)
         o_win = torch.einsum("bhw,bhwd->bhd", aw, rv)
         o = (o_delta + o_win).reshape(B, 1, -1)
+        if self.W_g is not None:
+            o = o * torch.sigmoid(self.W_g(self.norm1(h_t)))   # gate on block input, mirrors forward
         h = h_t + self.W_o(o)
         h = h + self.mlp(self.norm2(h))
         return h, (S, rk, rv, cring, pos + 1)
