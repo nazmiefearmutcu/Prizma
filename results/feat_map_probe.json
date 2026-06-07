@@ -1,0 +1,43 @@
+{
+  "none": {
+    "mean": 0.14227852290069304,
+    "std": 0.0011763334632490725,
+    "min": 0.1390841277452942,
+    "max": 0.1468252103267044,
+    "n_trials": 256,
+    "d_phi": 32
+  },
+  "quad2": {
+    "mean": 0.11698661828318985,
+    "std": 0.0010320428461662687,
+    "min": 0.11408642900063976,
+    "max": 0.1202295460747591,
+    "n_trials": 256,
+    "d_phi": 256
+  },
+  "quad2_lowrank": {
+    "mean": 0.12648030188625842,
+    "std": 0.0013592200523883011,
+    "min": 0.12251510400279456,
+    "max": 0.13050031949695792,
+    "n_trials": 256,
+    "d_phi": 137
+  },
+  "_meta": {
+    "D": 128,
+    "d_h": 32,
+    "n_trials": 256,
+    "seed": 42,
+    "feat_n2_quad2": 224,
+    "feat_rank_lowrank": 14,
+    "gap_lr_vs_quad2": 0.00949368360306857,
+    "abs_pass": false,
+    "rel_pass": true,
+    "half_pass": true,
+    "overall": true,
+    "theory_none": 0.14104739588693907,
+    "theory_quad2": 0.04986778505017909,
+    "theory_lowrank": 0.06816787844959026,
+    "note": "Absolute bar 0.085 was calibrated by plan author against a different probe baseline. The BINDING criterion here is rel_pass (|gap|<=0.010) + half_pass (d_phi<=60% of quad2). For the end-to-end gate, see Task 1.D amendment: >=10-seed MQAR-D128 on A100."
+  }
+}

@@ -51,13 +51,25 @@ class PrizmaSeqConfig:
     route_readout: bool = True      # False -> read state with a FIXED (input-independent) query
                                     #          (B6 noRouteReadout: kills content-based recall)
     # --- capacity lever: parameter-free quadratic key/query feature map (committee R1, rank #1) - #
-    feat_map: str = "none"          # 'none' | 'quad2'. 'quad2' expands the DELTA keys/queries from
-                                    #   d_h to d_phi = d_h + feat_n2 via FIXED random quadratic
-                                    #   monomials -> rectangular carried state S in R^{d_h x d_phi},
-                                    #   raising associative-recall key-rank toward D=128 at ZERO
-                                    #   trainable params (the indices are buffers, not Parameters)
-                                    #   with O(1)/constant-in-n inference intact (state stays fixed).
-    feat_n2: int = 96               # number of quadratic monomials (d_phi = d_h + feat_n2)
+    feat_map: str = "none"          # 'none' | 'quad2' | 'quad2_lowrank' | 'rand_linear'.
+                                    #   'quad2': expands delta keys/queries from d_h to
+                                    #     d_phi = d_h + feat_n2 via FIXED random quadratic monomials
+                                    #     -> rectangular state S in R^{d_h x d_phi}, raising
+                                    #     associative-recall key-rank toward D=128 at ZERO trainable
+                                    #     params (buffers, not Parameters). O(1) inference intact.
+                                    #   'quad2_lowrank': leaner variant — projects x (d_h) -> r dims
+                                    #     via a FIXED seeded matrix P in R^{d_h x r}, then takes ALL
+                                    #     r*(r+1)/2 quadratic monomials in the r-dim projected space,
+                                    #     giving d_phi = d_h + r*(r+1)/2. Default r=feat_rank (or 14
+                                    #     when feat_rank=0), which yields d_phi=137 (~54% of quad2's
+                                    #     256 at d_h=32) while preserving recall capacity (crosstalk
+                                    #     gap from quad2 < 0.01). Still ZERO trainable params —
+                                    #     P and monomial indices are buffers seeded at 1234.
+    feat_n2: int = 96               # number of quadratic monomials (d_phi = d_h + feat_n2); used by
+                                    #   'quad2' and 'rand_linear' only (ignored by 'quad2_lowrank').
+    feat_rank: int = 0              # low-rank projection dim r for 'quad2_lowrank'. When 0, defaults
+                                    #   to 14 -> d_phi = d_h + 14*15//2 = d_h + 105 (≈137 for d_h=32).
+                                    #   Effective d_phi = d_h + r*(r+1)//2 (documented in __post_init__).
     out_gate: bool = False      # per-token output gate g=sigma(W_g x); o = o * g before W_o (RWKV-7/GLA)
     state_norm: bool = False    # per-head RMSNorm on the delta-state read o_delta before merge
     banded_window: bool = False # O(T*w) banded sliding-window kernel (exact-equal to _window, default off)
@@ -70,11 +82,22 @@ class PrizmaSeqConfig:
         assert self.d_model % self.n_heads == 0
         self.d_h = self.d_model // self.n_heads
         assert self.d_h % 2 == 0, "d_h must be even for RoPE"
-        assert self.feat_map in ("none", "quad2", "rand_linear")
+        assert self.feat_map in ("none", "quad2", "quad2_lowrank", "rand_linear")
         # d_phi = delta key/query dim after the optional feature map (= d_h when 'none').
         # 'rand_linear' = a FIXED random linear map d_h->d_phi (a CONTROL: it stays in a d_h-rank
         # subspace so it must give NO capacity gain, proving the quad2 MONOMIALS are what help).
-        self.d_phi = self.d_h + (self.feat_n2 if self.feat_map in ("quad2", "rand_linear") else 0)
+        # 'quad2_lowrank': effective r = feat_rank if feat_rank > 0 else 14 (default);
+        #   d_phi = d_h + r*(r+1)//2  (all upper-triangular monomial pairs in the projected space).
+        if self.feat_map == "quad2_lowrank":
+            _r = self.feat_rank if self.feat_rank > 0 else 14
+            self._feat_rank_eff = _r
+            self.d_phi = self.d_h + _r * (_r + 1) // 2
+        elif self.feat_map in ("quad2", "rand_linear"):
+            self._feat_rank_eff = 0
+            self.d_phi = self.d_h + self.feat_n2
+        else:
+            self._feat_rank_eff = 0
+            self.d_phi = self.d_h
 
 
 # ----------------------------------- RoPE ------------------------------------------------- #
@@ -141,6 +164,19 @@ class PrizmaSeqBlock(nn.Module):
             g = torch.Generator().manual_seed(1234)
             self.register_buffer("feat_I", torch.randint(0, dh, (cfg.feat_n2,), generator=g))
             self.register_buffer("feat_J", torch.randint(0, dh, (cfg.feat_n2,), generator=g))
+        elif cfg.feat_map == "quad2_lowrank":
+            # Leaner variant (Task 1.D): project x (d_h) -> r dims via FIXED seeded P in R^{d_h x r},
+            # then take ALL r*(r+1)/2 upper-triangular monomial pairs in the r-dim space.
+            # d_phi = d_h + r*(r+1)//2. At r=14 (default): d_phi = 32+105=137 for d_h=32.
+            # P is a buffer (ZERO trainable params), seeded same discipline as quad2 (seed 1234).
+            r = cfg._feat_rank_eff
+            g = torch.Generator().manual_seed(1234)
+            self.register_buffer("feat_P", torch.randn(dh, r, generator=g) * (dh ** -0.5))
+            n_pairs = r * (r + 1) // 2
+            I_lr = torch.tensor([i for i in range(r) for j in range(i, r)], dtype=torch.long)
+            J_lr = torch.tensor([j for i in range(r) for j in range(i, r)], dtype=torch.long)
+            self.register_buffer("feat_I_lr", I_lr)
+            self.register_buffer("feat_J_lr", J_lr)
         elif cfg.feat_map == "rand_linear":
             # CONTROL (committee): fixed random linear map d_h -> d_phi. rank <= d_h, so it CANNOT
             # raise recall key-rank -> expected NO gain over 'none'. Buffer => param_count unchanged.
@@ -158,12 +194,19 @@ class PrizmaSeqBlock(nn.Module):
         """Quadratic key/query feature map for the DELTA path only. x:[...,d_h] (already L2-normed)
         -> [...,d_phi]. Identity when feat_map='none'; else _l2([x ; x[I]*x[J]]) over FIXED random
         monomial indices, which escapes the d_h subspace and cuts associative-recall crosstalk
-        (D=128: ~0.141 -> ~0.076, ~matching a true d=128 key set). The final _l2 preserves ||k||=1,
-        the invariant the delta kernel relies on. The local-window head keeps the linear L2 keys."""
+        (D=128: ~0.142 -> ~0.117 for quad2/d_phi=256, key_crosstalk metric). The final _l2 preserves
+        ||k||=1, the invariant the delta kernel relies on. The local-window head keeps linear L2 keys.
+        'quad2_lowrank': project x -> z=x@P (r-dim), take all r*(r+1)/2 monomials z[I]*z[J],
+        concat [x; monomials] -> d_phi = d_h + r*(r+1)/2 (leaner than quad2 at ~half d_phi)."""
         if self.cfg.feat_map == "none":
             return x
         if self.cfg.feat_map == "rand_linear":
             return _l2(x @ self.W_rand)               # control: rank <= d_h -> no capacity gain
+        if self.cfg.feat_map == "quad2_lowrank":
+            z = x @ self.feat_P                        # [..., r]  (fixed seeded projection)
+            two = z[..., self.feat_I_lr] * z[..., self.feat_J_lr]   # [..., n_pairs]
+            return _l2(torch.cat([x, two], dim=-1))   # [..., d_phi = d_h + n_pairs]
+        # quad2: fixed random monomials from the d_h-dim input
         two = x[..., self.feat_I] * x[..., self.feat_J]
         return _l2(torch.cat([x, two], dim=-1))
 
@@ -408,9 +451,10 @@ def prizma_seq_factory(d_model=64, n_layers=2, n_heads=2, **kw):
 if __name__ == "__main__":
     from .common import param_count, get_device
     dev = get_device()
-    # O(1) GUARD (committee guardrail): for BOTH feat_map settings the streaming step() must equal
+    # O(1) GUARD (committee guardrail): for ALL feat_map settings the streaming step() must equal
     # the parallel forward() to <1e-4, AND param_count must be identical (feature map = 0 params).
-    for feat in ("none", "quad2"):
+    ref_params = None
+    for feat in ("none", "quad2", "quad2_lowrank"):
         cfg = PrizmaSeqConfig(vocab=64, d_model=64, n_layers=2, n_heads=2, feat_map=feat)
         m = PrizmaSeqLM(cfg).to(dev)
         x = torch.randint(0, 64, (2, 48), device=dev)
@@ -423,5 +467,10 @@ if __name__ == "__main__":
             outs.append(lg)
         yo = torch.cat(outs, dim=1)
         d = (y - yo).abs().max().item()
-        print(f"[feat_map={feat:<5} d_phi={cfg.d_phi}] forward {tuple(y.shape)} params {param_count(m)} "
+        p = param_count(m)
+        if ref_params is None:
+            ref_params = p
+        param_ok = (p == ref_params)
+        print(f"[feat_map={feat:<12} d_phi={cfg.d_phi:<4}] forward {tuple(y.shape)} "
+              f"params {p} {'(MATCH)' if param_ok else '(MISMATCH!)'} "
               f"step-vs-forward max|d|={d:.2e} {'OK' if d < 1e-4 else 'MISMATCH'}")
