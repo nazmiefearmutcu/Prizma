@@ -62,6 +62,7 @@ class PrizmaSeqConfig:
     state_norm: bool = False    # per-head RMSNorm on the delta-state read o_delta before merge
     banded_window: bool = False # O(T*w) banded sliding-window kernel (exact-equal to _window, default off)
     decoupled_gate: bool = False  # GDN-2: decouple erase gate beta_e (key-side) from write gate beta_w
+    n_delta: int = 1              # DeltaProduct: number of sequential delta sub-steps per token (k=1 = today)
 
     def __post_init__(self):
         if self.d_ff is None:
@@ -119,6 +120,16 @@ class PrizmaSeqBlock(nn.Module):
         self.W_g = nn.Linear(d, d, bias=True) if cfg.out_gate else None
         self.state_rms = RMSNorm(dh) if cfg.state_norm else None
         self.W_e = nn.Linear(d, H, bias=True) if cfg.decoupled_gate else None   # erase gate beta_e
+        # DeltaProduct n_delta>=2: (n_delta-1) additional kv projections + beta heads.
+        # Each extra sub-step j>=1 gets its own W_kv_j and W_beta_j (independent params).
+        # Total param cost: (n_delta-1) * (2*d*d + H) trainable weights per block.
+        # NOTE: the plan explicitly allows repeated projections for simplicity (documented).
+        self.W_kv_extra = nn.ModuleList([
+            nn.Linear(d, 2 * d, bias=False) for _ in range(cfg.n_delta - 1)
+        ]) if cfg.n_delta >= 2 else None
+        self.W_beta_extra = nn.ModuleList([
+            nn.Linear(d, H, bias=True) for _ in range(cfg.n_delta - 1)
+        ]) if cfg.n_delta >= 2 else None
         self.norm2 = RMSNorm(d)
         self.mlp = SwiGLU(TFConfig(d_model=d, d_ff=cfg.d_ff))
         self.win_scale = dh ** -0.5
@@ -220,10 +231,37 @@ class PrizmaSeqBlock(nn.Module):
         q, k, v, beta, alpha, beta_e = self._encode(x, cos, sin)
         o = torch.zeros(B, self.H, T, self.dh, device=h.device, dtype=h.dtype)
         if self.cfg.use_workspace:
+            # DeltaProduct: for n_delta>=2, build multi-sub-step k,v,beta tensors
+            if self.cfg.n_delta >= 2:
+                # sub-step 0 uses the main projection; sub-steps 1..n_delta-1 use W_kv_extra
+                ks = [k]    # each [B,H,T,d_h]
+                vs = [v]
+                bs = [beta]
+                for i, (wkv, wbeta) in enumerate(zip(self.W_kv_extra, self.W_beta_extra)):
+                    kv_i = wkv(x).view(B, T, self.H, 2, self.dh)   # [B,T,H,2,dh]
+                    k_i, v_i = kv_i.unbind(3)                       # each [B,T,H,dh]
+                    k_i = k_i.transpose(1, 2); v_i = v_i.transpose(1, 2)   # [B,H,T,dh]
+                    k_i = _l2(k_i)                                   # unit-norm
+                    b_i = torch.sigmoid(wbeta(x)).transpose(1, 2) * self.cfg.beta_cap  # [B,H,T]
+                    ks.append(k_i); vs.append(v_i); bs.append(b_i)
+                # Stack on a new sub-step axis: [B,H,T,n_delta,d_h]
+                k_nd = torch.stack(ks, dim=3)
+                v_nd = torch.stack(vs, dim=3)
+                b_nd = torch.stack(bs, dim=3)
+                # phi applied per sub-step; for simplicity phi(k_sub_0) uses main k (already phi'd below)
+                # For k>=2 we apply phi to sub-step 0 key; extra sub-steps use linear keys (d_h, not d_phi)
+                # NOTE: n_delta>=2 uses d_h-dimensional state (no feat_map for sub-steps 1+, linear keys)
+                # Sub-step 0 key goes through phi; but the state dim must be consistent: we use d_h for all
+                # sub-steps when n_delta>=2 (phi expansion is not combined with n_delta in this impl).
+                o_delta, _ = chunked_delta(q, k_nd, v_nd, b_nd, alpha,
+                                           chunk=self.cfg.chunk, write_mode=self.cfg.write_mode,
+                                           beta_e=None, n_delta=self.cfg.n_delta)  # [B,H,T,d_h]
+            else:
+                # n_delta=1: standard path (byte-identical, with phi and beta_e)
+                o_delta, _ = chunked_delta(self._phi(q), self._phi(k), v, beta, alpha,
+                                           chunk=self.cfg.chunk, write_mode=self.cfg.write_mode,
+                                           beta_e=beta_e)                          # [B,H,T,d_h]
             # delta state keyed by phi(q),phi(k) (dim d_phi); values stay d_h -> state [B,H,d_h,d_phi]
-            o_delta, _ = chunked_delta(self._phi(q), self._phi(k), v, beta, alpha,
-                                       chunk=self.cfg.chunk, write_mode=self.cfg.write_mode,
-                                       beta_e=beta_e)                              # [B,H,T,d_h]
             if self.state_rms is not None:
                 o_delta = self.state_rms(o_delta)    # per-head RMSNorm over d_h
             o = o + o_delta
@@ -255,15 +293,38 @@ class PrizmaSeqBlock(nn.Module):
         cos, sin = _rope_cache(1, self.dh, h_t.device, h_t.dtype, offset=pos) if self.cfg.rope else (None, None)
         q, k, v, beta, alpha, beta_e = self._encode(x, cos, sin)  # [B,H,1,dh], beta [B,H,1]
         q1, k1, v1 = q[:, :, 0], k[:, :, 0], v[:, :, 0]          # [B,H,dh] (linear L2; window keys)
-        q1p, k1p = self._phi(q)[:, :, 0], self._phi(k)[:, :, 0]  # [B,H,d_phi] (delta state keys)
         b1 = beta[:, :, 0]                                       # [B,H]  write gate beta_w
-        be1 = beta_e[:, :, 0] if beta_e is not None else b1      # [B,H]  erase gate beta_e
         a1 = alpha[:, :, 0] if alpha is not None else torch.ones_like(b1)
-        o_delta = torch.einsum("bhij,bhj->bhi", S, q1p)          # pre-write read S_{t-1} phi(q)
-        Sk = torch.einsum("bhij,bhj->bhi", S, k1p)               # [B,H,d_h]
-        # decoupled: u = beta_w * v  -  beta_e * (alpha * S k)
-        u = b1[..., None] * v1 - be1[..., None] * (a1[..., None] * Sk)   # [B,H,d_h]
-        S = a1[..., None, None] * S + torch.einsum("bhi,bhj->bhij", u, k1p)   # [B,H,d_h,d_phi]
+        # pre-write read (always uses state from end of previous token)
+        if self.cfg.n_delta >= 2:
+            o_delta = torch.einsum("bhij,bhj->bhi", S, q1)        # [B,H,d_h] (d_h state for n_delta>=2)
+        else:
+            q1p = self._phi(q)[:, :, 0]                           # [B,H,d_phi] (delta state keys)
+            o_delta = torch.einsum("bhij,bhj->bhi", S, q1p)       # pre-write read S_{t-1} phi(q)
+        if self.cfg.n_delta >= 2:
+            # DeltaProduct: apply n_delta sub-steps sequentially (mirrors the chunked/reference form)
+            # Sub-step 0: main kv + alpha decay
+            k1_step = k1; v1_step = v1
+            Sk = torch.einsum("bhij,bhj->bhi", S, k1_step)
+            u = b1[..., None] * v1_step - b1[..., None] * (a1[..., None] * Sk)
+            S = a1[..., None, None] * S + torch.einsum("bhi,bhj->bhij", u, k1_step)
+            # Sub-steps 1..(n_delta-1): extra projections, no additional alpha decay
+            x1 = x[:, 0, :]                                       # [B,d] (squeeze T=1 dim)
+            for wkv, wbeta in zip(self.W_kv_extra, self.W_beta_extra):
+                kv_j = wkv(x1).view(B, self.H, 2, self.dh)        # [B,H,2,dh]
+                k_j, v_j = kv_j[:, :, 0], kv_j[:, :, 1]           # [B,H,dh]
+                k_j = _l2(k_j)
+                b_j = torch.sigmoid(wbeta(x1)).view(B, self.H) * self.cfg.beta_cap  # [B,H]
+                Sk_j = torch.einsum("bhij,bhj->bhi", S, k_j)
+                u_j = b_j[..., None] * (v_j - Sk_j)
+                S = S + torch.einsum("bhi,bhj->bhij", u_j, k_j)
+        else:
+            k1p = self._phi(k)[:, :, 0]                           # [B,H,d_phi] (delta state keys)
+            be1 = beta_e[:, :, 0] if beta_e is not None else b1   # [B,H]  erase gate beta_e
+            Sk = torch.einsum("bhij,bhj->bhi", S, k1p)            # [B,H,d_h]
+            # decoupled: u = beta_w * v  -  beta_e * (alpha * S k)
+            u = b1[..., None] * v1 - be1[..., None] * (a1[..., None] * Sk)   # [B,H,d_h]
+            S = a1[..., None, None] * S + torch.einsum("bhi,bhj->bhij", u, k1p)   # [B,H,d_h,d_phi]
         if self.state_rms is not None:
             o_delta = self.state_rms(o_delta)    # per-head RMSNorm [B,H,d_h], mirrors forward
         # window ring
@@ -313,8 +374,10 @@ class PrizmaSeqLM(nn.Module):
     def init_state(self, batch, device):
         st = []
         kc1 = max(self.cfg.short_conv - 1, 0)
+        # For n_delta>=2, state uses d_h-dim keys (no phi expansion); for n_delta=1 uses d_phi
+        state_k_dim = self.cfg.d_h if self.cfg.n_delta >= 2 else self.cfg.d_phi
         for _ in self.blocks:
-            S = torch.zeros(batch, self.cfg.n_heads, self.cfg.d_h, self.cfg.d_phi, device=device)
+            S = torch.zeros(batch, self.cfg.n_heads, self.cfg.d_h, state_k_dim, device=device)
             rk = torch.zeros(batch, self.cfg.n_heads, 0, self.cfg.d_h, device=device)
             rv = torch.zeros(batch, self.cfg.n_heads, 0, self.cfg.d_h, device=device)
             cring = torch.zeros(batch, kc1, self.cfg.d_model, device=device)

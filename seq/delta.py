@@ -17,16 +17,28 @@ from __future__ import annotations
 import torch
 
 
-def _delta_reference(q, k, v, beta, alpha=None, S0=None, write_mode="delta", beta_e=None):
+def _delta_reference(q, k, v, beta, alpha=None, S0=None, write_mode="delta", beta_e=None,
+                     n_delta=1):
     """Ground-truth sequential recurrence. q,k,v:[B,H,T,d]; beta:[B,H,T]; alpha:[B,H,T] or None.
     write_mode='additive' -> u=beta*v (no erase), the linear-attn ablation.
     beta_e: optional erase gate [B,H,T]; if None, beta_e=beta (byte-identical to old behaviour).
-    When beta_e is provided, u_t = beta_w*v_t - beta_e*(alpha*S k_t)  (decoupled GDN-2 write)."""
+    When beta_e is provided, u_t = beta_w*v_t - beta_e*(alpha*S k_t)  (decoupled GDN-2 write).
+    n_delta: int >= 1 (DeltaProduct). For n_delta=1, inputs have no extra k-axis (byte-identical to
+    old behaviour). For n_delta>=2, k,v have shape [B,H,T,n_delta,d] and beta [B,H,T,n_delta]:
+    each token applies n_delta sequential delta sub-steps before reading the next token. The read
+    o_t = S_{t-1} q_t uses the state from the END of the previous token's n_delta sub-steps. Alpha
+    decay is applied exactly once per token (on sub-step 0 only); subsequent sub-steps are pure
+    additive delta (no additional decay), consistent with Householder-product semantics."""
     B, H, T, d = q.shape
-    dv = v.shape[-1]                     # value-dim-aware init: supports a RECTANGULAR state
-    if S0 is None:                       #   S in R^{d_v x d_k} (d_k=d), needed by the feature-map
-        S = torch.zeros(B, H, dv, d, dtype=q.dtype, device=q.device)   # and GlobalDeltaMemory levers
-    else:                                #   (byte-identical when d_v == d_k, i.e. every existing call)
+    dv = v.shape[-1] if n_delta == 1 else v.shape[-1]  # [B,H,T,n_delta,d] -> last dim still d
+    if n_delta >= 2:
+        # v shape is [B,H,T,n_delta,d]; dv = d (last dim)
+        dv = v.shape[-1]
+    else:
+        dv = v.shape[-1]
+    if S0 is None:
+        S = torch.zeros(B, H, dv, d, dtype=q.dtype, device=q.device)
+    else:
         S = S0.clone()
     if alpha is None:
         alpha = torch.ones(B, H, T, dtype=q.dtype, device=q.device)
@@ -35,15 +47,41 @@ def _delta_reference(q, k, v, beta, alpha=None, S0=None, write_mode="delta", bet
     erase = (write_mode == "delta")
     outs = []
     for t in range(T):
-        qt, kt, vt = q[:, :, t], k[:, :, t], v[:, :, t]            # [B,H,d]
-        bt, bet, at = beta[:, :, t], beta_e[:, :, t], alpha[:, :, t]   # [B,H]
+        qt = q[:, :, t]                                            # [B,H,d]
+        at = alpha[:, :, t]                                        # [B,H]
         o = torch.einsum("bhij,bhj->bhi", S, qt)                   # read S_{t-1} q_t  (PRE-write)
-        if erase:
-            Sk = torch.einsum("bhij,bhj->bhi", S, kt)              # S_{t-1} k_t
-            u = bt[..., None] * vt - bet[..., None] * (at[..., None] * Sk)  # decoupled write
+        if n_delta == 1:
+            kt, vt = k[:, :, t], v[:, :, t]                       # [B,H,d]
+            bt  = beta[:, :, t]                                    # [B,H]
+            bet = beta_e[:, :, t]
+            if erase:
+                Sk = torch.einsum("bhij,bhj->bhi", S, kt)
+                u = bt[..., None] * vt - bet[..., None] * (at[..., None] * Sk)
+            else:
+                u = bt[..., None] * vt
+            S = at[..., None, None] * S + torch.einsum("bhi,bhj->bhij", u, kt)
         else:
-            u = bt[..., None] * vt                                # additive (no erase)
-        S = at[..., None, None] * S + torch.einsum("bhi,bhj->bhij", u, kt)
+            # n_delta >= 2: k[B,H,T,n_delta,d], v[B,H,T,n_delta,d], beta[B,H,T,n_delta]
+            for j in range(n_delta):
+                ktj = k[:, :, t, j]                               # [B,H,d]
+                vtj = v[:, :, t, j]
+                btj = beta[:, :, t, j]                             # [B,H]
+                if j == 0:
+                    # alpha decay applied once at the first sub-step
+                    if erase:
+                        Sk = torch.einsum("bhij,bhj->bhi", S, ktj)
+                        u = btj[..., None] * vtj - btj[..., None] * (at[..., None] * Sk)
+                    else:
+                        u = btj[..., None] * vtj
+                    S = at[..., None, None] * S + torch.einsum("bhi,bhj->bhij", u, ktj)
+                else:
+                    # subsequent sub-steps: pure delta, no additional alpha decay
+                    if erase:
+                        Sk = torch.einsum("bhij,bhj->bhi", S, ktj)
+                        u = btj[..., None] * (vtj - Sk)
+                    else:
+                        u = btj[..., None] * vtj
+                    S = S + torch.einsum("bhi,bhj->bhij", u, ktj)
         outs.append(o)
     O = torch.stack(outs, dim=2)                                   # [B,H,T,d]
     return O, S
@@ -70,13 +108,18 @@ def _solve_unit_lower(Amat, RHS):
         return X
 
 
-def chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode="delta", beta_e=None):
+def chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode="delta", beta_e=None,
+                  n_delta=1):
     """WY/UT chunk-parallel delta rule. Same semantics as _delta_reference, O(T d^2/C + T C d).
     alpha=None -> pure delta (no decay). write_mode='additive' -> linear-attn ablation (no erase:
     u=beta*v, used for B6 PRIZMA_noDelta). Returns O:[B,H,T,d], S_end:[B,H,d,d].
     beta_e: optional erase gate [B,H,T]; if None, beta_e=beta (byte-identical to old behaviour).
     When beta_e is provided, the A-matrix (erase/read-back) is scaled by beta_e while the Vc
-    (write) term is scaled by beta_w=beta — decoupled GDN-2 update."""
+    (write) term is scaled by beta_w=beta — decoupled GDN-2 update.
+    n_delta: int >= 1 (DeltaProduct). For n_delta=1, the standard WY/UT chunk-parallel path is
+    used (byte-identical to old behaviour). For n_delta>=2, k,v have shape [B,H,T,n_delta,d] and
+    beta [B,H,T,n_delta]. The k-axis is processed sequentially within each chunk (correctness-first
+    fallback as documented in the plan) while T remains chunked. Alpha applied once per token."""
     B, H, T, d = q.shape
     dv = v.shape[-1]                     # value-dim-aware init -> RECTANGULAR state S in R^{d_v x d_k}
     if S0 is None:                       #   (d_k=d). Byte-identical when d_v == d_k (every existing
@@ -87,6 +130,42 @@ def chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode="delt
     erase = (write_mode == "delta")
     # beta_e=None means use beta for both erase and write -> byte-identical to previous behaviour
     decoupled = (beta_e is not None)
+
+    # --- DeltaProduct n_delta >= 2: k-axis processed sequentially within each chunk ---
+    # For n_delta=1 (default), fall through to the fast WY/UT path (byte-identical to old code).
+    # For n_delta>=2: k,v are [B,H,T,n_delta,d], beta is [B,H,T,n_delta]. We chunk over T but
+    # loop over tokens and sub-steps within each chunk (sequential k-axis, documented fallback).
+    if n_delta >= 2:
+        outs_nd = []
+        for c0 in range(0, T, chunk):
+            c1 = min(c0 + chunk, T)
+            for ti in range(c0, c1):
+                qt = q[:, :, ti]                                   # [B,H,d]
+                at = alpha[:, :, ti] if gated else torch.ones(B, H, dtype=q.dtype, device=q.device)
+                o = torch.einsum("bhij,bhj->bhi", S, qt)           # pre-write read
+                for j in range(n_delta):
+                    ktj = k[:, :, ti, j]                           # [B,H,d]
+                    vtj = v[:, :, ti, j]
+                    btj = beta[:, :, ti, j]                        # [B,H]
+                    if j == 0:
+                        # alpha applied once at first sub-step
+                        if erase:
+                            Sk = torch.einsum("bhij,bhj->bhi", S, ktj)
+                            u = btj[..., None] * vtj - btj[..., None] * (at[..., None] * Sk)
+                        else:
+                            u = btj[..., None] * vtj
+                        S = at[..., None, None] * S + torch.einsum("bhi,bhj->bhij", u, ktj)
+                    else:
+                        # subsequent sub-steps: pure delta, no alpha decay
+                        if erase:
+                            Sk = torch.einsum("bhij,bhj->bhi", S, ktj)
+                            u = btj[..., None] * (vtj - Sk)
+                        else:
+                            u = btj[..., None] * vtj
+                        S = S + torch.einsum("bhi,bhj->bhij", u, ktj)
+                outs_nd.append(o)
+        return torch.stack(outs_nd, dim=2), S
+
     outs = []
     for c0 in range(0, T, chunk):
         c1 = min(c0 + chunk, T)
