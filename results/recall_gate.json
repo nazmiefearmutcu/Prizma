@@ -1,0 +1,653 @@
+{
+  "meta": {
+    "scale": "d64L2H2",
+    "seeds": [
+      0,
+      1
+    ],
+    "prizma_kw": {
+      "feat_map": "none"
+    },
+    "tost_margin": 0.05,
+    "solve_thresh": 0.5,
+    "smoke": true,
+    "lr_grid": [
+      0.001,
+      0.002
+    ]
+  },
+  "cells": {
+    "MQAR-HARD-FLIP.TF-big": {
+      "sweep": {
+        "best_lr": 0.001,
+        "best_acc": 0.2015380859375,
+        "grid": [
+          {
+            "lr": 0.001,
+            "best_acc": 0.2015380859375,
+            "steps_to_plateau": 800
+          },
+          {
+            "lr": 0.002,
+            "best_acc": 0.2000732421875,
+            "steps_to_plateau": 800
+          }
+        ]
+      },
+      "seeds": {
+        "0": {
+          "best": 0.2015380859375,
+          "plateau": 800,
+          "params": 404096,
+          "sec": 6.4,
+          "lr": 0.001
+        },
+        "1": {
+          "best": 0.2027587890625,
+          "plateau": 800,
+          "params": 404096,
+          "sec": 5.7,
+          "lr": 0.001
+        }
+      },
+      "best_accs": [
+        0.2015380859375,
+        0.2027587890625
+      ],
+      "best_lr": 0.001,
+      "params": 404096
+    },
+    "MQAR-HARD.TF": {
+      "sweep": {
+        "best_lr": 0.001,
+        "best_acc": 0.2022705078125,
+        "grid": [
+          {
+            "lr": 0.001,
+            "best_acc": 0.2022705078125,
+            "steps_to_plateau": 800
+          },
+          {
+            "lr": 0.002,
+            "best_acc": 0.1981201171875,
+            "steps_to_plateau": 800
+          }
+        ]
+      },
+      "seeds": {
+        "0": {
+          "best": 0.2022705078125,
+          "plateau": 800,
+          "params": 101696,
+          "sec": 2.4,
+          "lr": 0.001
+        },
+        "1": {
+          "best": 0.2025146484375,
+          "plateau": 800,
+          "params": 101696,
+          "sec": 2.6,
+          "lr": 0.001
+        }
+      },
+      "best_accs": [
+        0.2022705078125,
+        0.2025146484375
+      ],
+      "best_lr": 0.001,
+      "params": 101696
+    },
+    "MQAR-HARD.Prizma": {
+      "sweep": {
+        "best_lr": 0.002,
+        "best_acc": 0.207275390625,
+        "grid": [
+          {
+            "lr": 0.001,
+            "best_acc": 0.1785888671875,
+            "steps_to_plateau": 800
+          },
+          {
+            "lr": 0.002,
+            "best_acc": 0.207275390625,
+            "steps_to_plateau": 800
+          }
+        ]
+      },
+      "seeds": {
+        "0": {
+          "best": 0.207275390625,
+          "plateau": 800,
+          "params": 102728,
+          "sec": 28.7,
+          "lr": 0.002
+        },
+        "1": {
+          "best": 0.62060546875,
+          "plateau": 800,
+          "params": 102728,
+          "sec": 29.0,
+          "lr": 0.002
+        }
+      },
+      "best_accs": [
+        0.207275390625,
+        0.62060546875
+      ],
+      "best_lr": 0.002,
+      "params": 102728
+    },
+    "MQAR-HARD.Hybrid": {
+      "sweep": {
+        "best_lr": 0.001,
+        "best_acc": 0.1976318359375,
+        "grid": [
+          {
+            "lr": 0.001,
+            "best_acc": 0.1976318359375,
+            "steps_to_plateau": 800
+          },
+          {
+            "lr": 0.002,
+            "best_acc": 0.1944580078125,
+            "steps_to_plateau": 800
+          }
+        ]
+      },
+      "seeds": {
+        "0": {
+          "best": 0.1976318359375,
+          "plateau": 800,
+          "params": 102212,
+          "sec": 17.2,
+          "lr": 0.001
+        },
+        "1": {
+          "best": 0.1998291015625,
+          "plateau": 800,
+          "params": 102212,
+          "sec": 16.4,
+          "lr": 0.001
+        }
+      },
+      "best_accs": [
+        0.1976318359375,
+        0.1998291015625
+      ],
+      "best_lr": 0.001,
+      "params": 102212
+    },
+    "INDUCTION.TF": {
+      "sweep": {
+        "best_lr": 0.001,
+        "best_acc": 0.08203125,
+        "grid": [
+          {
+            "lr": 0.001,
+            "best_acc": 0.08203125,
+            "steps_to_plateau": 800
+          },
+          {
+            "lr": 0.002,
+            "best_acc": 0.07421875,
+            "steps_to_plateau": 800
+          }
+        ]
+      },
+      "seeds": {
+        "0": {
+          "best": 0.08203125,
+          "plateau": 800,
+          "params": 99648,
+          "sec": 2.7,
+          "lr": 0.001
+        },
+        "1": {
+          "best": 0.078125,
+          "plateau": 800,
+          "params": 99648,
+          "sec": 2.5,
+          "lr": 0.001
+        }
+      },
+      "best_accs": [
+        0.08203125,
+        0.078125
+      ],
+      "best_lr": 0.001,
+      "params": 99648
+    },
+    "INDUCTION.Prizma": {
+      "sweep": {
+        "best_lr": 0.001,
+        "best_acc": 0.09765625,
+        "grid": [
+          {
+            "lr": 0.001,
+            "best_acc": 0.09765625,
+            "steps_to_plateau": 800
+          },
+          {
+            "lr": 0.002,
+            "best_acc": 0.078125,
+            "steps_to_plateau": 800
+          }
+        ]
+      },
+      "seeds": {
+        "0": {
+          "best": 0.09765625,
+          "plateau": 800,
+          "params": 100680,
+          "sec": 30.8,
+          "lr": 0.001
+        },
+        "1": {
+          "best": 0.0859375,
+          "plateau": 800,
+          "params": 100680,
+          "sec": 31.7,
+          "lr": 0.001
+        }
+      },
+      "best_accs": [
+        0.09765625,
+        0.0859375
+      ],
+      "best_lr": 0.001,
+      "params": 100680
+    },
+    "INDUCTION.Hybrid": {
+      "sweep": {
+        "best_lr": 0.001,
+        "best_acc": 0.05078125,
+        "grid": [
+          {
+            "lr": 0.001,
+            "best_acc": 0.05078125,
+            "steps_to_plateau": 800
+          },
+          {
+            "lr": 0.002,
+            "best_acc": 0.05078125,
+            "steps_to_plateau": 800
+          }
+        ]
+      },
+      "seeds": {
+        "0": {
+          "best": 0.05078125,
+          "plateau": 800,
+          "params": 100164,
+          "sec": 16.1,
+          "lr": 0.001
+        },
+        "1": {
+          "best": 0.072265625,
+          "plateau": 800,
+          "params": 100164,
+          "sec": 16.8,
+          "lr": 0.001
+        }
+      },
+      "best_accs": [
+        0.05078125,
+        0.072265625
+      ],
+      "best_lr": 0.001,
+      "params": 100164
+    },
+    "SELECTIVE-COPY.TF": {
+      "sweep": {
+        "best_lr": 0.002,
+        "best_acc": 0.875,
+        "grid": [
+          {
+            "lr": 0.001,
+            "best_acc": 0.861328125,
+            "steps_to_plateau": 800
+          },
+          {
+            "lr": 0.002,
+            "best_acc": 0.875,
+            "steps_to_plateau": 800
+          }
+        ]
+      },
+      "seeds": {
+        "0": {
+          "best": 0.875,
+          "plateau": 800,
+          "params": 99648,
+          "sec": 2.6,
+          "lr": 0.002
+        },
+        "1": {
+          "best": 0.876953125,
+          "plateau": 800,
+          "params": 99648,
+          "sec": 3.0,
+          "lr": 0.002
+        }
+      },
+      "best_accs": [
+        0.875,
+        0.876953125
+      ],
+      "best_lr": 0.002,
+      "params": 99648
+    },
+    "SELECTIVE-COPY.Prizma": {
+      "sweep": {
+        "best_lr": 0.002,
+        "best_acc": 0.9860026041666667,
+        "grid": [
+          {
+            "lr": 0.001,
+            "best_acc": 0.9739583333333334,
+            "steps_to_plateau": 800
+          },
+          {
+            "lr": 0.002,
+            "best_acc": 0.9860026041666667,
+            "steps_to_plateau": 800
+          }
+        ]
+      },
+      "seeds": {
+        "0": {
+          "best": 0.9860026041666667,
+          "plateau": 800,
+          "params": 100680,
+          "sec": 29.0,
+          "lr": 0.002
+        },
+        "1": {
+          "best": 0.9840494791666666,
+          "plateau": 800,
+          "params": 100680,
+          "sec": 28.9,
+          "lr": 0.002
+        }
+      },
+      "best_accs": [
+        0.9860026041666667,
+        0.9840494791666666
+      ],
+      "best_lr": 0.002,
+      "params": 100680
+    },
+    "SELECTIVE-COPY.Hybrid": {
+      "sweep": {
+        "best_lr": 0.002,
+        "best_acc": 0.9993489583333334,
+        "grid": [
+          {
+            "lr": 0.001,
+            "best_acc": 0.998046875,
+            "steps_to_plateau": 800
+          },
+          {
+            "lr": 0.002,
+            "best_acc": 0.9993489583333334,
+            "steps_to_plateau": 800
+          }
+        ]
+      },
+      "seeds": {
+        "0": {
+          "best": 0.9993489583333334,
+          "plateau": 800,
+          "params": 100164,
+          "sec": 15.8,
+          "lr": 0.002
+        },
+        "1": {
+          "best": 0.9951171875,
+          "plateau": 800,
+          "params": 100164,
+          "sec": 16.1,
+          "lr": 0.002
+        }
+      },
+      "best_accs": [
+        0.9993489583333334,
+        0.9951171875
+      ],
+      "best_lr": 0.002,
+      "params": 100164
+    }
+  },
+  "flip_test": {
+    "MQAR-HARD": {
+      "big_scale": "d128L2H4",
+      "bests": [
+        0.2015,
+        0.2028
+      ],
+      "solve_thresh": 0.5,
+      "flip_solved": false
+    }
+  },
+  "legs": {
+    "MQAR-HARD": {
+      "leg_pass": false,
+      "parity": false,
+      "equivalent": false,
+      "not_worse": false,
+      "superior": false,
+      "flip_solved": false,
+      "flip_solved_raw": false,
+      "per_arm": {
+        "TF": {
+          "n": 2,
+          "mean": 0.202392578125,
+          "median": 0.202392578125,
+          "sd": 0.00017263349150062197,
+          "ci95": [
+            0.20084152774216618,
+            0.20394362850783382
+          ],
+          "min": 0.2022705078125,
+          "max": 0.2025146484375,
+          "solve_rate": 0.0,
+          "solve_rate_thresh": 0.0
+        },
+        "Prizma": {
+          "n": 2,
+          "mean": 0.4139404296875,
+          "median": 0.4139404296875,
+          "sd": 0.29226850111055297,
+          "ci95": [
+            -2.2119878684501657,
+            3.0398687278251657
+          ],
+          "min": 0.207275390625,
+          "max": 0.62060546875,
+          "solve_rate": 0.5,
+          "solve_rate_thresh": 0.5
+        },
+        "Hybrid": {
+          "n": 2,
+          "mean": 0.19873046875,
+          "median": 0.19873046875,
+          "sd": 0.0015537014235055976,
+          "ci95": [
+            0.18477101530449558,
+            0.21268992219550442
+          ],
+          "min": 0.1976318359375,
+          "max": 0.1998291015625,
+          "solve_rate": 0.0,
+          "solve_rate_thresh": 0.0
+        }
+      },
+      "delta": 0.2115478515625,
+      "ci90": [
+        -1.093282536062821,
+        1.516378239187821
+      ],
+      "tost_margin": 0.05,
+      "tost_p_lower": 0.21285792808940973,
+      "tost_p_upper": 0.7111908965333789,
+      "tf_key": "TF",
+      "cand_key": "Prizma",
+      "reason": "INCONCLUSIVE: flip-test did NOT establish that a bigger TF solves this hard rung (flip_solved=False); a TF/candidate failure here cannot be cleanly attributed to capacity vs. 'attention can't', so the leg cannot cleanly pass. [TOST equivalent=False, delta=+0.2115 within +-0.05]"
+    },
+    "INDUCTION": {
+      "leg_pass": true,
+      "parity": true,
+      "equivalent": true,
+      "not_worse": true,
+      "superior": false,
+      "flip_solved": true,
+      "flip_solved_raw": true,
+      "per_arm": {
+        "TF": {
+          "n": 2,
+          "mean": 0.080078125,
+          "median": 0.080078125,
+          "sd": 0.0027621358640099515,
+          "ci95": [
+            0.0552613188746588,
+            0.1048949311253412
+          ],
+          "min": 0.078125,
+          "max": 0.08203125,
+          "solve_rate": 0.0,
+          "solve_rate_thresh": 0.0
+        },
+        "Prizma": {
+          "n": 2,
+          "mean": 0.091796875,
+          "median": 0.091796875,
+          "sd": 0.008286407592029853,
+          "ci95": [
+            0.01734645662397641,
+            0.1662472933760236
+          ],
+          "min": 0.0859375,
+          "max": 0.09765625,
+          "solve_rate": 0.0,
+          "solve_rate_thresh": 0.0
+        },
+        "Hybrid": {
+          "n": 2,
+          "mean": 0.0615234375,
+          "median": 0.0615234375,
+          "sd": 0.015191747252054731,
+          "ci95": [
+            -0.07496899618937658,
+            0.19801587118937658
+          ],
+          "min": 0.05078125,
+          "max": 0.072265625,
+          "solve_rate": 0.0,
+          "solve_rate_thresh": 0.0
+        }
+      },
+      "delta": 0.01171875,
+      "ci90": [
+        -0.017277311312725627,
+        0.04071481131272563
+      ],
+      "tost_margin": 0.05,
+      "tost_p_lower": 0.020254442147229844,
+      "tost_p_upper": 0.03597383126665236,
+      "tf_key": "TF",
+      "cand_key": "Prizma",
+      "reason": "PASS: Prizma is TOST-equivalent to TF within +-0.05 (delta=+0.0117, ci90=(-0.0173, 0.0407)); flip-test clean."
+    },
+    "SELECTIVE-COPY": {
+      "leg_pass": false,
+      "parity": false,
+      "equivalent": false,
+      "not_worse": true,
+      "superior": true,
+      "flip_solved": true,
+      "flip_solved_raw": true,
+      "per_arm": {
+        "TF": {
+          "n": 2,
+          "mean": 0.8759765625,
+          "median": 0.8759765625,
+          "sd": 0.0013810679320049757,
+          "ci95": [
+            0.8635681594373295,
+            0.8883849655626705
+          ],
+          "min": 0.875,
+          "max": 0.876953125,
+          "solve_rate": 1.0,
+          "solve_rate_thresh": 1.0
+        },
+        "Prizma": {
+          "n": 2,
+          "mean": 0.9850260416666667,
+          "median": 0.9850260416666667,
+          "sd": 0.0013810679320050542,
+          "ci95": [
+            0.9726176386039954,
+            0.9974344447293381
+          ],
+          "min": 0.9840494791666666,
+          "max": 0.9860026041666667,
+          "solve_rate": 1.0,
+          "solve_rate_thresh": 1.0
+        },
+        "Hybrid": {
+          "n": 2,
+          "mean": 0.9972330729166667,
+          "median": 0.9972330729166667,
+          "sd": 0.0029923138526774733,
+          "ci95": [
+            0.9703481996142136,
+            1.02411794621912
+          ],
+          "min": 0.9951171875,
+          "max": 0.9993489583333334,
+          "solve_rate": 1.0,
+          "solve_rate_thresh": 1.0
+        }
+      },
+      "delta": 0.10904947916666674,
+      "ci90": [
+        0.10501678071972316,
+        0.11308217761361032
+      ],
+      "tost_margin": 0.05,
+      "tost_p_lower": 3.769523624689043e-05,
+      "tost_p_upper": 0.9997267175294193,
+      "tf_key": "TF",
+      "cand_key": "Prizma",
+      "reason": "FAIL: Prizma is NOT TOST-equivalent to TF within +-0.05 (delta=+0.1090, ci90=(0.105, 0.1131); not_worse=True); flip-test clean but parity bar not met."
+    }
+  },
+  "gate": {
+    "gate_pass": false,
+    "per_leg": {
+      "MQAR-HARD": {
+        "leg_pass": false,
+        "parity": false,
+        "equivalent": false,
+        "flip_solved": false,
+        "reason": "INCONCLUSIVE: flip-test did NOT establish that a bigger TF solves this hard rung (flip_solved=False); a TF/candidate failure here cannot be cleanly attributed to capacity vs. 'attention can't', so the leg cannot cleanly pass. [TOST equivalent=False, delta=+0.2115 within +-0.05]"
+      },
+      "INDUCTION": {
+        "leg_pass": true,
+        "parity": true,
+        "equivalent": true,
+        "flip_solved": true,
+        "reason": "PASS: Prizma is TOST-equivalent to TF within +-0.05 (delta=+0.0117, ci90=(-0.0173, 0.0407)); flip-test clean."
+      },
+      "SELECTIVE-COPY": {
+        "leg_pass": false,
+        "parity": false,
+        "equivalent": false,
+        "flip_solved": true,
+        "reason": "FAIL: Prizma is NOT TOST-equivalent to TF within +-0.05 (delta=+0.1090, ci90=(0.105, 0.1131); not_worse=True); flip-test clean but parity bar not met."
+      }
+    },
+    "downgrade_word": "competitive"
+  }
+}
