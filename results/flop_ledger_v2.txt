@@ -1,0 +1,153 @@
+Param counts (matched, all four configs share params — feat map is buffers):
+   d64L2H2: TF 130,368  Prizma 131,400
+   d128L4H4: TF 857,216  Prizma 862,368
+
+############### SCALE LEGACY d64L2H2 (d_phi=256, v1 ref): d=64, H=2, L=2, d_h=32, d_ff=168, T=384 ###############
+TRANSFORMER per-layer (causal-honest):
+   qkv_proj           9.44 MFLOP
+   attn_scores        9.46 MFLOP
+   attn_AV            9.46 MFLOP
+   attn_out           3.15 MFLOP
+   mlp               24.77 MFLOP
+   TF: layer    56.28 MFLOP  x2+head =   137.72 MFLOP/seq  =   358.7 kFLOP/token
+Prizma-quad2 (d_phi=256) per-layer:
+   conv                   0.20 MFLOP
+   qkv_proj               9.44 MFLOP
+   beta                   0.10 MFLOP
+   phi_qk                 1.52 MFLOP
+   delta_state           94.37 MFLOP
+   window_full_TT        37.75 MFLOP
+   window_band_ideal      1.54 MFLOP
+   out_proj               3.15 MFLOP
+   mlp                   24.77 MFLOP
+   Prizma as-coded: x2+head =   367.76 MFLOP/seq =   957.7 kFLOP/token
+   Prizma ideal   : x2+head =   295.34 MFLOP/seq =   769.1 kFLOP/token
+   RATIO Prizma/TF forward:  as-coded 2.67x   ideal 2.14x
+   lever (d_phi 256 vs 32): delta-state x5.5  | window_full share = 20.5% as-coded, band =  1.0% ideal
+
+############################## R4 PER-CONFIG LEDGER (headline d128L4H4) ##############################
+
+=================== CONFIG none_d32: feat_map=none feat_n2=0 feat_rank=0 -> d_phi=32 ===================
+
+############### SCALE none_d32 (d128L4H4): d=128, H=4, L=4, d_h=32, d_ff=344, T=384 ###############
+TRANSFORMER per-layer (causal-honest):
+   qkv_proj          37.75 MFLOP
+   attn_scores       18.92 MFLOP
+   attn_AV           18.92 MFLOP
+   attn_out          12.58 MFLOP
+   mlp              101.45 MFLOP
+   TF: layer   189.63 MFLOP  x4+head =   808.85 MFLOP/seq  =  2106.4 kFLOP/token
+Prizma-quad2 (d_phi=32) per-layer:
+   conv                   0.39 MFLOP
+   qkv_proj              37.75 MFLOP
+   beta                   0.39 MFLOP
+   phi_qk                 0.29 MFLOP
+   delta_state           34.60 MFLOP
+   window_full_TT        75.50 MFLOP
+   window_band_ideal      3.08 MFLOP
+   out_proj              12.58 MFLOP
+   mlp                  101.45 MFLOP
+   Prizma as-coded: x4+head =  1102.18 MFLOP/seq =  2870.3 kFLOP/token
+   Prizma ideal   : x4+head =   812.53 MFLOP/seq =  2116.0 kFLOP/token
+   RATIO Prizma/TF forward:  as-coded 1.36x   ideal 1.00x
+   lever (d_phi 32 vs 32): delta-state x1.0  | window_full share = 27.4% as-coded, band =  1.5% ideal
+
+=== FLOP-matched TF search @ d=128 H=4 L=4 d_phi=32 (match Prizma as-coded 2870.3 kFLOP/tok) ===
+   deeper: TF d128L6H4  -> 3094.0 kFLOP/tok  (1.47x base, 1.08x Prizma)
+   wider : TF d160L4H4  -> 3104.0 kFLOP/tok  (1.47x base, 1.08x Prizma)
+
+=================== CONFIG quad2_d128_codedefault: feat_map=quad2 feat_n2=96 feat_rank=0 -> d_phi=128 ===================
+
+############### SCALE quad2_d128_codedefault (d128L4H4): d=128, H=4, L=4, d_h=32, d_ff=344, T=384 ###############
+TRANSFORMER per-layer (causal-honest):
+   qkv_proj          37.75 MFLOP
+   attn_scores       18.92 MFLOP
+   attn_AV           18.92 MFLOP
+   attn_out          12.58 MFLOP
+   mlp              101.45 MFLOP
+   TF: layer   189.63 MFLOP  x4+head =   808.85 MFLOP/seq  =  2106.4 kFLOP/token
+Prizma-quad2 (d_phi=128) per-layer:
+   conv                   0.39 MFLOP
+   qkv_proj              37.75 MFLOP
+   beta                   0.39 MFLOP
+   phi_qk                 1.47 MFLOP
+   delta_state          100.66 MFLOP
+   window_full_TT        75.50 MFLOP
+   window_band_ideal      3.08 MFLOP
+   out_proj              12.58 MFLOP
+   mlp                  101.45 MFLOP
+   Prizma as-coded: x4+head =  1371.14 MFLOP/seq =  3570.7 kFLOP/token
+   Prizma ideal   : x4+head =  1081.49 MFLOP/seq =  2816.4 kFLOP/token
+   RATIO Prizma/TF forward:  as-coded 1.70x   ideal 1.34x
+   lever (d_phi 128 vs 32): delta-state x2.9  | window_full share = 22.0% as-coded, band =  1.1% ideal
+
+=== FLOP-matched TF search @ d=128 H=4 L=4 d_phi=128 (match Prizma as-coded 3570.7 kFLOP/tok) ===
+   deeper: TF d128L7H4  -> 3587.8 kFLOP/tok  (1.70x base, 1.00x Prizma)
+   wider : TF d176L4H4  -> 3707.3 kFLOP/tok  (1.76x base, 1.04x Prizma)
+
+=================== CONFIG quad2_d256_v1ref: feat_map=quad2 feat_n2=224 feat_rank=0 -> d_phi=256 ===================
+
+############### SCALE quad2_d256_v1ref (d128L4H4): d=128, H=4, L=4, d_h=32, d_ff=344, T=384 ###############
+TRANSFORMER per-layer (causal-honest):
+   qkv_proj          37.75 MFLOP
+   attn_scores       18.92 MFLOP
+   attn_AV           18.92 MFLOP
+   attn_out          12.58 MFLOP
+   mlp              101.45 MFLOP
+   TF: layer   189.63 MFLOP  x4+head =   808.85 MFLOP/seq  =  2106.4 kFLOP/token
+Prizma-quad2 (d_phi=256) per-layer:
+   conv                   0.39 MFLOP
+   qkv_proj              37.75 MFLOP
+   beta                   0.39 MFLOP
+   phi_qk                 3.05 MFLOP
+   delta_state          188.74 MFLOP
+   window_full_TT        75.50 MFLOP
+   window_band_ideal      3.08 MFLOP
+   out_proj              12.58 MFLOP
+   mlp                  101.45 MFLOP
+   Prizma as-coded: x4+head =  1729.76 MFLOP/seq =  4504.6 kFLOP/token
+   Prizma ideal   : x4+head =  1440.10 MFLOP/seq =  3750.3 kFLOP/token
+   RATIO Prizma/TF forward:  as-coded 2.14x   ideal 1.78x
+   lever (d_phi 256 vs 32): delta-state x5.5  | window_full share = 17.5% as-coded, band =  0.9% ideal
+
+=== FLOP-matched TF search @ d=128 H=4 L=4 d_phi=256 (match Prizma as-coded 4504.6 kFLOP/tok) ===
+   deeper: TF d128L9H4  -> 4575.5 kFLOP/tok  (2.17x base, 1.02x Prizma)
+   wider : TF d208L4H4  -> 4993.7 kFLOP/tok  (2.37x base, 1.11x Prizma)
+
+=================== CONFIG quad2_lowrank_d137_v2lean: feat_map=quad2_lowrank feat_n2=0 feat_rank=14 -> d_phi=137 ===================
+
+############### SCALE quad2_lowrank_d137_v2lean (d128L4H4): d=128, H=4, L=4, d_h=32, d_ff=344, T=384 ###############
+TRANSFORMER per-layer (causal-honest):
+   qkv_proj          37.75 MFLOP
+   attn_scores       18.92 MFLOP
+   attn_AV           18.92 MFLOP
+   attn_out          12.58 MFLOP
+   mlp              101.45 MFLOP
+   TF: layer   189.63 MFLOP  x4+head =   808.85 MFLOP/seq  =  2106.4 kFLOP/token
+Prizma-quad2 (d_phi=137) per-layer:
+   conv                   0.39 MFLOP
+   qkv_proj              37.75 MFLOP
+   beta                   0.39 MFLOP
+   phi_qk                 1.59 MFLOP
+   delta_state          106.86 MFLOP
+   window_full_TT        75.50 MFLOP
+   window_band_ideal      3.08 MFLOP
+   out_proj              12.58 MFLOP
+   mlp                  101.45 MFLOP
+   Prizma as-coded: x4+head =  1396.36 MFLOP/seq =  3636.4 kFLOP/token
+   Prizma ideal   : x4+head =  1106.71 MFLOP/seq =  2882.0 kFLOP/token
+   RATIO Prizma/TF forward:  as-coded 1.73x   ideal 1.37x
+   lever (d_phi 137 vs 32): delta-state x3.1  | window_full share = 21.6% as-coded, band =  1.1% ideal
+
+=== FLOP-matched TF search @ d=128 H=4 L=4 d_phi=137 (match Prizma as-coded 3636.4 kFLOP/tok) ===
+   deeper: TF d128L8H4  -> 4081.7 kFLOP/tok  (1.94x base, 1.12x Prizma)
+   wider : TF d176L4H4  -> 3707.3 kFLOP/tok  (1.76x base, 1.02x Prizma)
+
+==============================================================================
+R4 SUMMARY — per-config FLOP ratios (Prizma / param-matched TF) @ d128L4H4:
+   config                         d_phi  as-coded   ideal  ascoded x  ideal x
+   none_d32                          32   2870.3 2116.0k      1.36x    1.00x
+   quad2_d128_codedefault           128   3570.7 2816.4k      1.70x    1.34x
+   quad2_d256_v1ref                 256   4504.6 3750.3k      2.14x    1.78x
+   quad2_lowrank_d137_v2lean        137   3636.4 2882.0k      1.73x    1.37x
+   (canonical v2 d_phi pending A100 >=10-seed MQAR-D128 gate — plan Task 1.D)

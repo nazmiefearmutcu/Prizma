@@ -1,0 +1,174 @@
+{
+  "_about": "R4 d_phi reconciliation. ANALYTICAL per-token forward FLOPs (causal-honest), one entry per canonical (feat_map, feat_n2/feat_rank, d_phi) config at the headline scale d128L4H4. These are analytical FLOP counts, NOT measured-accuracy metrics. The canonical v2 d_phi is LOCKED by a pending A100 >=10-seed MQAR-D128 solve-rate gate (plan Task 1.D); this ledger does not pick a winner.",
+  "scale": "d128L4H4",
+  "vocab": 512,
+  "T": 384,
+  "labels": {
+    "none_d32": "no-feature-map baseline (feat_map='none')",
+    "quad2_d128_codedefault": "current CODE DEFAULT (feat_n2=96 -> d_phi=128)",
+    "quad2_d256_v1ref": "v1 PUBLISHED reference / full quad2 (feat_n2=224 -> d_phi=256)",
+    "quad2_lowrank_d137_v2lean": "v2 LEAN target (quad2_lowrank, r=14 -> d_phi=137)"
+  },
+  "configs": {
+    "none_d32": {
+      "d_phi": 32,
+      "tf_per_tok": 2106368.0,
+      "ps_ascoded_per_tok": 2870272.0,
+      "ps_ideal_per_tok": 2115968.0,
+      "ratio_ascoded": 1.3626640738940203,
+      "ratio_ideal": 1.0045576081672338,
+      "feat_map": "none",
+      "feat_n2": 0,
+      "feat_rank": 0,
+      "scale": "d128L4H4",
+      "param_match": {
+        "tf_params": 857216,
+        "pz_params": 862368,
+        "delta": 5152,
+        "rel": 0.006010153800209049,
+        "matched": true,
+        "feat_map_added_params": 0
+      },
+      "matched_tf": {
+        "deeper": {
+          "label": "d128L6H4",
+          "d": 128,
+          "L": 6,
+          "H": 4,
+          "kflop_per_tok": 3094.016,
+          "x_base": 1.468886728245017,
+          "x_prizma": 1.0779521940777739
+        },
+        "wider": {
+          "label": "d160L4H4",
+          "d": 160,
+          "L": 4,
+          "H": 4,
+          "kflop_per_tok": 3104.0,
+          "x_base": 1.4736266407389402,
+          "x_prizma": 1.0814306100606492
+        }
+      }
+    },
+    "quad2_d128_codedefault": {
+      "d_phi": 128,
+      "tf_per_tok": 2106368.0,
+      "ps_ascoded_per_tok": 3570688.0,
+      "ps_ideal_per_tok": 2816384.0,
+      "ratio_ascoded": 1.695187165775401,
+      "ratio_ideal": 1.3370807000486145,
+      "feat_map": "quad2",
+      "feat_n2": 96,
+      "feat_rank": 0,
+      "scale": "d128L4H4",
+      "param_match": {
+        "tf_params": 857216,
+        "pz_params": 862368,
+        "delta": 5152,
+        "rel": 0.006010153800209049,
+        "matched": true,
+        "feat_map_added_params": 0
+      },
+      "matched_tf": {
+        "deeper": {
+          "label": "d128L7H4",
+          "d": 128,
+          "L": 7,
+          "H": 4,
+          "kflop_per_tok": 3587.84,
+          "x_base": 1.7033300923675254,
+          "x_prizma": 1.0048035560653856
+        },
+        "wider": {
+          "label": "d176L4H4",
+          "d": 176,
+          "L": 4,
+          "H": 4,
+          "kflop_per_tok": 3707.264,
+          "x_base": 1.7600267379679144,
+          "x_prizma": 1.038249211356467
+        }
+      }
+    },
+    "quad2_d256_v1ref": {
+      "d_phi": 256,
+      "tf_per_tok": 2106368.0,
+      "ps_ascoded_per_tok": 4504576.0,
+      "ps_ideal_per_tok": 3750272.0,
+      "ratio_ascoded": 2.1385512882839084,
+      "ratio_ideal": 1.780444822557122,
+      "feat_map": "quad2",
+      "feat_n2": 224,
+      "feat_rank": 0,
+      "scale": "d128L4H4",
+      "param_match": {
+        "tf_params": 857216,
+        "pz_params": 862368,
+        "delta": 5152,
+        "rel": 0.006010153800209049,
+        "matched": true,
+        "feat_map_added_params": 0
+      },
+      "matched_tf": {
+        "deeper": {
+          "label": "d128L9H4",
+          "d": 128,
+          "L": 9,
+          "H": 4,
+          "kflop_per_tok": 4575.488,
+          "x_base": 2.1722168206125425,
+          "x_prizma": 1.015742214139577
+        },
+        "wider": {
+          "label": "d208L4H4",
+          "d": 208,
+          "L": 4,
+          "H": 4,
+          "kflop_per_tok": 4993.664,
+          "x_base": 2.3707462323772486,
+          "x_prizma": 1.1085758126847012
+        }
+      }
+    },
+    "quad2_lowrank_d137_v2lean": {
+      "d_phi": 137,
+      "tf_per_tok": 2106368.0,
+      "ps_ascoded_per_tok": 3636352.0,
+      "ps_ideal_per_tok": 2882048.0,
+      "ratio_ascoded": 1.7263612056392805,
+      "ratio_ideal": 1.368254739912494,
+      "feat_map": "quad2_lowrank",
+      "feat_n2": 0,
+      "feat_rank": 14,
+      "scale": "d128L4H4",
+      "param_match": {
+        "tf_params": 857216,
+        "pz_params": 862368,
+        "delta": 5152,
+        "rel": 0.006010153800209049,
+        "matched": true,
+        "feat_map_added_params": 0
+      },
+      "matched_tf": {
+        "deeper": {
+          "label": "d128L8H4",
+          "d": 128,
+          "L": 8,
+          "H": 4,
+          "kflop_per_tok": 4081.664,
+          "x_base": 1.937773456490034,
+          "x_prizma": 1.122461191875814
+        },
+        "wider": {
+          "label": "d176L4H4",
+          "d": 176,
+          "L": 4,
+          "H": 4,
+          "kflop_per_tok": 3707.264,
+          "x_base": 1.7600267379679144,
+          "x_prizma": 1.0195008624027597
+        }
+      }
+    }
+  }
+}

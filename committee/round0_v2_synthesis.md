@@ -34,9 +34,17 @@
 5. **Lever I (free):** stochastic training window size — bolt onto E at zero extra cost.
 6. **Lever D (R9 + caveat):** gate is the **end-to-end ≥10-seed MQAR-D128 recall** at the reduced
    d_φ, run BEFORE any LM run — not just the crosstalk probe. Back off d_φ if the solve point regresses.
-7. **d_φ reconciliation (R4):** code default `feat_n2=96` → d_φ=128; the REPORT's headline FLOP/recall
-   numbers used d_φ=256. Reconcile across code/report/synthesis and re-emit the FLOP ledger from the
-   actual config before any FLOP statement.
+7. **d_φ reconciliation (R4) — RESOLVED.** code default `feat_n2=96` → d_φ=128; the REPORT's headline
+   FLOP/recall numbers used d_φ=256 (= the v1 full-quad2 reference, `feat_n2=224`); v2 lean target =
+   d_φ=137 (`quad2_lowrank`, r=14). Per-config FLOP ledger **re-emitted** for all four configs
+   (none/32, code/128, v1/256, lean/137) at the headline scale d128L4H4, each FLOP number pinned to its
+   exact `(feat_map, feat_n2/feat_rank → d_φ)` config AND tied to a REAL param-matched module pair
+   (param-match holds for all four, +0.6% vs TF). See `flop_ledger.py::emit_per_config_ledger`,
+   `results/flop_ledger_v2.json` / `results/flop_ledger_v2.txt`, the REPORT "d_φ reconciliation (R4)"
+   note, and `tests/test_flop_ledger.py`. As-coded / ideal ratios vs param-matched TF: none 1.36×/1.00×,
+   code-d128 1.70×/1.34×, v1-d256 2.14×/1.78×, lean-d137 1.73×/1.37×. **The canonical v2 d_φ is NOT
+   chosen here** — it remains LOCKED by the pending A100 ≥10-seed MQAR-D128 solve-rate gate (Task 1.D,
+   item 6 / Lever D).
 8. **LR fairness (R6):** Stage-1 LR uses ≥3 seeds for the bimodal legs (select on solve-rate→median,
    not best_acc@1seed) and is re-swept **per lever combination**; drop the "μP-aware" label unless a
    coordinate-check passes.

@@ -140,7 +140,9 @@ hard-won fair one (§ below "Fairness protocol"): **MixedMQAR** mixed-difficulty
 at target D=128), **gen-warm** (lr=1e-3, warmup=2000), **per-model plateau early-stop with
 engagement-floor=0.5** (a sub-0.5 model trains to the full 80k cap — it is *not* cut off
 pre-transition), **frozen reproducible eval set**, **≥5 seeds** on the headline with solve-rate +
-median + 95% CI. Scale notation `d{model}L{layers}H{heads}`; d_h=32, quad2 d_φ=256 throughout.
+median + 95% CI. Scale notation `d{model}L{layers}H{heads}`; d_h=32, quad2 d_φ=256 throughout
+(this is the **v1 full-quad2 reference** config, `feat_n2=224`; see "d_φ reconciliation (R4)" below —
+the code default is `d_φ=128` and the v2 lean target is `d_φ=137`; canonical v2 d_φ pending Task 1.D).
 
 > **Harness note (honesty):** mid-run the training harness was made CUDA-sync-free for tractable
 > wall-clock — `masked_ce` rewritten to a dense-CE×mask form (numerically **identical** to the
@@ -153,7 +155,9 @@ median + 95% CI. Scale notation `d{model}L{layers}H{heads}`; d_h=32, quad2 d_φ=
 Honest causal-counted forward FLOPs per token (`flop_ledger.py`, parameterized). Param-matched at
 each scale: d128L4H4 → **TF 857,216 vs Prizma-quad2 862,368** (+0.6%).
 
-| Scale | TF kFLOP/tok | Prizma-quad2-256 as-coded | Prizma ideal (banded window) | Ratio as-coded / ideal |
+_(d_φ=256 = the v1 full-quad2 reference, `feat_n2=224`; per-config table for d128 in "d_φ reconciliation (R4)" below.)_
+
+| Scale | TF kFLOP/tok | Prizma-quad2-256 (v1 ref) as-coded | Prizma ideal (banded window) | Ratio as-coded / ideal |
 |---|---|---|---|---|
 | d64L2H2 (legacy) | 358.7 | 957.7 | 769.1 | **2.67× / 2.14×** |
 | **d128L4H4 (headline)** | 2106.4 | **4504.6** | 3750.3 | **2.14× / 1.78×** |
@@ -164,6 +168,29 @@ column). The ratio *shrinks* with scale (2.67×→2.14×) because the TF's d_mod
 Prizma's fixed d_h·d_φ delta-state does not. **FLOP-matched TF arm** (Phase 2b): a deeper
 **TF d128L9H4** (4575.5 kFLOP/tok) matches Prizma-quad2's as-coded FLOPs to ~2% — and carries *more*
 params than Prizma, so it is deliberately generous to attention.
+
+#### d_φ reconciliation (R4)
+Three different `d_φ` were in flight across code/report/synthesis; every FLOP/recall figure is now
+**pinned to its exact `(feat_map, feat_n2/feat_rank → d_φ)` config** (machine-readable in
+`results/flop_ledger_v2.json`, printed tables in `results/flop_ledger_v2.txt`, emitted by
+`flop_ledger.py::emit_per_config_ledger`). Param-match holds for **all four** configs (the feature map
+is buffers, 0 trainable params → identical 862K params, +0.6% vs the matched TF 857K). The numbers in
+this section's table and the headline verdict above are the **v1 published reference, `d_φ=256`
+(`feat_n2=224`, "full quad2")** — kept verbatim, not altered. Per-config forward-FLOP ratios vs the
+param-matched TF at the headline scale d128L4H4 (analytical, causal-honest):
+
+| Config (label) | feat_map | feat_n2 / r | d_φ | as-coded ratio | ideal (banded) ratio |
+|---|---|---|---|---|---|
+| `none_d32` (no-feat baseline) | none | — | 32 | 1.36× | 1.00× |
+| `quad2_d128_codedefault` (**current code default**) | quad2 | 96 | 128 | 1.70× | 1.34× |
+| `quad2_d256_v1ref` (**v1 published headline**) | quad2 | 224 | 256 | **2.14×** | **1.78×** |
+| `quad2_lowrank_d137_v2lean` (**v2 lean target**) | quad2_lowrank | r=14 | 137 | 1.73× | 1.37× |
+
+Stated plainly: **code default = `d_φ=128`**, **v1 published headline = `d_φ=256`**, **v2 lean target
+= `d_φ=137`**. The **canonical v2 `d_φ` is LOCKED by the pending A100 ≥10-seed MQAR-D128 solve-rate
+gate** (plan Task 1.D) — this ledger does *not* pick a winner; it only makes every FLOP number
+unambiguous. These FLOP figures are **analytical** (a closed-form causal count), not measured-accuracy
+metrics, so they are reproducible without a GPU.
 
 ### Gap 1 — optimization-vs-capacity (does a BIGGER TF solve D=128?) + the headline
 _Filled from `gpu_bench.json` on completion (run streaming on A100). Pre-registered reading rule:_
