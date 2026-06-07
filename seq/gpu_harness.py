@@ -42,6 +42,7 @@ from .stats import (
 from .transformer import Transformer, TFConfig
 from .prizma_seq import PrizmaSeqLM, PrizmaSeqConfig
 from .hybrid import hybrid_factory
+from .gla import gla_factory
 
 
 # =========================================================== recipe constants ====
@@ -289,7 +290,14 @@ def make_arm(kind, d, L, H, **knobs):
         fac = hybrid_factory(d, L, H, **knobs)   # returns lambda V, T: HybridSeqLM(...)
         return name, fac
 
-    raise ValueError(f"unknown arm kind {kind!r} (expected 'tf'|'prizma'|'hybrid')")
+    if kind == "gla":
+        # Faithful Gated Linear Attention SOTA baseline (seq.gla). knobs forward to GLAConfig
+        # (chunk, expand_k, expand_v, gate_low_rank_dim, gate_logit_normalizer, ...).
+        name = f"GLA.{scale}{_knob_tag()}"
+        fac = gla_factory(d, L, H, **knobs)      # returns lambda V, T: GLALM(...)
+        return name, fac
+
+    raise ValueError(f"unknown arm kind {kind!r} (expected 'tf'|'prizma'|'hybrid'|'gla')")
 
 
 # ============================================================ negative_control ==
