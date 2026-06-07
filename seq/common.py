@@ -35,8 +35,12 @@ def get_device(prefer="mps"):
 
 
 def set_seed(seed: int):
-    torch.manual_seed(seed)
+    import random
+    random.seed(seed)
     np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
 
 
 def param_count(model: nn.Module, trainable_only=True) -> int:
