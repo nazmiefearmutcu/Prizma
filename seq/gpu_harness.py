@@ -254,7 +254,7 @@ def holm_family(pvals, alpha=0.05):
 def make_arm(kind, d, L, H, **knobs):
     """Declarative arm spec -> (name, factory).
 
-    kind in {'tf','prizma','hybrid'}.
+    kind in {'tf','prizma','hybrid','gla'}.
     factory has the (lambda V, T: nn.Module) signature so it drops into run_cell / sweep_then_seeds.
     For 'prizma' and 'hybrid', `knobs` forward the v2 PrizmaSeqConfig levers verbatim:
       out_gate, state_norm, decoupled_gate, surprise_gate, surprise_mode, n_delta,

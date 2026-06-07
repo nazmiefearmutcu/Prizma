@@ -136,9 +136,13 @@ class GLABlock(nn.Module):
         return torch.stack(outs, dim=2)                          # [B,H,T,head_v]
 
     def _chunk(self, q, k, v, log_alpha):
-        """Chunk-parallel GLA. Per-key-channel cumulative gates in LOG space; all ratios are
-        exp(log-diff) so they are <=1 on the causal region (float32-stable, mirrors delta.py).
-        Carries a real state S across chunks (true O(T) training). -> O:[B,H,T,head_v] (== _recurrent)."""
+        """Chunk-parallel GLA. Per-key-channel cumulative gates in LOG space. The RECOMBINED causal
+        ratio exp(B_i - B_s) is <=1 only for s<=i (hence the lower-triangular mask). The DECOMPOSED
+        factors q_i*exp(B_i) and k_s*exp(-B_s) are NOT individually bounded by 1 — exp(-B_s) grows as
+        the cumulative log-gate B_s goes negative. Numerical stability therefore rests on float32's
+        dynamic range PLUS `gate_logit_normalizer` bounding how negative each per-token log-gate can
+        get (not on the factors being <=1). Carries a real state S across chunks (true O(T) training).
+        -> O:[B,H,T,head_v] (== _recurrent)."""
         B, H, T, hk = q.shape
         C = self.cfg.chunk
         hv = v.shape[-1]
@@ -154,8 +158,11 @@ class GLABlock(nn.Module):
             cb = torch.cumsum(la, dim=2)                         # [B,H,Cc,head_k]  (B_i)
             # --- intra-chunk causal attention ---
             # A[i,s] = sum_ch q_i[ch] * exp(B_i[ch] - B_s[ch]) * k_s[ch]   for s <= i.
-            # Decompose so ratios stay <=1 on the causal region: q~_i = q_i*exp(B_i), k~_s = k_s*exp(-B_s);
-            # exp(B_i - B_s) <= 1 only for s <= i, so we MASK to the lower triangle (incl diag).
+            # Decompose the recombined ratio: q~_i = q_i*exp(B_i), k~_s = k_s*exp(-B_s) so
+            # q~_i . k~_s = sum_ch q_i k_s exp(B_i - B_s). The PRODUCT exp(B_i - B_s) <= 1 only for
+            # s <= i, so we MASK to the lower triangle (incl diag). The individual k~_s = k_s*exp(-B_s)
+            # is NOT <=1 (it grows as B_s goes negative) — stability rests on float32 range +
+            # gate_logit_normalizer (see the method docstring), not on the factors being bounded.
             q_dec = qc * torch.exp(cb)                           # [B,H,Cc,head_k]   q_i * b_i
             k_dec = kc * torch.exp(-cb)                          # [B,H,Cc,head_k]   k_s / b_s
             scores = torch.matmul(q_dec, k_dec.transpose(-1, -2))   # [B,H,Cc,Cc]  A[i,s]
