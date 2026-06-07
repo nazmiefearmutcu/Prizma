@@ -61,6 +61,7 @@ class PrizmaSeqConfig:
     out_gate: bool = False      # per-token output gate g=sigma(W_g x); o = o * g before W_o (RWKV-7/GLA)
     state_norm: bool = False    # per-head RMSNorm on the delta-state read o_delta before merge
     banded_window: bool = False # O(T*w) banded sliding-window kernel (exact-equal to _window, default off)
+    decoupled_gate: bool = False  # GDN-2: decouple erase gate beta_e (key-side) from write gate beta_w
 
     def __post_init__(self):
         if self.d_ff is None:
@@ -117,6 +118,7 @@ class PrizmaSeqBlock(nn.Module):
         self.W_o = nn.Linear(d, d, bias=False)
         self.W_g = nn.Linear(d, d, bias=True) if cfg.out_gate else None
         self.state_rms = RMSNorm(dh) if cfg.state_norm else None
+        self.W_e = nn.Linear(d, H, bias=True) if cfg.decoupled_gate else None   # erase gate beta_e
         self.norm2 = RMSNorm(d)
         self.mlp = SwiGLU(TFConfig(d_model=d, d_ff=cfg.d_ff))
         self.win_scale = dh ** -0.5
@@ -177,7 +179,11 @@ class PrizmaSeqBlock(nn.Module):
             alpha = 0.5 + 0.5 * alpha           # keep decay in [0.5,1] (stability)
         else:
             alpha = None
-        return q, k, v, beta, alpha
+        if self.W_e is not None:
+            beta_e = torch.sigmoid(self.W_e(x)).transpose(1, 2) * self.cfg.beta_cap   # [B,H,T]
+        else:
+            beta_e = None          # => chunked_delta will use beta_e = beta (byte-identical)
+        return q, k, v, beta, alpha, beta_e
 
     def _window(self, q, k, v):
         """Exact causal attention restricted to the last `w` tokens (incl. self). Fused SDPA + band
@@ -211,12 +217,13 @@ class PrizmaSeqBlock(nn.Module):
         B, T, d = h.shape
         x = self._apply_conv(self.norm1(h))
         cos, sin = _rope_cache(T, self.dh, h.device, h.dtype) if self.cfg.rope else (None, None)
-        q, k, v, beta, alpha = self._encode(x, cos, sin)
+        q, k, v, beta, alpha, beta_e = self._encode(x, cos, sin)
         o = torch.zeros(B, self.H, T, self.dh, device=h.device, dtype=h.dtype)
         if self.cfg.use_workspace:
             # delta state keyed by phi(q),phi(k) (dim d_phi); values stay d_h -> state [B,H,d_h,d_phi]
             o_delta, _ = chunked_delta(self._phi(q), self._phi(k), v, beta, alpha,
-                                       chunk=self.cfg.chunk, write_mode=self.cfg.write_mode)  # [B,H,T,d_h]
+                                       chunk=self.cfg.chunk, write_mode=self.cfg.write_mode,
+                                       beta_e=beta_e)                              # [B,H,T,d_h]
             if self.state_rms is not None:
                 o_delta = self.state_rms(o_delta)    # per-head RMSNorm over d_h
             o = o + o_delta
@@ -246,14 +253,16 @@ class PrizmaSeqBlock(nn.Module):
         else:
             x = xin
         cos, sin = _rope_cache(1, self.dh, h_t.device, h_t.dtype, offset=pos) if self.cfg.rope else (None, None)
-        q, k, v, beta, alpha = self._encode(x, cos, sin)         # [B,H,1,dh], beta [B,H,1]
+        q, k, v, beta, alpha, beta_e = self._encode(x, cos, sin)  # [B,H,1,dh], beta [B,H,1]
         q1, k1, v1 = q[:, :, 0], k[:, :, 0], v[:, :, 0]          # [B,H,dh] (linear L2; window keys)
         q1p, k1p = self._phi(q)[:, :, 0], self._phi(k)[:, :, 0]  # [B,H,d_phi] (delta state keys)
-        b1 = beta[:, :, 0]                                       # [B,H]
+        b1 = beta[:, :, 0]                                       # [B,H]  write gate beta_w
+        be1 = beta_e[:, :, 0] if beta_e is not None else b1      # [B,H]  erase gate beta_e
         a1 = alpha[:, :, 0] if alpha is not None else torch.ones_like(b1)
         o_delta = torch.einsum("bhij,bhj->bhi", S, q1p)          # pre-write read S_{t-1} phi(q)
         Sk = torch.einsum("bhij,bhj->bhi", S, k1p)               # [B,H,d_h]
-        u = b1[..., None] * (v1 - a1[..., None] * Sk)            # [B,H,d_h]
+        # decoupled: u = beta_w * v  -  beta_e * (alpha * S k)
+        u = b1[..., None] * v1 - be1[..., None] * (a1[..., None] * Sk)   # [B,H,d_h]
         S = a1[..., None, None] * S + torch.einsum("bhi,bhj->bhij", u, k1p)   # [B,H,d_h,d_phi]
         if self.state_rms is not None:
             o_delta = self.state_rms(o_delta)    # per-head RMSNorm [B,H,d_h], mirrors forward

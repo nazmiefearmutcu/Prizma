@@ -17,9 +17,11 @@ from __future__ import annotations
 import torch
 
 
-def _delta_reference(q, k, v, beta, alpha=None, S0=None, write_mode="delta"):
+def _delta_reference(q, k, v, beta, alpha=None, S0=None, write_mode="delta", beta_e=None):
     """Ground-truth sequential recurrence. q,k,v:[B,H,T,d]; beta:[B,H,T]; alpha:[B,H,T] or None.
-    write_mode='additive' -> u=beta*v (no erase), the linear-attn ablation."""
+    write_mode='additive' -> u=beta*v (no erase), the linear-attn ablation.
+    beta_e: optional erase gate [B,H,T]; if None, beta_e=beta (byte-identical to old behaviour).
+    When beta_e is provided, u_t = beta_w*v_t - beta_e*(alpha*S k_t)  (decoupled GDN-2 write)."""
     B, H, T, d = q.shape
     dv = v.shape[-1]                     # value-dim-aware init: supports a RECTANGULAR state
     if S0 is None:                       #   S in R^{d_v x d_k} (d_k=d), needed by the feature-map
@@ -28,15 +30,17 @@ def _delta_reference(q, k, v, beta, alpha=None, S0=None, write_mode="delta"):
         S = S0.clone()
     if alpha is None:
         alpha = torch.ones(B, H, T, dtype=q.dtype, device=q.device)
+    if beta_e is None:
+        beta_e = beta          # default: erase == write gate (byte-identical to today)
     erase = (write_mode == "delta")
     outs = []
     for t in range(T):
         qt, kt, vt = q[:, :, t], k[:, :, t], v[:, :, t]            # [B,H,d]
-        bt, at = beta[:, :, t], alpha[:, :, t]                     # [B,H]
+        bt, bet, at = beta[:, :, t], beta_e[:, :, t], alpha[:, :, t]   # [B,H]
         o = torch.einsum("bhij,bhj->bhi", S, qt)                   # read S_{t-1} q_t  (PRE-write)
         if erase:
             Sk = torch.einsum("bhij,bhj->bhi", S, kt)              # S_{t-1} k_t
-            u = bt[..., None] * (vt - at[..., None] * Sk)          # [B,H,d]
+            u = bt[..., None] * vt - bet[..., None] * (at[..., None] * Sk)  # decoupled write
         else:
             u = bt[..., None] * vt                                # additive (no erase)
         S = at[..., None, None] * S + torch.einsum("bhi,bhj->bhij", u, kt)
@@ -66,10 +70,13 @@ def _solve_unit_lower(Amat, RHS):
         return X
 
 
-def chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode="delta"):
+def chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode="delta", beta_e=None):
     """WY/UT chunk-parallel delta rule. Same semantics as _delta_reference, O(T d^2/C + T C d).
     alpha=None -> pure delta (no decay). write_mode='additive' -> linear-attn ablation (no erase:
-    u=beta*v, used for B6 PRIZMA_noDelta). Returns O:[B,H,T,d], S_end:[B,H,d,d]."""
+    u=beta*v, used for B6 PRIZMA_noDelta). Returns O:[B,H,T,d], S_end:[B,H,d,d].
+    beta_e: optional erase gate [B,H,T]; if None, beta_e=beta (byte-identical to old behaviour).
+    When beta_e is provided, the A-matrix (erase/read-back) is scaled by beta_e while the Vc
+    (write) term is scaled by beta_w=beta — decoupled GDN-2 update."""
     B, H, T, d = q.shape
     dv = v.shape[-1]                     # value-dim-aware init -> RECTANGULAR state S in R^{d_v x d_k}
     if S0 is None:                       #   (d_k=d). Byte-identical when d_v == d_k (every existing
@@ -78,6 +85,8 @@ def chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode="delt
         S = S0
     gated = alpha is not None
     erase = (write_mode == "delta")
+    # beta_e=None means use beta for both erase and write -> byte-identical to previous behaviour
+    decoupled = (beta_e is not None)
     outs = []
     for c0 in range(0, T, chunk):
         c1 = min(c0 + chunk, T)
@@ -85,7 +94,8 @@ def chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode="delt
         Kc = k[:, :, c0:c1]                      # [B,H,C,d]
         Vc = v[:, :, c0:c1]
         Qc = q[:, :, c0:c1]
-        Bc = beta[:, :, c0:c1]                    # [B,H,C]
+        Bc = beta[:, :, c0:c1]                    # [B,H,C]  write gate beta_w
+        Bec = beta_e[:, :, c0:c1] if decoupled else Bc   # [B,H,C]  erase gate beta_e
         if gated:
             Ac = alpha[:, :, c0:c1]               # [B,H,C]  in [0.5,1]
             # within-chunk cumulative decay in LOG space (avoids float32 underflow of gamma over
@@ -97,10 +107,15 @@ def chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode="delt
             clog_prev = clog - logA                              # log gamma_{i-1} (pre i)
             KK = torch.matmul(Kc, Kc.transpose(-1, -2))          # [B,H,C,C]  k_i·k_j
             ratio = torch.exp(clog[..., :, None] - clog[..., None, :])         # gamma_i/gamma_j
-            A = torch.tril(Bc[..., :, None] * (KK * ratio), -1) if erase else torch.zeros_like(KK)
+            # A matrix: erase gate beta_e scales the KK*ratio terms (read-back / erase strength)
+            A = torch.tril(Bec[..., :, None] * (KK * ratio), -1) if erase else torch.zeros_like(KK)
             KS0 = torch.matmul(Kc, S.transpose(-1, -2))          # [B,H,C,d]  (k_i^T S0^T)
             gamma = torch.exp(clog)[..., None]                   # [B,H,C,1] absolute (genuine small)
-            rhs = Bc[..., None] * (Vc - gamma * KS0) if erase else Bc[..., None] * Vc
+            # rhs: write gate beta_w scales Vc; erase gate beta_e scales the gamma*KS0 term
+            if erase:
+                rhs = Bc[..., None] * Vc - Bec[..., None] * (gamma * KS0)
+            else:
+                rhs = Bc[..., None] * Vc
             U = _solve_unit_lower(A, rhs)                        # [B,H,C,d]
             # reads are PRE-write -> decayed to gamma_{i-1}
             read_ratio = torch.exp(clog_prev[..., :, None] - clog[..., None, :])   # gamma_{i-1}/gamma_j
@@ -115,9 +130,14 @@ def chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode="delt
             S = gC * S + torch.matmul((scale[..., None] * U).transpose(-1, -2), Kc)
         else:
             KK = torch.matmul(Kc, Kc.transpose(-1, -2))          # [B,H,C,C]
-            A = torch.tril(Bc[..., :, None] * KK, -1) if erase else torch.zeros_like(KK)
+            # A matrix: erase gate beta_e scales the KK terms
+            A = torch.tril(Bec[..., :, None] * KK, -1) if erase else torch.zeros_like(KK)
             KS0 = torch.matmul(Kc, S.transpose(-1, -2))          # [B,H,C,d]
-            rhs = Bc[..., None] * (Vc - KS0) if erase else Bc[..., None] * Vc
+            # rhs: write gate beta_w scales Vc; erase gate beta_e scales KS0
+            if erase:
+                rhs = Bc[..., None] * Vc - Bec[..., None] * KS0
+            else:
+                rhs = Bc[..., None] * Vc
             U = _solve_unit_lower(A, rhs)                        # [B,H,C,d]
             O_inter = torch.matmul(Qc, S.transpose(-1, -2))      # [B,H,C,d]
             QK = torch.matmul(Qc, Kc.transpose(-1, -2))
