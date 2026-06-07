@@ -141,9 +141,14 @@ deepening ablations, drafting the report, running council rounds. No blocking on
 - **Overclaiming pressure** (chasing "dramatic") → Council 1 integrity referee + Council 3 standards
   bar are veto gates; the bar in §3 requires powered stats, not point estimates.
 
-## 10. Success definition
-Prizma-Seq v2 is done when: the §3 bar is cleared on ≥3 axes decisively (char-LM win + a measured
-all-n latency win + per-FLOP parity/win) **with powered statistics and seed-pinned reproducibility**,
-the constant-memory and param-efficiency edges are retained, the novel surprise-gate is causally
-attributed, **and all three councils sign off** that this is a credible, non-strawman, dramatically
-Pareto-dominant non-Transformer architecture in the tested regime — with scale stated honestly.
+## 10. Success definition (Pareto-dominance, made precise)
+"Pareto-dominance" = on **every** §3 axis Prizma-Seq v2 is **statistically not worse** than the
+matched tuned Transformer, **and decisively (powered) better on the key axes** — at minimum:
+char-LM (≥0.03 BPC, TOST-superiority), a **measured all-n latency win** (n ≳ 2k), and **per-FLOP
+parity-or-win**; while *retaining* the existing constant-memory and parameter-efficiency edges and
+not regressing the diagnostic legs. All decisive claims require **powered statistics (≥10 seeds,
+TOST/superiority, CIs) and seed-pinned reproducibility**, the novel surprise-gate must be **causally
+attributed**, and **all three councils must sign off** that this is a credible, non-strawman,
+dramatically Pareto-dominant non-Transformer architecture in the tested regime — with scale stated
+honestly. (No axis may be silently dropped; an axis that cannot be won is reported as a Pareto knob,
+not hidden.)
