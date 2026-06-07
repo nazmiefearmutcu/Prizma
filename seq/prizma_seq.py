@@ -75,6 +75,9 @@ class PrizmaSeqConfig:
     banded_window: bool = False # O(T*w) banded sliding-window kernel (exact-equal to _window, default off)
     decoupled_gate: bool = False  # GDN-2: decouple erase gate beta_e (key-side) from write gate beta_w
     n_delta: int = 1              # DeltaProduct: number of sequential delta sub-steps per token (k=1 = today)
+    # --- surprise-gated write (Lever A) ---
+    surprise_gate: bool = False   # if True, scale write by g_t = 1+tanh(||eps_t||) (default OFF = identical)
+    surprise_mode: str = 'norm'   # 'norm' | 'random' | 'constant' — controls for R9 ablation
 
     def __post_init__(self):
         if self.d_ff is None:
@@ -83,6 +86,8 @@ class PrizmaSeqConfig:
         self.d_h = self.d_model // self.n_heads
         assert self.d_h % 2 == 0, "d_h must be even for RoPE"
         assert self.feat_map in ("none", "quad2", "quad2_lowrank", "rand_linear")
+        assert self.surprise_mode in ('norm', 'random', 'constant'), \
+            f"surprise_mode must be 'norm', 'random', or 'constant', got {self.surprise_mode!r}"
         # d_phi = delta key/query dim after the optional feature map (= d_h when 'none').
         # 'rand_linear' = a FIXED random linear map d_h->d_phi (a CONTROL: it stays in a d_h-rank
         # subspace so it must give NO capacity gain, proving the quad2 MONOMIALS are what help).
@@ -300,10 +305,12 @@ class PrizmaSeqBlock(nn.Module):
                                            chunk=self.cfg.chunk, write_mode=self.cfg.write_mode,
                                            beta_e=None, n_delta=self.cfg.n_delta)  # [B,H,T,d_h]
             else:
-                # n_delta=1: standard path (byte-identical, with phi and beta_e)
+                # n_delta=1: standard path (byte-identical when surprise_gate=False, with phi and beta_e)
                 o_delta, _ = chunked_delta(self._phi(q), self._phi(k), v, beta, alpha,
                                            chunk=self.cfg.chunk, write_mode=self.cfg.write_mode,
-                                           beta_e=beta_e)                          # [B,H,T,d_h]
+                                           beta_e=beta_e,
+                                           surprise=self.cfg.surprise_gate,
+                                           surprise_mode=self.cfg.surprise_mode)   # [B,H,T,d_h]
             # delta state keyed by phi(q),phi(k) (dim d_phi); values stay d_h -> state [B,H,d_h,d_phi]
             if self.state_rms is not None:
                 o_delta = self.state_rms(o_delta)    # per-head RMSNorm over d_h
@@ -365,8 +372,19 @@ class PrizmaSeqBlock(nn.Module):
             k1p = self._phi(k)[:, :, 0]                           # [B,H,d_phi] (delta state keys)
             be1 = beta_e[:, :, 0] if beta_e is not None else b1   # [B,H]  erase gate beta_e
             Sk = torch.einsum("bhij,bhj->bhi", S, k1p)            # [B,H,d_h]
-            # decoupled: u = beta_w * v  -  beta_e * (alpha * S k)
-            u = b1[..., None] * v1 - be1[..., None] * (a1[..., None] * Sk)   # [B,H,d_h]
+            # Prediction error (free-energy gradient at S_{t-1}): eps = v - alpha*S*k
+            eps1 = v1 - a1[..., None] * Sk                        # [B,H,d_h]
+            if self.cfg.surprise_gate:
+                # g_t = 1 + tanh(||eps_t||); same formula as _delta_reference / _surprise_gate 'norm'
+                # (only 'norm' mode is used in step() — the 'random'/'constant' modes are ablation-only
+                # and are not wired through step() since they are not meaningful at inference time).
+                # For step==forward parity with surprise_mode='norm', this is exact.
+                g1 = (1.0 + torch.tanh(eps1.norm(dim=-1)))[..., None]   # [B,H,1]
+                # Apply g to full write vector: u = g * (beta_w*v - beta_e*alpha*Sk)
+                u = g1 * (b1[..., None] * v1 - be1[..., None] * (a1[..., None] * Sk))
+            else:
+                # decoupled: u = beta_w * v  -  beta_e * (alpha * S k)
+                u = b1[..., None] * v1 - be1[..., None] * (a1[..., None] * Sk)   # [B,H,d_h]
             S = a1[..., None, None] * S + torch.einsum("bhi,bhj->bhij", u, k1p)   # [B,H,d_h,d_phi]
         if self.state_rms is not None:
             o_delta = self.state_rms(o_delta)    # per-head RMSNorm [B,H,d_h], mirrors forward
@@ -474,3 +492,19 @@ if __name__ == "__main__":
         print(f"[feat_map={feat:<12} d_phi={cfg.d_phi:<4}] forward {tuple(y.shape)} "
               f"params {p} {'(MATCH)' if param_ok else '(MISMATCH!)'} "
               f"step-vs-forward max|d|={d:.2e} {'OK' if d < 1e-4 else 'MISMATCH'}")
+    # SURPRISE GATE O(1) guard: surprise_gate=True step()==forward() < 1e-4
+    cfg_s = PrizmaSeqConfig(vocab=64, d_model=64, n_layers=2, n_heads=2,
+                            feat_map='none', surprise_gate=True, surprise_mode='norm')
+    m_s = PrizmaSeqLM(cfg_s).to(dev)
+    m_s.train(False)
+    torch.manual_seed(7)
+    x_s = torch.randint(0, 64, (2, 48), device=dev)
+    y_s = m_s(x_s)
+    st_s = m_s.init_state(2, dev)
+    outs_s = []
+    for t in range(x_s.shape[1]):
+        lg_s, st_s = m_s.step(x_s[:, t:t + 1], st_s)
+        outs_s.append(lg_s)
+    yo_s = torch.cat(outs_s, dim=1)
+    d_s = (y_s - yo_s).abs().max().item()
+    print(f"[surprise_gate=True norm] step-vs-forward max|d|={d_s:.2e} {'OK' if d_s < 1e-4 else 'MISMATCH'}")
