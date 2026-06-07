@@ -1,5 +1,8 @@
 # Prizma
 
+[![CI](https://github.com/nazmiefearmutcu/Prizma/actions/workflows/ci.yml/badge.svg)](https://github.com/nazmiefearmutcu/Prizma/actions/workflows/ci.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 Two small-scale research threads built the same way: a **pre-registered falsifiable bar**, a
 **parameter/FLOP-matched** baseline, an **adversarial referee audit**, and **honest, binding
 limits**. No faked metrics — every number is produced by a reproducible script and the raw result
@@ -89,3 +92,21 @@ python3.13 -m venv .venv && ./.venv/bin/pip install numpy matplotlib
 
 > Status: research prototypes. Neither thread claims large-scale parity; each is a falsifiability
 > gate passed (or honestly refused) in a precisely-characterized small-scale regime.
+
+---
+
+## Reproducing the falsifiability harness
+
+The invariant test suite (kernel guards, lever `off == identical` checks, O(1) `step == forward`
+equivalence, and the anti-conservative statistics gate) runs on every push via
+[CI](.github/workflows/ci.yml):
+
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install -r requirements.txt pytest
+pytest -q          # 94 tests, ~25 s on CPU
+```
+
+## License
+
+Prizma is released under the [Apache License 2.0](LICENSE). © 2026 The Prizma Authors.
