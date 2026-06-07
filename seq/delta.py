@@ -33,6 +33,22 @@ Surprise-gated write (Lever A):
                  E[tanh(|N(0,1)|)] ≈ 0.56 ≈ E[tanh(||eps||)] for typical normalised delta errors.
     'constant' : g_t = 1 + tanh(1.0) ≈ 1.762, a fixed constant equal to E[tanh(||eps||)]
                  approximated by tanh(1.0).  Provides a constant-mean-beta_eff control.
+
+In-context per-channel learning rate (Lever G — RWKV-7 "Goose" generalized delta):
+  The scalar write gate beta_t (one rate per head) generalizes into a per-VALUE-channel rate vector
+  eta_t in R^{d_v}, which modulates the delta write per state/output channel:
+      u_t = eta_t (elementwise over the d_v value channels) * (v_t - alpha_t * S_{t-1} k_t)
+      S_t = alpha_t * S_{t-1} + u_t k_t^T
+  Decay (alpha) and the erase read-back are UNCHANGED — G is a vector-valued beta on the WRITE
+  magnitude only. eta=None (default) -> the scalar-beta path, byte-identical to today.
+
+  SPEED NOTE: when eta is provided, chunked_delta delegates to _delta_reference for an EXACT
+  sequential scan (same correctness-first fallback the 'surprise' path uses). The WY/UT chunk
+  shortcut solves ONE triangular system (I+A) U = rhs whose coupling matrix A mixes the value
+  channels uniformly (a single scalar rate per token); a per-VALUE-channel eta makes the cross-token
+  write coupling channel-dependent, which a single channel-shared solve cannot represent exactly.
+  Correctness first; a per-channel chunked kernel is a future Pareto knob. eta is scoped to
+  n_delta==1 (NotImplementedError for n_delta>=2, mirroring how existing levers scope interactions).
 """
 from __future__ import annotations
 
@@ -65,7 +81,8 @@ def _surprise_gate(eps, mode, gen):
 
 
 def _delta_reference(q, k, v, beta, alpha=None, S0=None, write_mode="delta", beta_e=None,
-                     n_delta=1, surprise=False, surprise_mode='norm', surprise_gen=None):
+                     n_delta=1, surprise=False, surprise_mode='norm', surprise_gen=None,
+                     eta=None):
     """Ground-truth sequential recurrence. q,k,v:[B,H,T,d]; beta:[B,H,T]; alpha:[B,H,T] or None.
     write_mode='additive' -> u=beta*v (no erase), the linear-attn ablation.
     beta_e: optional erase gate [B,H,T]; if None, beta_e=beta (byte-identical to old behaviour).
@@ -78,7 +95,19 @@ def _delta_reference(q, k, v, beta, alpha=None, S0=None, write_mode="delta", bet
     additive delta (no additional decay), consistent with Householder-product semantics.
     surprise: if True, scale u_t by g_t = 1+tanh(||eps_t||) (or per surprise_mode) BEFORE writing.
     surprise_mode: 'norm' | 'random' | 'constant' — see module docstring.
-    surprise_gen: explicit torch.Generator for 'random' mode (reproducibility, R8 discipline)."""
+    surprise_gen: explicit torch.Generator for 'random' mode (reproducibility, R8 discipline).
+    eta: optional in-context per-VALUE-channel learning rate (Lever G, RWKV-7 generalized delta),
+    shape [B,H,T,d_v]. When None (default), the scalar write gate beta_t is used unchanged
+    (byte-identical to old behaviour). When provided, eta REPLACES the scalar write gate on the WRITE
+    term, modulating the delta write per value/output channel:
+        u_t = eta_t (elementwise over the d_v value channels) * (v_t - alpha_t * S_{t-1} k_t)
+    Decay (alpha) and the erase read-back are unchanged: G modulates only the per-channel WRITE
+    magnitude, exactly like a vector-valued beta. eta is scoped to n_delta==1 (a NotImplementedError
+    is raised for n_delta>=2, mirroring how existing levers scope their interactions)."""
+    if eta is not None and n_delta >= 2:
+        raise NotImplementedError(
+            "inctx_lr (per-channel eta) is only implemented for n_delta==1; "
+            "combining it with n_delta>=2 (DeltaProduct) is out of scope for Lever G.")
     B, H, T, d = q.shape
     dv = v.shape[-1] if n_delta == 1 else v.shape[-1]  # [B,H,T,n_delta,d] -> last dim still d
     if n_delta >= 2:
@@ -115,14 +144,22 @@ def _delta_reference(q, k, v, beta, alpha=None, S0=None, write_mode="delta", bet
                 #   which is the write vector. The eps for SIGNAL computation always uses
                 #   the symmetric beta (bt), consistent with the free-energy interpretation.
                 eps_t = vt - at[..., None] * Sk                    # [B,H,d] prediction error
-                if surprise:
+                if eta is not None:
+                    # Lever G: per-VALUE-channel in-context learning rate eta_t in R^{d_v} REPLACES
+                    # the scalar write gate, modulating the delta write per output channel:
+                    #   u_t = eta_t (elementwise) * (v_t - alpha_t * S_{t-1} k_t) = eta_t * eps_t
+                    # Decay (alpha) and the erase read-back stay exactly as today; G is a vector beta
+                    # on the WRITE magnitude. (Scoped to n_delta==1; not combined with surprise.)
+                    u = eta[:, :, t] * eps_t                        # [B,H,d_v]
+                elif surprise:
                     g = _surprise_gate(eps_t, surprise_mode, surprise_gen)  # [B,H,1]
                     # Apply g to the full write vector u (before alpha-scaled state decay)
                     u = g * (bt[..., None] * vt - bet[..., None] * (at[..., None] * Sk))
                 else:
                     u = bt[..., None] * vt - bet[..., None] * (at[..., None] * Sk)
             else:
-                u = bt[..., None] * vt
+                # additive (linear-attn) write: eta (if provided) is a per-channel rate on v_t.
+                u = (eta[:, :, t] * vt) if eta is not None else (bt[..., None] * vt)
             S = at[..., None, None] * S + torch.einsum("bhi,bhj->bhij", u, kt)
         else:
             # n_delta >= 2: k[B,H,T,n_delta,d], v[B,H,T,n_delta,d], beta[B,H,T,n_delta]
@@ -173,7 +210,7 @@ def _solve_unit_lower(Amat, RHS):
 
 
 def chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode="delta", beta_e=None,
-                  n_delta=1, surprise=False, surprise_mode='norm', surprise_gen=None):
+                  n_delta=1, surprise=False, surprise_mode='norm', surprise_gen=None, eta=None):
     """WY/UT chunk-parallel delta rule. Same semantics as _delta_reference, O(T d^2/C + T C d).
     alpha=None -> pure delta (no decay). write_mode='additive' -> linear-attn ablation (no erase:
     u=beta*v, used for B6 PRIZMA_noDelta). Returns O:[B,H,T,d], S_end:[B,H,d,d].
@@ -189,13 +226,32 @@ def chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode="delt
     all prior surprise-gated writes. A frozen chunk-entry state approximation diverges on repeated
     keys by ~100% (remedy R3). When surprise=False (default), the fast WY/UT path is used
     byte-for-byte (no speed regression on the default path).
-    surprise_mode / surprise_gen: forwarded to _delta_reference (see module docstring)."""
+    surprise_mode / surprise_gen: forwarded to _delta_reference (see module docstring).
+    eta: optional in-context per-VALUE-channel learning rate (Lever G), shape [B,H,T,d_v]. When None
+    (default), the scalar-beta fast WY/UT path is used byte-for-byte (no speed regression).
+    When provided, this delegates to _delta_reference for an EXACT SEQUENTIAL scan — the same
+    correctness-first fallback the 'surprise' path uses. RATIONALE: the WY/UT closed form solves a
+    single triangular system (I + A) U = rhs whose coupling matrix A = tril(beta_e * KK * ratio)
+    mixes the value channels UNIFORMLY (one scalar rate per token); a per-VALUE-channel eta makes the
+    cross-token write coupling channel-dependent, which a single channel-shared triangular solve
+    cannot represent exactly. Correctness takes priority; a per-channel chunked kernel is a future
+    Pareto knob. eta is scoped to n_delta==1 (NotImplementedError for n_delta>=2)."""
     B, H, T, d = q.shape
     dv = v.shape[-1]                     # value-dim-aware init -> RECTANGULAR state S in R^{d_v x d_k}
     if S0 is None:                       #   (d_k=d). Byte-identical when d_v == d_k (every existing
         S = torch.zeros(B, H, dv, d, dtype=q.dtype, device=q.device)   # call); enables feature-map/GDM
     else:
         S = S0
+
+    # IN-CONTEXT PER-CHANNEL LR PATH (Lever G): must be exact — delegate to _delta_reference, which
+    # threads the TRUE running state through every token and applies eta per value channel. The
+    # WY/UT chunk shortcut cannot absorb a per-channel rate (its triangular solve uses a single
+    # channel-shared coupling matrix). Disclosed speed cost; eta=None keeps the fast path untouched.
+    if eta is not None:
+        return _delta_reference(q, k, v, beta, alpha=alpha, S0=S, write_mode=write_mode,
+                                beta_e=beta_e, n_delta=n_delta,
+                                surprise=surprise, surprise_mode=surprise_mode,
+                                surprise_gen=surprise_gen, eta=eta)
 
     # SURPRISE PATH: must be exact — delegate to _delta_reference which threads the TRUE running
     # state through every token.  The WY/UT chunk shortcut cannot be used here because eps_t depends
@@ -380,4 +436,31 @@ if __name__ == "__main__":
             ok_s = max(do_s, ds_s) < 1e-4; allok &= ok_s
             print(f"[surprise={smode:<8} {dev}] repeated-key max|dO|={do_s:.2e} max|dS|={ds_s:.2e}  "
                   f"{'OK' if ok_s else 'MISMATCH'}")
+    # IN-CONTEXT PER-CHANNEL LR (Lever G): chunked_delta(eta=...) must equal _delta_reference(eta=...)
+    # for both pure and gated alpha, AND eta=None must stay byte-identical to the scalar-beta path.
+    for dev in devs:
+        B, H, T, d, C = 2, 3, 200, 16, 64
+        torch.manual_seed(123)
+        q = torch.randn(B, H, T, d, device=dev)
+        k = torch.randn(B, H, T, d, device=dev); k = k / k.norm(dim=-1, keepdim=True)
+        v = torch.randn(B, H, T, d, device=dev)
+        beta = torch.rand(B, H, T, device=dev) * 0.99
+        eta = torch.rand(B, H, T, d, device=dev) * 0.99          # per VALUE-channel rate
+        # OFF-path byte-identity: eta=None == scalar-beta baseline (< 1e-6)
+        Ob, Sb = chunked_delta(q, k, v, beta, chunk=C)
+        On, Sn = chunked_delta(q, k, v, beta, chunk=C, eta=None)
+        do0 = (Ob - On).abs().max().item(); ds0 = (Sb - Sn).abs().max().item()
+        ok0 = max(do0, ds0) < 1e-6; allok &= ok0
+        print(f"[inctx_lr OFF  {dev}] max|dO|={do0:.2e} max|dS|={ds0:.2e}  "
+              f"{'OK' if ok0 else 'MISMATCH'}")
+        for amode in (None, "rand"):
+            alpha = (0.5 + 0.5 * torch.rand(B, H, T, device=dev)) if amode == "rand" else None
+            Oref_e, Sref_e = _delta_reference(q, k, v, beta, alpha, eta=eta)
+            Och_e, Sch_e = chunked_delta(q, k, v, beta, alpha, chunk=C, eta=eta)
+            do_e = (Oref_e - Och_e).abs().max().item()
+            ds_e = (Sref_e - Sch_e).abs().max().item()
+            ok_e = max(do_e, ds_e) < 1e-4; allok &= ok_e
+            tag = "gated" if amode else "pure "
+            print(f"[inctx_lr {tag} {dev}] max|dO|={do_e:.2e} max|dS|={ds_e:.2e}  "
+                  f"{'OK' if ok_e else 'MISMATCH'}")
     print("ALL OK" if allok else "FAILURES PRESENT")

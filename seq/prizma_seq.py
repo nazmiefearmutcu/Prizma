@@ -78,6 +78,10 @@ class PrizmaSeqConfig:
     # --- surprise-gated write (Lever A) ---
     surprise_gate: bool = False   # if True, scale write by g_t = 1+tanh(||eps_t||) (default OFF = identical)
     surprise_mode: str = 'norm'   # 'norm' | 'random' | 'constant' — controls for R9 ablation
+    # --- in-context per-channel learning rate (Lever G, RWKV-7 "Goose" generalized delta) ---
+    inctx_lr: bool = False        # if True, replace scalar write gate beta_t with a per-VALUE-channel
+                                  #   rate eta_t = beta_cap * sigmoid(W_eta x_t) in R^{d_h}, modulating
+                                  #   the delta write per state channel. Default OFF = byte-identical.
 
     def __post_init__(self):
         if self.d_ff is None:
@@ -88,6 +92,9 @@ class PrizmaSeqConfig:
         assert self.feat_map in ("none", "quad2", "quad2_lowrank", "rand_linear")
         assert self.surprise_mode in ('norm', 'random', 'constant'), \
             f"surprise_mode must be 'norm', 'random', or 'constant', got {self.surprise_mode!r}"
+        # Lever G is scoped to n_delta==1 (per-channel eta is not combined with DeltaProduct).
+        assert not (self.inctx_lr and self.n_delta >= 2), \
+            "inctx_lr (per-channel eta) is only implemented for n_delta==1, not n_delta>=2."
         # d_phi = delta key/query dim after the optional feature map (= d_h when 'none').
         # 'rand_linear' = a FIXED random linear map d_h->d_phi (a CONTROL: it stays in a d_h-rank
         # subspace so it must give NO capacity gain, proving the quad2 MONOMIALS are what help).
@@ -148,6 +155,9 @@ class PrizmaSeqBlock(nn.Module):
         self.W_g = nn.Linear(d, d, bias=True) if cfg.out_gate else None
         self.state_rms = RMSNorm(dh) if cfg.state_norm else None
         self.W_e = nn.Linear(d, H, bias=True) if cfg.decoupled_gate else None   # erase gate beta_e
+        # Lever G: per-VALUE-channel in-context learning rate eta = beta_cap * sigmoid(W_eta x).
+        # d = n_heads*d_h -> one rate per head per channel; reshaped to [B,H,T,d_h] in _encode.
+        self.W_eta = nn.Linear(d, d, bias=True) if cfg.inctx_lr else None
         # DeltaProduct n_delta>=2: (n_delta-1) additional kv projections + beta heads.
         # Each extra sub-step j>=1 gets its own W_kv_j and W_beta_j (independent params).
         # Total param cost: (n_delta-1) * (2*d*d + H) trainable weights per block.
@@ -242,7 +252,14 @@ class PrizmaSeqBlock(nn.Module):
             beta_e = torch.sigmoid(self.W_e(x)).transpose(1, 2) * self.cfg.beta_cap   # [B,H,T]
         else:
             beta_e = None          # => chunked_delta will use beta_e = beta (byte-identical)
-        return q, k, v, beta, alpha, beta_e
+        if self.W_eta is not None:
+            # Lever G: per-VALUE-channel rate eta = beta_cap * sigmoid(W_eta x). W_eta(x) is [B,T,d];
+            # reshape to [B,T,H,d_h] -> [B,H,T,d_h] so eta broadcasts over the value/output channels.
+            eta = torch.sigmoid(self.W_eta(x)).view(B, T, self.H, self.dh).transpose(1, 2)
+            eta = eta * self.cfg.beta_cap                                              # [B,H,T,d_h]
+        else:
+            eta = None             # => chunked_delta uses the scalar-beta path (byte-identical)
+        return q, k, v, beta, alpha, beta_e, eta
 
     def _window(self, q, k, v):
         """Exact causal attention restricted to the last `w` tokens (incl. self). Fused SDPA + band
@@ -276,7 +293,7 @@ class PrizmaSeqBlock(nn.Module):
         B, T, d = h.shape
         x = self._apply_conv(self.norm1(h))
         cos, sin = _rope_cache(T, self.dh, h.device, h.dtype) if self.cfg.rope else (None, None)
-        q, k, v, beta, alpha, beta_e = self._encode(x, cos, sin)
+        q, k, v, beta, alpha, beta_e, eta = self._encode(x, cos, sin)
         o = torch.zeros(B, self.H, T, self.dh, device=h.device, dtype=h.dtype)
         if self.cfg.use_workspace:
             # DeltaProduct: for n_delta>=2, build multi-sub-step k,v,beta tensors
@@ -306,11 +323,13 @@ class PrizmaSeqBlock(nn.Module):
                                            beta_e=None, n_delta=self.cfg.n_delta)  # [B,H,T,d_h]
             else:
                 # n_delta=1: standard path (byte-identical when surprise_gate=False, with phi and beta_e)
+                # Lever G: eta (per-value-channel LR) threads through; eta=None keeps the fast path.
                 o_delta, _ = chunked_delta(self._phi(q), self._phi(k), v, beta, alpha,
                                            chunk=self.cfg.chunk, write_mode=self.cfg.write_mode,
                                            beta_e=beta_e,
                                            surprise=self.cfg.surprise_gate,
-                                           surprise_mode=self.cfg.surprise_mode)   # [B,H,T,d_h]
+                                           surprise_mode=self.cfg.surprise_mode,
+                                           eta=eta)   # [B,H,T,d_h]
             # delta state keyed by phi(q),phi(k) (dim d_phi); values stay d_h -> state [B,H,d_h,d_phi]
             if self.state_rms is not None:
                 o_delta = self.state_rms(o_delta)    # per-head RMSNorm over d_h
@@ -341,7 +360,7 @@ class PrizmaSeqBlock(nn.Module):
         else:
             x = xin
         cos, sin = _rope_cache(1, self.dh, h_t.device, h_t.dtype, offset=pos) if self.cfg.rope else (None, None)
-        q, k, v, beta, alpha, beta_e = self._encode(x, cos, sin)  # [B,H,1,dh], beta [B,H,1]
+        q, k, v, beta, alpha, beta_e, eta = self._encode(x, cos, sin)  # [B,H,1,dh], beta [B,H,1]
         q1, k1, v1 = q[:, :, 0], k[:, :, 0], v[:, :, 0]          # [B,H,dh] (linear L2; window keys)
         b1 = beta[:, :, 0]                                       # [B,H]  write gate beta_w
         a1 = alpha[:, :, 0] if alpha is not None else torch.ones_like(b1)
@@ -374,7 +393,13 @@ class PrizmaSeqBlock(nn.Module):
             Sk = torch.einsum("bhij,bhj->bhi", S, k1p)            # [B,H,d_h]
             # Prediction error (free-energy gradient at S_{t-1}): eps = v - alpha*S*k
             eps1 = v1 - a1[..., None] * Sk                        # [B,H,d_h]
-            if self.cfg.surprise_gate:
+            if eta is not None:
+                # Lever G: per-VALUE-channel in-context LR replaces the scalar write gate. Mirrors
+                # _delta_reference: u = eta_t (elementwise over value channels) * eps_t. Same eta the
+                # parallel forward() applies -> step()==forward() (G1 O(1) guard).
+                eta1 = eta[:, :, 0]                               # [B,H,d_h]
+                u = eta1 * eps1                                   # [B,H,d_h]
+            elif self.cfg.surprise_gate:
                 # g_t = 1 + tanh(||eps_t||); same formula as _delta_reference / _surprise_gate 'norm'
                 # (only 'norm' mode is used in step() — the 'random'/'constant' modes are ablation-only
                 # and are not wired through step() since they are not meaningful at inference time).
@@ -508,3 +533,19 @@ if __name__ == "__main__":
     yo_s = torch.cat(outs_s, dim=1)
     d_s = (y_s - yo_s).abs().max().item()
     print(f"[surprise_gate=True norm] step-vs-forward max|d|={d_s:.2e} {'OK' if d_s < 1e-4 else 'MISMATCH'}")
+    # IN-CONTEXT PER-CHANNEL LR O(1) guard (Lever G): inctx_lr=True step()==forward() < 1e-4
+    cfg_g = PrizmaSeqConfig(vocab=64, d_model=64, n_layers=2, n_heads=2,
+                            feat_map='quad2', inctx_lr=True)
+    m_g = PrizmaSeqLM(cfg_g).to(dev)
+    m_g.train(False)
+    torch.manual_seed(11)
+    x_g = torch.randint(0, 64, (2, 48), device=dev)
+    y_g = m_g(x_g)
+    st_g = m_g.init_state(2, dev)
+    outs_g = []
+    for t in range(x_g.shape[1]):
+        lg_g, st_g = m_g.step(x_g[:, t:t + 1], st_g)
+        outs_g.append(lg_g)
+    yo_g = torch.cat(outs_g, dim=1)
+    d_g = (y_g - yo_g).abs().max().item()
+    print(f"[inctx_lr=True quad2]    step-vs-forward max|d|={d_g:.2e} {'OK' if d_g < 1e-4 else 'MISMATCH'}")
