@@ -142,12 +142,18 @@ Replacing the keys $k_t$ in Equation~\eqref{eq:delta} with their lifted form $\p
 (and reading with $\phi(q_t)$) turns the carried state from a square $\dhd\times\dhd$ matrix into a
 \textbf{rectangular} $\dhd\times\dphi$ matrix:
 \begin{equation}
-S_t \;=\; \alpha_t\, S_{t-1} \;+\; \beta_t\,\varepsilon_t\,\phi(k_t)^{\top},
+S_t \;=\; \alpha_t\, S_{t-1} \;+\; \beta_t\,\varepsilon^{\phi}_t\,\phi(k_t)^{\top},
+\qquad
+\varepsilon^{\phi}_t \;=\; v_t - S_{t-1}\,\phi(k_t),
 \qquad S_t \in \R^{\dhd\times\dphi},
 \qquad o_t \;=\; S_{t-1}\,\phi(q_t).
 \label{eq:rectstate}
 \end{equation}
-This is the paper's contribution: the \emph{rectangular delta-state framing}. The recall ceiling is
+This is the paper's contribution: the \emph{rectangular delta-state framing}. The
+predictive-coding reading carries over with the lifted key: the write
+$\beta_t\varepsilon^{\phi}_t\phi(k_t)^{\top}$ is one gradient step on
+$F_t(S)=\tfrac12\lVert v_t - S\,\phi(k_t)\rVert^2$, whose gradient is
+$\partial F_t/\partial S = -\varepsilon^{\phi}_t\phi(k_t)^{\top}$. The recall ceiling is
 governed by the effective rank of the lifted key space ($\dphi$ near-orthogonal directions per head
 rather than $\dhd$), recovering associative capacity, while the per-token write and read remain a
 pair of matrix-vector products over a state of \emph{fixed} size $\dhd\dphi$ floats. Because that
