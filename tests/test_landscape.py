@@ -19,6 +19,13 @@ load_results) — these tests pin the GLUE that is new here:
 
   (C) CLI ARG-GUARD  main()  — an unknown flag exits NON-ZERO (never silently launches the
       multi-hour full landscape), mirroring recall_gate T8.
+
+  (D) CHAR-LM LEG  run_landscape_charlm(...)  — the LANGUAGE-MODELING axis of the same 4 arms, on
+      char-LM BPC (lower-is-better). A CPU-fast smoke trains all 4 arms on a tiny shakespeare slice,
+      writes results/gpu_landscape_charlm.json with the per-pair BPC verdicts + the negative control,
+      and is resumable. The PRIZMA_CHARLM_KNOBS gate-superset (gates ON for char-LM) is pinned DISTINCT
+      from the recall PRIZMA_V2_KNOBS (gates OFF for clean overwrite), and a synthetic lower-is-better
+      verdict sanity reuses the shared landscape_verdict.
 """
 from __future__ import annotations
 
@@ -256,3 +263,121 @@ def test_cli_known_flags_parse_and_select_mode():
     assert none.smoke is False and none.full is False
     with pytest.raises(SystemExit):
         parser.parse_args(["--smoke", "--full"])
+
+
+def test_cli_charlm_flag_parses_and_is_smoke_composable():
+    """--charlm selects the char-LM leg; --smoke --charlm composes (tiny char-LM smoke). Unknown
+    flags still exit non-zero (arg-guard), and the existing recall flags are unchanged."""
+    from seq.landscape import _build_parser
+    parser = _build_parser()
+    assert parser.parse_args(["--charlm"]).charlm is True
+    both = parser.parse_args(["--smoke", "--charlm"])
+    assert both.smoke is True and both.charlm is True
+    # the default recall path is unchanged: no --charlm => charlm False.
+    assert parser.parse_args([]).charlm is False
+    assert parser.parse_args(["--smoke"]).charlm is False
+    # arg-guard still rejects an unknown flag even alongside --charlm.
+    with pytest.raises(SystemExit) as ei:
+        parser.parse_args(["--charlm", "--bogus"])
+    assert ei.value.code != 0
+
+
+# ===================================================== CHAR-LM: gate-superset knob distinction =====
+def test_prizma_charlm_knobs_gate_superset_and_differs_from_recall():
+    """PRIZMA_CHARLM_KNOBS is the char-LM gate SUPERSET (4 gates ON + quad2_lowrank feature map), and it
+    DIFFERS from the recall PRIZMA_V2_KNOBS (which has the gates OFF for clean overwrite). This pins the
+    distinction the contract requires: char-LM benefits from forget/output gates; recall does not."""
+    import seq.landscape as ls
+    ck = ls.PRIZMA_CHARLM_KNOBS
+    assert isinstance(ck, dict)
+    # the 4 gate knobs are ON for char-LM ...
+    for k in ("out_gate", "state_norm", "decoupled_gate", "gated"):
+        assert ck.get(k) is True, f"char-LM Prizma must set gate knob {k}=True, got {ck.get(k)!r}"
+    # ... and the feature map is the v2 lean recall lever, shared with the campaign char-LM arm.
+    assert ck.get("feat_map") == "quad2_lowrank"
+    # the recall arm (PRIZMA_V2_KNOBS) must NOT carry any of those gate knobs (gates OFF for recall).
+    for k in ("out_gate", "state_norm", "decoupled_gate", "gated"):
+        assert k not in ls.PRIZMA_V2_KNOBS, f"recall Prizma must NOT set the char-LM gate knob {k}"
+    # the two configs are genuinely DIFFERENT (the char-LM arm is not the recall arm).
+    assert ck != ls.PRIZMA_V2_KNOBS, "char-LM knobs must differ from recall knobs"
+    # cross-check against gpu_charlm2's V2 gate set (single source of truth for the char-LM gates).
+    import gpu_charlm2
+    for k, v in gpu_charlm2.V2_GATE_KW.items():
+        assert ck.get(k) == v, f"char-LM gate {k} must match gpu_charlm2.V2_GATE_KW"
+
+
+# ===================================================== CHAR-LM: lower-is-better verdict sanity =====
+def test_charlm_verdict_lower_bpc_prizma_beats_baseline():
+    """A clearly-lower-BPC Prizma vs a baseline must read BEATS under lower_is_better=True, reusing the
+    SAME landscape_verdict the recall path uses (the char-LM leg adds NO new verdict layer)."""
+    from seq.landscape import landscape_verdict
+    rng = np.random.default_rng(7)
+    arm_accs = {
+        "Prizma": list(1.10 + 0.01 * rng.standard_normal(8)),   # clearly lower BPC = better
+        "TF":     list(1.40 + 0.01 * rng.standard_normal(8)),   # higher BPC -> Prizma BEATS it
+    }
+    v = landscape_verdict(arm_accs, cand_key="Prizma", margin=0.05, lower_is_better=True)
+    assert v["lower_is_better"] is True
+    assert v["pareto_table"][0]["name"] == "Prizma"             # best-first = lowest BPC
+    assert v["pairwise"]["TF"]["verdict"] == "BEATS", v["pairwise"]["TF"]
+
+
+# ===================================================== CHAR-LM: SMOKE END-TO-END (CPU) =====
+def test_charlm_smoke_end_to_end_writes_bpc_verdicts_and_resumes():
+    """A CPU-fast --smoke --charlm run must complete, write results/gpu_landscape_charlm.json containing
+    all 4 arms + per-pair BPC verdicts (lower_is_better) + the negative control, and be RESUMABLE.
+
+    Kept tiny (bundled tiny-shakespeare slice, tiny d/T/cap, 2 seeds, 1-LR grid) so it runs CPU-fast.
+    The tiny-shakespeare corpus is bundled in the repo (seq/data/shakespeare.txt) so the smoke is
+    network-free."""
+    from seq import landscape as ls
+    with tempfile.TemporaryDirectory() as td:
+        out = os.path.join(td, "gpu_landscape_charlm.json")
+        report = ls.run_landscape_charlm(smoke=True, results_path=out)
+
+        assert os.path.exists(out), "char-LM smoke must write the results ledger"
+        on_disk = json.load(open(out))
+
+        # report + ledger agree and carry the char-LM landscape block, flagged smoke + lower-is-better.
+        assert report["smoke"] is True
+        rep = on_disk["landscape_charlm_report"]
+        assert rep["smoke"] is True
+        assert rep["lower_is_better"] is True
+        assert rep["metric"] == "bits_per_char"
+
+        # exactly one task (char-LM) with all 4 arms ranked + pairwise BPC verdicts.
+        tasks = rep["tasks"]
+        assert len(tasks) == 1, f"char-LM smoke runs exactly one LM task, got {list(tasks)}"
+        (task_name, task_block), = tasks.items()
+        present = task_block["arms_present"]
+        for kind in ("tf", "prizma", "gla", "mamba2"):
+            assert kind in present, f"{kind} must appear (present or skipped-with-reason): {present}"
+        assert len(task_block["pareto_table"]) == 4, task_block["pareto_table"]
+        # the verdict is lower-is-better (BPC) end-to-end.
+        assert task_block["lower_is_better"] is True
+        # Prizma vs each of the 3 baselines, keyed by full arm name -> match by kind prefix.
+        pair_kinds = {k.split(".")[0]: pv for k, pv in task_block["pairwise"].items()}
+        assert set(pair_kinds) == {"TF", "GLA", "Mamba2"}, pair_kinds
+        for b in ("TF", "GLA", "Mamba2"):
+            assert pair_kinds[b]["verdict"] in ("BEATS", "PARITY", "WORSE", "INCONCLUSIVE")
+            assert pair_kinds[b]["lower_is_better"] is True
+
+        # the Prizma char-LM arm carries the gate superset (gates ON) in its disclosed knobs.
+        assert rep["prizma_knobs"]["out_gate"] is True
+        assert rep["prizma_knobs"]["feat_map"] == "quad2_lowrank"
+
+        # NEGATIVE-CONTROL integrity leg present (two byte-identical arms must not differ).
+        nc = rep["negative_control"]
+        assert "p_value" in nc and "pass" in nc
+
+        # a loud non-scientific DISCLAIMER is recorded for the smoke result.
+        assert rep.get("smoke_disclaimer"), "smoke must record a non-scientific disclaimer"
+
+        # ---- RESUMABILITY: a second smoke run must SKIP cached cells (bit-identical BPCs). ----
+        before_keys = set(on_disk.keys())
+        report2 = ls.run_landscape_charlm(smoke=True, results_path=out)
+        after_keys = set(json.load(open(out)).keys())
+        assert after_keys == before_keys, "resume must not introduce new top-level cells"
+        t1 = {r["name"]: r["accs"] for r in report["tasks"][task_name]["pareto_table"]}
+        t2 = {r["name"]: r["accs"] for r in report2["tasks"][task_name]["pareto_table"]}
+        assert t1 == t2, "resumed char-LM run must reuse cached BPCs (no retrain)"

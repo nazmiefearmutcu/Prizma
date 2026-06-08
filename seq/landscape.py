@@ -26,7 +26,7 @@ TWO LAYERS (cleanly separated so the verdict is UNIT-TESTABLE WITHOUT TRAINING):
                            (margin_superiority + TOST + reverse check), comparison family Holm-corrected,
           * the lower-is-LOSS sign handled correctly (BEATS/WORSE flip when lower_is_better=True).
 
-  (B) TRAINING RUNNER  run_landscape(...):
+  (B) TRAINING RUNNER  run_landscape(...):  [the RECALL leg]
         Per diagnostic task: builds the FOUR arms via make_arm at a matched (d,L,H) scale, pre-flight
         runnable-checks each (a broken arm SKIPs with its reason, never crashes the run — mirrors
         gpu_ablation._arm_runnable), then per arm runs sweep_then_seeds (stage-1 LR sweep @1 seed over
@@ -34,6 +34,18 @@ TWO LAYERS (cleanly separated so the verdict is UNIT-TESTABLE WITHOUT TRAINING):
         computes the powered Pareto table + Holm-corrected pairwise verdicts, runs an identical-model
         NEGATIVE CONTROL (integrity canary), and streams everything crash-safe (json -> .tmp ->
         os.replace, resumable by cellkey) to results/gpu_landscape.json.
+
+  (C) CHAR-LM RUNNER  run_landscape_charlm(...):  [the LANGUAGE-MODELING leg]
+        The SAME 4 arms (TF / Prizma / GLA / Mamba-2) at matched (d,L,H), but on the char-LM
+        bits-per-char axis (BPC = held-out next-char CE (nats)/ln2, LOWER is better). It REUSES
+        gpu_charlm2.py's corpus loader (load_corpus / CharData) + char-LM training cell (train_charlm:
+        the BPC metric, val-selected early-stop) and the SAME pure verdict layer (A) with
+        lower_is_better=True. The Prizma arm carries PRIZMA_CHARLM_KNOBS — the GATE SUPERSET (forget +
+        output gates ON), DISTINCT from the recall arm's PRIZMA_V2_KNOBS (gates OFF for clean
+        overwrite): char-LM rewards forgetting, recall does not (see seq/delta.py). Same pre-flight ->
+        per-arm LR sweep -> seed-pinned multi-seed -> powered Pareto-BPC + Holm pairwise -> identical
+        -model negative control -> crash-safe resumable JSON, streamed to results/gpu_landscape_charlm.json
+        (a SEPARATE file from the recall leg's gpu_landscape.json).
 
 INTEGRITY.
   * Every number is POWERED (real Student-t CIs / TOST), SEED-PINNED (build_and_train), and
@@ -45,16 +57,18 @@ INTEGRITY.
   * The --smoke path uses a TINY config (CPU-fast, plumbing-only) and prints a loud DISCLAIMER that
     smoke numbers are NOT a scientific landscape result.
 
-CLI SAFETY. main() parses with argparse: it recognizes --smoke and --full and NOTHING else. An
-unknown/typo'd flag prints usage and exits NON-ZERO — it NEVER silently launches the multi-hour full
-landscape (which would also overwrite the committed results/gpu_landscape.json). The FULL landscape
-runs ONLY on an explicit no-arg invocation or --full.
+CLI SAFETY. main() parses with argparse: it recognizes --smoke, --full and --charlm and NOTHING else.
+An unknown/typo'd flag prints usage and exits NON-ZERO — it NEVER silently launches a multi-hour full
+landscape (which would also overwrite the committed results JSON). The FULL landscape runs ONLY on an
+explicit no-arg invocation or --full. --charlm selects the LANGUAGE-MODELING leg and COMPOSES with
+--smoke (--smoke --charlm = the tiny char-LM smoke); the default (no --charlm) RECALL path is unchanged.
 
-Run:
-  python3.13 seq/landscape.py --smoke      # tiny plumbing smoke (CPU/MPS, minutes) -> results/gpu_landscape.json
-  python3.13 -m seq.landscape --smoke      # same, as a module
-  python3.13 seq/landscape.py --full       # FULL landscape (needs a GPU + budget; the real >=10-seed config)
-  python3.13 seq/landscape.py              # no-arg ALSO runs the FULL landscape (explicit; same as --full)
+Run (use the module form; the deferred relative imports need the package context):
+  python3.13 -m seq.landscape --smoke              # tiny RECALL plumbing smoke -> results/gpu_landscape.json
+  python3.13 -m seq.landscape --full               # FULL recall landscape (needs a GPU + budget)
+  python3.13 -m seq.landscape                       # no-arg ALSO runs the FULL recall landscape
+  python3.13 -m seq.landscape --smoke --charlm     # tiny CHAR-LM smoke -> results/gpu_landscape_charlm.json
+  python3.13 -m seq.landscape --charlm             # FULL char-LM landscape (text8, >=10-seed; GPU + budget)
 """
 from __future__ import annotations
 
@@ -82,6 +96,22 @@ except ImportError:                                  # run as a bare script: boo
 # (out_gate/state_norm/decoupled_gate/gated, used by gpu_charlm2.py) belongs to a SEPARATE char-LM
 # landscape leg, NOT here — using it on recall tasks would be a different model than the campaign reports.
 PRIZMA_V2_KNOBS = dict(feat_map="quad2_lowrank")
+
+
+# The Prizma arm config for the CHAR-LM landscape leg (run_landscape_charlm below). Unlike the recall
+# arm (PRIZMA_V2_KNOBS, gates OFF), the char-LM arm turns ON the FULL gate SUPERSET — exactly the v2
+# Prizma config gpu_charlm2.py's --v2 arm uses (gpu_charlm2.V2_GATE_KW = out_gate/state_norm/
+# decoupled_gate/gated) on top of the shared feat_map='quad2_lowrank' lean recall lever. WHY THE
+# DIFFERENCE: per seq/delta.py's module docstring, the diagnostic recall tasks (MQAR/induction/
+# selective-copy) need a CLEAN OVERWRITE — "the diagnostic gates ... need clean overwrite, not
+# forgetting; the gated path is enabled for char-LM." Char-LM is the opposite regime: natural language
+# REWARDS forgetting + an output gate (stale context must decay, the read must be gated), so the gate
+# superset HELPS BPC. Using the recall (gates-off) config on char-LM — or the char-LM (gates-on) config
+# on recall — would each be a DIFFERENT model than the campaign reports, so the two are pinned distinct.
+# feat_map is shared verbatim with gpu_charlm2's char-LM Prizma so the landscape char-LM Prizma == the
+# campaign char-LM Prizma. (Gate values mirrored from gpu_charlm2.V2_GATE_KW — single source of truth.)
+PRIZMA_CHARLM_KNOBS = dict(out_gate=True, state_norm=True, decoupled_gate=True, gated=True,
+                           feat_map="quad2_lowrank")
 
 
 # ============================================================ PURE VERDICT LAYER ==
@@ -230,13 +260,13 @@ def landscape_verdict(arm_accs, *, cand_key="Prizma", margin=0.05, lower_is_bett
 # Heavy imports (torch, harness, tasks) are deferred into the runner so the PURE layer above stays
 # importable + unit-testable in milliseconds without pulling in torch.
 
-def _results_path(explicit=None):
+def _results_path(explicit=None, *, fname="gpu_landscape.json"):
     if explicit:
         return explicit
     res_dir = os.environ.get("PRIZMA_RESULTS", os.path.join(os.path.dirname(__file__), "..", "results"))
     res_dir = os.path.abspath(res_dir)
     os.makedirs(res_dir, exist_ok=True)
-    return os.path.join(res_dir, "gpu_landscape.json")
+    return os.path.join(res_dir, fname)
 
 
 def _make_mixed_induction(vocab, lens):
@@ -455,6 +485,328 @@ def run_landscape(scale=(128, 4, 4), seeds=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), smoke
     return report
 
 
+# ============================================================ CHAR-LM LANDSCAPE LEG ==
+# The LANGUAGE-MODELING axis of the SAME 4 arms (TF / Prizma / GLA / Mamba-2): char-LM bits-per-char
+# (BPC), LOWER is better. This REUSES gpu_charlm2.py's corpus loader + char-LM training cell (so the
+# landscape char-LM Prizma == the campaign char-LM Prizma) and the EXISTING pure verdict layer
+# (landscape_verdict supports lower_is_better=True). It does NOT touch the recall path above.
+#
+# Why a thin BPC sweep+seeds here instead of gpu_harness.sweep_then_seeds: the recall harness scores
+# token ACCURACY (build_and_train -> masked_acc, higher-is-better) and writes to gpu_charlm2.json via
+# gpu_charlm2's module globals. Char-LM scores BPC (lower-is-better) and must stream to THIS leg's own
+# results/gpu_landscape_charlm.json. So the cell loop below delegates the TRAINING to the audited
+# gpu_charlm2.train_charlm (the BPC metric + val-selected early-stop) but owns the crash-safe cache +
+# device, mirroring sweep_then_seeds's stage-1-sweep-then-stage-2-seeds structure exactly.
+
+def _charlm_arms(scale, T):
+    """Build the 4 char-LM landscape arms as SINGLE-ARG (V) factories at scale=(d,L,H), context T.
+
+    make_arm yields (name, (V,T)->module) arms; char-LM's run-cell takes a single-arg (V) factory
+    (gpu_charlm2 bakes T into ctx), so we bake T in here. Prizma carries the char-LM gate superset +
+    learned_pos (its delta path is position-free, so char-LM parity uses a learned position embedding —
+    the same convention as gpu_charlm2.ps_factory). Returns {kind -> (name, (V)->module)}."""
+    from .gpu_harness import make_arm
+    d, L, H = scale
+    out = {}
+    for kind in ARM_KINDS:
+        if kind == "prizma":
+            knobs = dict(PRIZMA_CHARLM_KNOBS)
+            knobs.setdefault("learned_pos", True)   # char-LM parity: learned absolute positions
+        else:
+            knobs = {}
+        name, fac2 = make_arm(kind, d, L, H, **knobs)   # fac2(V, T) -> module
+        out[kind] = (name, (lambda f: (lambda V: f(V, T)))(fac2))   # bake T -> single-arg V factory
+    return out
+
+
+def _charlm_arm_runnable(fac, vocab, T, device):
+    """Cheap pre-flight for a char-LM arm (mirrors _arm_runnable): build at the corpus (V) and run ONE
+    tiny forward. fac is the single-arg (V) factory. Returns (ok, reason)."""
+    import torch
+    try:
+        model = fac(vocab).to(device)
+        x = torch.randint(0, vocab, (2, min(T, 16)), device=device)
+        with torch.no_grad():
+            out = model(x)
+        assert out.shape[-1] == vocab
+        return True, None
+    except Exception as e:
+        return False, f"{type(e).__name__}: {e}"
+
+
+def _charlm_cell(res, key, build_model, data, hp, device, seed, lr, results_path, log=False):
+    """Train ONE (arm x seed) char-LM cell at `lr`, SEED-PINNED, cached + crash-safe to results_path.
+    Delegates the actual training to the audited gpu_charlm2.train_charlm (BPC metric, val-selected
+    early-stop) but owns the cache key + device + ledger so the char-LM leg streams to its OWN file."""
+    import time
+    import gpu_charlm2 as gc2
+    from .common import param_count, set_seed
+    from .gpu_harness import _save
+
+    if key in res and "best_bpc" in res[key]:
+        return res[key]
+    set_seed(seed)                                  # deterministic model construction (init RNG)
+    model = build_model(data.vocab)
+    p = param_count(model)
+    t0 = time.time()
+    r = gc2.train_charlm(model, data, device, lr=lr, seed=seed,
+                         steps=hp["steps"], batch_size=hp["batch_size"], warmup=hp["warmup"],
+                         grad_clip=hp["grad_clip"], weight_decay=hp["weight_decay"], betas=hp["betas"],
+                         eval_every=hp["eval_every"], eval_batches=hp["eval_batches"], log=log)
+    rec = {"best_bpc": round(r["best_bpc"], 5), "best_step": r["best_step"],
+           "final_bpc": round(r["final_bpc"], 5), "min_test_bpc": r["min_test_bpc"],
+           "early_stop": r["early_stop"], "params": p, "lr": lr, "seed": seed,
+           "steps": hp["steps"], "sec": round(time.time() - t0, 1)}
+    res[key] = rec
+    _save(res, results_path)
+    return rec
+
+
+def _charlm_sweep_then_seeds(res, prefix, build_model, data, hp, device, seeds, grid, results_path,
+                             log=False):
+    """Per-arm BPC LR sweep @seeds[0] (stage-1), then all seeds at the winning LR (stage-2). Crash-safe
+    + resumable (each cell cached by key). Returns {best_lr, lr_grid, accs (per-seed BPC), params}.
+    Mirrors gpu_harness.sweep_then_seeds, but the metric is BPC (lower-is-better) so the LR winner is
+    the MIN best_bpc on the grid (not the max accuracy)."""
+    lr_seed = seeds[0]
+    grid_rows, grid_bpc = [], {}
+    for lr in grid:
+        rec = _charlm_cell(res, f"{prefix}.lrsel.lr{lr:.0e}.s{lr_seed}", build_model, data, hp,
+                           device, lr_seed, lr, results_path, log=log)
+        grid_bpc[lr] = rec["best_bpc"]
+        grid_rows.append({"lr": lr, "best_bpc": rec["best_bpc"], "best_step": rec["best_step"]})
+    best_lr = min(grid_bpc, key=grid_bpc.get)        # lower BPC is better
+    per_seed = []
+    for s in seeds:
+        if s == lr_seed:                              # reuse the sweep cell that already ran @best_lr
+            per_seed.append(res[f"{prefix}.lrsel.lr{best_lr:.0e}.s{lr_seed}"])
+        else:
+            per_seed.append(_charlm_cell(res, f"{prefix}.final.lr{best_lr:.0e}.s{s}", build_model, data,
+                                         hp, device, s, best_lr, results_path, log=log))
+    return {"best_lr": best_lr, "lr_grid": grid_rows,
+            "accs": [rec["best_bpc"] for rec in per_seed], "params": per_seed[0]["params"]}
+
+
+def _charlm_negative_control(res, scale, T, data, hp, device, seeds, grid, results_path,
+                             seed_offset=None):
+    """INTEGRITY CANARY for the char-LM leg: two BYTE-IDENTICAL Prizma char-LM arms (same gate-superset
+    config) trained on DIFFERENT seeds must NOT differ significantly in BPC. Mirrors
+    gpu_harness.negative_control (same arch, seed-shifted seeds => a genuine canary, not a tautology),
+    but on the BPC metric via tost/superiority over the per-seed BPC arrays."""
+    from .gpu_harness import NEGCTRL_SEED_OFFSET, make_arm
+    seed_offset = NEGCTRL_SEED_OFFSET if seed_offset is None else seed_offset
+    d, L, H = scale
+    knobs = dict(PRIZMA_CHARLM_KNOBS)
+    knobs.setdefault("learned_pos", True)
+    _, fac2 = make_arm("prizma", d, L, H, **knobs)
+    build_model = lambda V: fac2(V, T)
+    seeds_a = tuple(seeds)
+    seeds_b = tuple(s + seed_offset for s in seeds)   # SAME arch, DIFFERENT seeds (the real canary)
+    ra = _charlm_sweep_then_seeds(res, "charlm.negctrl.A", build_model, data, hp, device, seeds_a,
+                                  grid, results_path)
+    rb = _charlm_sweep_then_seeds(res, "charlm.negctrl.B", build_model, data, hp, device, seeds_b,
+                                  grid, results_path)
+    st = superiority_test(ra["accs"], rb["accs"])
+    return {"p_value": float(st["p_value"]), "significant": bool(st["significant"]),
+            "pass": (not bool(st["significant"])), "delta": float(st["delta"]),
+            "accs_a": [float(x) for x in ra["accs"]], "accs_b": [float(x) for x in rb["accs"]],
+            "seeds_a": list(seeds_a), "seeds_b": list(seeds_b)}
+
+
+def run_landscape_charlm(scale=(256, 4, 4), seeds=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), smoke=False,
+                         results_path=None, lr_grid=None, margin=0.05, parity_margin=0.05,
+                         solve_thresh=0.9, log=False):
+    """Run the 4-arm char-LM BPC head-to-head (TF vs Prizma-charLM vs GLA vs Mamba-2) on the char-LM
+    corpus, compute the powered Pareto-BPC table + Holm-corrected pairwise verdicts (lower_is_better),
+    run an identical-model negative control, and stream everything crash-safe to
+    results/gpu_landscape_charlm.json (resumable by cellkey).
+
+    This is the LANGUAGE-MODELING leg of the landscape (the recall leg lives in run_landscape). It
+    REUSES gpu_charlm2.py's corpus loader (load_corpus) + char-LM training cell (train_charlm); the
+    metric is BPC = held-out next-char CE (nats)/ln(2), LOWER is better. The Prizma arm carries
+    PRIZMA_CHARLM_KNOBS (the gate superset — char-LM benefits from forget/output gates, unlike recall).
+
+    Args:
+      scale        : (d_model, n_layers, n_heads) for ALL arms (the matched arena; smoke overrides).
+      seeds        : per-arm seeds (default 10 = the real powered run; smoke overrides to 2).
+      smoke        : True -> TINY CPU-fast config on a small tiny-shakespeare slice (a loud DISCLAIMER
+                     is printed); 4 arms + the 2-arm negative control, 2 seeds, 1-LR grid, short cap.
+      results_path : explicit results JSON path (default $PRIZMA_RESULTS/gpu_landscape_charlm.json).
+      lr_grid      : LR sweep grid (default seq.lrsweep.DEFAULT_GRID; smoke uses a single-LR grid).
+      margin       : the BPC superiority win bar (Prizma beats baseline by >= this) used by the verdict.
+      parity_margin: the TOST equivalence band (BPC units) — defaults equal to `margin`.
+      solve_thresh : per-arm solve-rate threshold (BPC <= thresh counts as solved).
+
+    Returns the landscape_charlm_report dict (tasks, negative_control, meta).
+    """
+    import torch
+    import gpu_charlm2 as gc2
+    from .gpu_harness import load_results, _save
+    from .lrsweep import DEFAULT_GRID
+
+    # --------- config: smoke (plumbing only) vs full (the real char-LM landscape) ---------
+    if smoke:
+        device = torch.device("cpu")              # CPU keeps the smoke deterministic + MPS-gap-free
+        scale = (48, 1, 2)
+        seeds = (0, 1)
+        T = 64                                    # tiny context
+        # tiny tiny-shakespeare slice: the bundled corpus is ~1.1M chars; take a small contiguous
+        # block so CharData's contiguous 90/10 split + frozen eval are both well-formed but CPU-fast.
+        corpus = "shakespeare"
+        hp = dict(steps=120, batch_size=16, warmup=20, grad_clip=1.0, weight_decay=0.1,
+                  betas=(0.9, 0.95), eval_every=60, eval_batches=6)
+        lr_grid = lr_grid or (2e-3,)              # ONE LR -> each arm is just 2 tiny trains
+        slice_chars = 40_000                      # small slice (90/10 -> ~36k train / 4k test)
+        margin, parity_margin, solve_thresh = 0.05, 0.05, 3.0   # low BPC bar so the smoke is shaped
+        print("=" * 78, flush=True)
+        print("  *** CHAR-LM SMOKE MODE: PLUMBING-ONLY ***", flush=True)
+        print("  These BPC numbers validate that the char-LM landscape leg wires together (pre-flight", flush=True)
+        print("  -> per-arm LR sweep -> seed-pinned multi-seed -> powered Pareto-BPC + Holm pairwise", flush=True)
+        print("  (lower-is-better) -> negative control -> crash-safe JSON). They are NOT a scientific", flush=True)
+        print("  result. A real verdict requires the A100 >=10-seed run at scale. DO NOT cite.", flush=True)
+        print("=" * 78, flush=True)
+    else:
+        device = gc2.DEV
+        T = 256
+        corpus = "text8"
+        hp = dict(steps=20000, batch_size=48, warmup=1000, grad_clip=1.0, weight_decay=0.1,
+                  betas=(0.9, 0.95), eval_every=250, eval_batches=40)
+        lr_grid = lr_grid or DEFAULT_GRID
+        slice_chars = None                        # text8 path uses gpu_charlm2's explicit subset sizing
+        margin = margin if margin is not None else 0.05
+
+    results_path = _results_path(results_path, fname="gpu_landscape_charlm.json")
+
+    # ---- corpus (reuse gpu_charlm2.load_corpus / CharData; the metric is BPC = CE/ln2) ----------- #
+    if corpus == "shakespeare":
+        # Use a small contiguous slice of the bundled tiny-shakespeare so the smoke is network-free +
+        # CPU-fast. CharData does a CONTIGUOUS 90/10 train/test split (no n-gram leak); no val split,
+        # so train_charlm falls back to min-over-test (documented in gpu_charlm2).
+        with open(gc2._SHAKES, "r", encoding="utf-8") as f:
+            text = f.read()
+        if slice_chars:
+            text = text[:slice_chars]
+        data = gc2.CharData(text, T, "shakespeare")
+        src = "bundled-slice"
+    else:
+        data, src = gc2.load_corpus(corpus, T)
+    print(f"device={device} results={results_path} scale=d{scale[0]}L{scale[1]}H{scale[2]} "
+          f"corpus={data.name} (src={src}, rand-BPC={data.rand_bpc:.3f}) seeds={list(seeds)} "
+          f"arms={list(ARM_KINDS)} prizma_knobs={PRIZMA_CHARLM_KNOBS}", flush=True)
+
+    res = load_results(results_path)
+    res.setdefault("landscape_charlm_report", {})
+    rep = res["landscape_charlm_report"]
+    rep["meta"] = {
+        "scale": f"d{scale[0]}L{scale[1]}H{scale[2]}", "seeds": list(seeds), "arms": list(ARM_KINDS),
+        "prizma_knobs": dict(PRIZMA_CHARLM_KNOBS), "corpus": corpus, "ctx": T,
+        "margin": margin, "parity_margin": parity_margin, "solve_thresh": solve_thresh,
+        "lr_grid": list(lr_grid), "hp": dict(hp), "device": device.type,
+        "random_baseline_bpc": round(data.rand_bpc, 4),
+    }
+    rep["smoke"] = bool(smoke)
+    rep["lower_is_better"] = True
+    rep["metric"] = "bits_per_char"
+    rep["prizma_knobs"] = dict(PRIZMA_CHARLM_KNOBS)
+    rep["smoke_disclaimer"] = (
+        "PLUMBING-ONLY: char-LM smoke BPC + verdict are from a tiny CPU config (few steps/seeds, "
+        "tiny corpus slice) and are NOT a scientific result." if smoke else None)
+    _save(res, results_path)
+
+    # ---- the single char-LM TASK: 4-arm BPC head-to-head ---------------------------------------- #
+    task_name = f"CHARLM-{corpus.upper()}"
+    print(f"\n==== TASK: {task_name} @ d{scale[0]}L{scale[1]}H{scale[2]} ({len(seeds)} seeds) ====",
+          flush=True)
+    arms = _charlm_arms(scale, T)
+    arm_accs, params, arms_present, unrunnable = {}, {}, {}, {}
+    for kind, (name, fac) in arms.items():
+        ok, reason = _charlm_arm_runnable(fac, data.vocab, T, device)
+        if not ok:
+            print(f"  -- arm '{kind}' [{name}] UNRUNNABLE -> SKIP : {reason}", flush=True)
+            arms_present[kind] = {"name": name, "status": "skipped", "reason": reason}
+            unrunnable[kind] = {"name": name, "reason": reason}
+            continue
+        print(f"  -- arm '{kind}' [{name}] : LR sweep (@seed {seeds[0]}) then {len(seeds)} seeds --",
+              flush=True)
+        r = _charlm_sweep_then_seeds(res, f"{task_name}.{kind}", fac, data, hp, device, seeds, lr_grid,
+                                     results_path, log=log)
+        arm_accs[name] = r["accs"]
+        params[name] = r["params"]
+        arms_present[kind] = {"name": name, "status": "ok", "best_lr": r["best_lr"],
+                              "lr_grid": r["lr_grid"]}
+        summ = summarize(r["accs"], solve_thresh)
+        print(f"     best_lr={r['best_lr']:.1e} median_bpc={summ['median']:.3f} "
+              f"mean_bpc={summ['mean']:.3f} CI95=[{summ['ci95'][0]:.3f},{summ['ci95'][1]:.3f}] "
+              f"{r['params']:,}p accs={[round(a, 3) for a in r['accs']]}", flush=True)
+
+    prizma_name = arms["prizma"][0]
+    assert prizma_name in arm_accs, (
+        f"Prizma char-LM arm must be runnable (it is the head-to-head candidate); "
+        f"unrunnable={unrunnable.get('prizma')}")
+
+    # ---- powered Pareto-BPC table + Holm-corrected pairwise verdicts (LOWER is better) ----------- #
+    verdict = landscape_verdict(arm_accs, cand_key=prizma_name, margin=margin,
+                                lower_is_better=True, params=params, solve_thresh=solve_thresh)
+    block = dict(verdict)
+    block["arms_present"] = arms_present
+    block["unrunnable"] = unrunnable
+    rep.setdefault("tasks", {})[task_name] = block
+    _save(res, results_path)
+    print(f"  -> {task_name}: Pareto-BPC rank (best=lowest) = "
+          f"{[r['name'].split('.')[0] for r in block['pareto_table']]}", flush=True)
+    for b, pv in block["pairwise"].items():
+        print(f"     Prizma vs {b.split('.')[0]:<8} {pv['verdict']:<7} "
+              f"(delta={pv['delta']:+.4f}, holm_p_adj={pv['holm_p_adj']:.3f})", flush=True)
+
+    # ---- NEGATIVE CONTROL (integrity canary): two byte-identical Prizma arms must NOT differ ------ #
+    print("\n-- negative control: two byte-identical Prizma char-LM arms must NOT differ in BPC --",
+          flush=True)
+    nc = _charlm_negative_control(res, scale, T, data, hp, device, seeds, lr_grid, results_path)
+    rep["negative_control"] = nc
+    _save(res, results_path)
+    print(f"   p={nc['p_value']:.3f}  significant={nc['significant']}  PASS={nc['pass']}", flush=True)
+
+    _print_charlm_summary(rep, smoke)
+    return rep
+
+
+def _print_charlm_summary(report, smoke):
+    print("\n" + "=" * 78, flush=True)
+    print("  CHAR-LM LANDSCAPE HEAD-TO-HEAD (BPC, lower-is-better) — " + (
+          "SMOKE (PLUMBING-ONLY, NOT A RESULT)" if smoke else "POWERED RESULTS"), flush=True)
+    print("=" * 78, flush=True)
+    meta = report.get("meta", {})
+    print(f"  scale={meta.get('scale')}  corpus={meta.get('corpus')}  seeds={meta.get('seeds')}  "
+          f"rand-BPC={meta.get('random_baseline_bpc')}  margin={meta.get('margin')}", flush=True)
+    for task_name, block in report.get("tasks", {}).items():
+        print(f"\n  [{task_name}]  Pareto-BPC rank (best=lowest):", flush=True)
+        for i, row in enumerate(block["pareto_table"], 1):
+            ci = row["ci95"]
+            pstr = f"{row['params']:,}p" if row["params"] is not None else "?p"
+            print(f"    {i}. {row['name'].split('.')[0]:<8} mean_bpc={row['mean']:.3f} "
+                  f"median_bpc={row['median']:.3f} CI95=[{ci[0]:.3f},{ci[1]:.3f}]  {pstr}", flush=True)
+        if block.get("unrunnable"):
+            for kind, info in block["unrunnable"].items():
+                print(f"    (skipped {kind}: {info['reason']})", flush=True)
+        print(f"    Prizma vs baselines (lower BPC = Prizma better):", flush=True)
+        for b, pv in block["pairwise"].items():
+            print(f"      vs {b.split('.')[0]:<8} {pv['verdict']:<7} "
+                  f"(delta={pv['delta']:+.4f}, holm_p_adj={pv['holm_p_adj']:.3f}, "
+                  f"equivalent={pv['equivalent']})", flush=True)
+    nc = report.get("negative_control")
+    if nc:
+        print(f"\n  NEGATIVE CONTROL (identical models must NOT differ): "
+              f"p={nc['p_value']:.3f} significant={nc['significant']} "
+              f"=> {'PASS' if nc['pass'] else 'FAIL'}", flush=True)
+    if smoke:
+        print("\n  [SMOKE] The BPC numbers above are PLUMBING-ONLY (tiny model, few steps/seeds).",
+              flush=True)
+        print("  [SMOKE] They prove the char-LM pipeline runs end-to-end incl. the negative control.",
+              flush=True)
+        print("  [SMOKE] They are NOT a scientific result — do NOT cite.", flush=True)
+    print("=" * 78, flush=True)
+
+
 # ------------------------------------------------------------------ presentation --
 def _print_summary(report, smoke):
     print("\n" + "=" * 78, flush=True)
@@ -501,14 +853,21 @@ def _build_parser():
     p = argparse.ArgumentParser(
         prog="landscape",
         description="SOTA-LANDSCAPE powered head-to-head (TF vs Prizma-v2 vs GLA vs Mamba-2). With no "
-                    "flags (or --full) runs the FULL multi-hour landscape; --smoke runs the tiny "
-                    "plumbing-only smoke. An unknown flag is rejected (non-zero exit) and does NOT "
-                    "launch the full landscape.")
+                    "flags (or --full) runs the FULL multi-hour RECALL landscape; --smoke runs the tiny "
+                    "plumbing-only smoke; --charlm switches to the char-LM BPC leg (composes with "
+                    "--smoke). An unknown flag is rejected (non-zero exit) and does NOT launch a full "
+                    "landscape.")
     mode = p.add_mutually_exclusive_group()
     mode.add_argument("--smoke", action="store_true",
                       help="tiny plumbing-only smoke (CPU/MPS, minutes)")
     mode.add_argument("--full", action="store_true",
                       help="explicit FULL landscape (same as no-arg; needs a GPU + budget)")
+    # The char-LM LEG selector. COMPOSABLE with --smoke (--smoke --charlm = tiny char-LM smoke) and
+    # orthogonal to the --smoke/--full mode group, so the default (no-arg) RECALL path is unchanged.
+    p.add_argument("--charlm", action="store_true",
+                   help="run the char-LM BPC leg (4-arm TF/Prizma/GLA/Mamba-2 head-to-head on "
+                        "bits-per-char, lower-is-better) instead of the recall leg; composes with "
+                        "--smoke for a tiny char-LM smoke")
     return p
 
 
@@ -516,7 +875,10 @@ def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     # argparse SystemExits non-zero on an unknown arg (printing usage) BEFORE we ever launch a run.
     args = _build_parser().parse_args(argv)
-    run_landscape(smoke=args.smoke)
+    if args.charlm:
+        run_landscape_charlm(smoke=args.smoke)   # the LANGUAGE-MODELING (BPC) leg
+    else:
+        run_landscape(smoke=args.smoke)          # the default RECALL leg (unchanged)
 
 
 if __name__ == "__main__":
