@@ -1,3 +1,4 @@
+% arXiv submission: primary category cs.LG, secondary cs.CL. License: CC BY 4.0.
 \documentclass[11pt]{article}
 
 \usepackage[margin=1in]{geometry}
@@ -37,12 +38,11 @@ $D{=}128$ at 130K parameters where the matched Transformer fails and the smalles
 solver on our coarse grid needs $\geq$461K ($\geq$3.5$\times$ parameter-efficiency); it solves
 induction (0.9995) and selective-copy (0.9991); and it is competitive on a text8 character LM
 (1.7496 vs.\ 1.7254 bits-per-character, within a pre-registered $+0.05$ margin --- it does
-\emph{not} beat the Transformer). At inference the carried state is a constant $0.56$\,MB ($147{,}456$ fp32 floats) at every
-sequence length --- analytically $28$--$455\times$ fewer floats than a growing KV-cache --- which
-shows up as a measured constant $17.9$\,MB peak (weights $+$ activations $+$ state) versus the
-Transformer's $49.5$--$561.7$\,MB, i.e.\ a $2.8$--$31\times$ measured peak-memory advantage; and a
-measured $O(1)$-latency crossover appears at $n{\geq}32\text{k}$ ($2.4$--$2.8\times$ faster at
-$n{=}65\text{k}$); below $\sim$16k it is $\sim$1.3--1.6$\times$ \emph{slower}. A causal ablation shows the gain is the quadratic
+\emph{not} beat the Transformer). At inference the carried state is constant in $n$ ($0.56$\,MB / $147{,}456$ floats), analytically
+$28$--$455\times$ fewer floats than a growing KV-cache and a measured constant $17.9$\,MB peak
+($2.8$--$31\times$ less than the Transformer); a measured $O(1)$-latency crossover appears at
+$n{\geq}32\text{k}$ ($2.4$--$2.8\times$ faster at $n{=}65\text{k}$), while below $\sim$16k it is
+$\sim$1.3--1.6$\times$ \emph{slower}. A causal ablation shows the gain is the quadratic
 monomials specifically ($\quadtwo\!\gg\!\text{rand\_linear}\!\approx\!\text{none}\!\gg\!\text{TF}$),
 not ``a bigger recurrent state.'' We make no per-FLOP, large-scale-LM, or backprop-free-parity
 claim; Prizma-Seq is a \emph{candidate} efficient-attention replacement in the tested regime, and
@@ -218,7 +218,8 @@ tasks --- exactly what the bar pre-registered.
 All numbers are produced by reproducible scripts; the raw result JSONs, the experiment configs, and
 the figure-generation code are committed at \url{https://github.com/nazmiefearmutcu/Prizma} (see
 \texttt{results/} and \texttt{paper/figures/}). Each figure in this paper traces to a named JSON
-under \texttt{results/}; the per-figure provenance map is \texttt{paper/figures/figdata/PROVENANCE.md}.
+under \texttt{results/}; the per-figure provenance map is
+\texttt{paper/\allowbreak figures/\allowbreak figdata/\allowbreak PROVENANCE.md}.
 
 \section{Results}
 \label{sec:results}

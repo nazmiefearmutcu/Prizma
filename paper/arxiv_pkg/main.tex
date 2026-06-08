@@ -1,3 +1,4 @@
+% arXiv submission: primary category cs.LG, secondary cs.CL. License: CC BY 4.0.
 \documentclass[11pt]{article}
 
 \usepackage[margin=1in]{geometry}
@@ -5,6 +6,7 @@
 \usepackage{amssymb}
 \usepackage{booktabs}
 \usepackage{graphicx}
+\graphicspath{{figures/}}
 \usepackage{microtype}
 \usepackage{xcolor}
 \usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
@@ -36,10 +38,11 @@ $D{=}128$ at 130K parameters where the matched Transformer fails and the smalles
 solver on our coarse grid needs $\geq$461K ($\geq$3.5$\times$ parameter-efficiency); it solves
 induction (0.9995) and selective-copy (0.9991); and it is competitive on a text8 character LM
 (1.7496 vs.\ 1.7254 bits-per-character, within a pre-registered $+0.05$ margin --- it does
-\emph{not} beat the Transformer). At inference its state is a constant 17.9\,MB at every sequence
-length ($28$--$455\times$ less than a growing KV-cache), and a measured $O(1)$-latency crossover
-appears at $n{\geq}32\text{k}$ ($2.4$--$2.8\times$ faster at $n{=}65\text{k}$); below $\sim$16k it
-is $\sim$1.3--1.6$\times$ \emph{slower}. A causal ablation shows the gain is the quadratic
+\emph{not} beat the Transformer). At inference the carried state is constant in $n$ ($0.56$\,MB / $147{,}456$ floats), analytically
+$28$--$455\times$ fewer floats than a growing KV-cache and a measured constant $17.9$\,MB peak
+($2.8$--$31\times$ less than the Transformer); a measured $O(1)$-latency crossover appears at
+$n{\geq}32\text{k}$ ($2.4$--$2.8\times$ faster at $n{=}65\text{k}$), while below $\sim$16k it is
+$\sim$1.3--1.6$\times$ \emph{slower}. A causal ablation shows the gain is the quadratic
 monomials specifically ($\quadtwo\!\gg\!\text{rand\_linear}\!\approx\!\text{none}\!\gg\!\text{TF}$),
 not ``a bigger recurrent state.'' We make no per-FLOP, large-scale-LM, or backprop-free-parity
 claim; Prizma-Seq is a \emph{candidate} efficient-attention replacement in the tested regime, and
@@ -142,12 +145,18 @@ Replacing the keys $k_t$ in Equation~\eqref{eq:delta} with their lifted form $\p
 (and reading with $\phi(q_t)$) turns the carried state from a square $\dhd\times\dhd$ matrix into a
 \textbf{rectangular} $\dhd\times\dphi$ matrix:
 \begin{equation}
-S_t \;=\; \alpha_t\, S_{t-1} \;+\; \beta_t\,\varepsilon_t\,\phi(k_t)^{\top},
+S_t \;=\; \alpha_t\, S_{t-1} \;+\; \beta_t\,\varepsilon^{\phi}_t\,\phi(k_t)^{\top},
+\qquad
+\varepsilon^{\phi}_t \;=\; v_t - S_{t-1}\,\phi(k_t),
 \qquad S_t \in \R^{\dhd\times\dphi},
 \qquad o_t \;=\; S_{t-1}\,\phi(q_t).
 \label{eq:rectstate}
 \end{equation}
-This is the paper's contribution: the \emph{rectangular delta-state framing}. The recall ceiling is
+This is the paper's contribution: the \emph{rectangular delta-state framing}
+(Fig.~\ref{fig:arch}). The predictive-coding reading carries over with the lifted key: the write
+$\beta_t\varepsilon^{\phi}_t\phi(k_t)^{\top}$ is one gradient step on
+$F_t(S)=\tfrac12\lVert v_t - S\,\phi(k_t)\rVert^2$, whose gradient is
+$\partial F_t/\partial S = -\varepsilon^{\phi}_t\phi(k_t)^{\top}$. The recall ceiling is
 governed by the effective rank of the lifted key space ($\dphi$ near-orthogonal directions per head
 rather than $\dhd$), recovering associative capacity, while the per-token write and read remain a
 pair of matrix-vector products over a state of \emph{fixed} size $\dhd\dphi$ floats. Because that
@@ -157,9 +166,18 @@ single-step recurrence and the chunk-parallel training form agree
 ($\lVert\text{step}-\text{forward}\rVert<10^{-6}$: none $3.6\times10^{-7}$, \quadtwo{}
 $4.8\times10^{-7}$), so the cheap inference path is the exact same model as the trained one.
 
+\begin{figure}[t]\centering
+\includegraphics[width=0.92\linewidth]{fig1_architecture.pdf}
+\caption{The \quadtwo{} lift makes the per-head delta-state \emph{rectangular}
+($\dhd\times\dphi$) at zero added parameters; the per-token write and read stay matrix--vector
+products over a state whose size $\dhd\dphi$ is independent of the sequence length $n$, so $O(1)$
+inference is preserved.}
+\label{fig:arch}
+\end{figure}
+
 The cost of the lift is FLOPs, not parameters or memory: the $\dphi{=}256$ expansion multiplies the
-delta-state FLOPs and brings Prizma-Seq's forward cost to $2.14\times$ the Transformer's per token
-at the headline scale (Section~\ref{sec:limits}). We make no per-FLOP claim and disclose this ratio
+delta-state FLOPs and brings Prizma-Seq's forward cost to $2.14\times$ (as-coded; $1.78\times$
+kernel-ideal) the Transformer's per token at the headline scale (Section~\ref{sec:limits}). We make no per-FLOP claim and disclose this ratio
 plainly.
 
 \section{Experimental setup}
@@ -179,7 +197,7 @@ The baseline is a tuned decoder-only Transformer with RMSNorm, SwiGLU, and RoPE,
 norms, embeddings, and tied head with Prizma-Seq so that only the mixer differs. A parameter-match
 auditor counts both models at each scale; the headline MQAR scale d128L4H4 is matched to
 \textbf{TF 857{,}216 vs.\ Prizma-quad2 862{,}368 params ($+0.6\%$)}, and the character-LM scale to
-TF 3{,}220{,}480 vs.\ Prizma-quad2 3{,}224{,}608 ($-0.13\%$). Scale notation is
+TF 3{,}220{,}480 vs.\ Prizma-quad2 3{,}224{,}608 ($+0.13\%$). Scale notation is
 $d\{$model$\}$L$\{$layers$\}$H$\{$heads$\}$; throughout, $\dhd{=}32$ and \quadtwo{} uses $\dphi{=}256$.
 
 \paragraph{Protocol and honesty notes.}
@@ -195,6 +213,13 @@ $n{=}2$ character LM) are \emph{descriptive}, not powered equivalence tests. Inf
 is analytically counted from closed-form float counts; inference \emph{latency} is measured
 wall-clock on an A100 (median of 5 reps, 2 warmup). All experiments are small scale on the named
 tasks --- exactly what the bar pre-registered.
+
+\paragraph{Reproducibility and availability.}
+All numbers are produced by reproducible scripts; the raw result JSONs, the experiment configs, and
+the figure-generation code are committed at \url{https://github.com/nazmiefearmutcu/Prizma} (see
+\texttt{results/} and \texttt{paper/figures/}). Each figure in this paper traces to a named JSON
+under \texttt{results/}; the per-figure provenance map is
+\texttt{paper/\allowbreak figures/\allowbreak figdata/\allowbreak PROVENANCE.md}.
 
 \section{Results}
 \label{sec:results}
@@ -217,9 +242,9 @@ Char-LM is reported as competitive \emph{within} the $+0.05$ margin, \emph{not} 
 \textbf{Leg} & \textbf{Verdict} & \textbf{Headline} \\
 \midrule
 MQAR ($D{=}128$) & PASS &
-Parity at 860K matched params (\quadtwo{} median 0.998 vs.\ TF 0.9995); solves at 130K where the
-matched TF fails (0/3) and the smallest grid TF solver needs $\geq$461K $\Rightarrow$
-$\geq$3.5$\times$ param-efficiency (coarse grid). \\
+Parity at 860K matched params (\quadtwo{} median 0.998, seeds $[0.996,0.998,0.999]$ vs.\ TF 0.9995);
+solves at 130K (3/3, seeds $[0.935,0.997,0.999]$) where the matched TF fails (0/3) and the smallest
+grid TF solver needs $\geq$461K $\Rightarrow$ $\geq$3.5$\times$ param-efficiency (coarse grid). \\
 \addlinespace[2pt]
 Induction & PASS &
 \quadtwo{} median 0.9995 (3/3) vs.\ TF 0.9956. \emph{Non-discriminating:} Prizma-none also solves
@@ -234,12 +259,13 @@ Prizma 1.7496 vs.\ TF 1.7254 BPC; margin $-0.024 < +0.05$. Within the bar; does 
 the TF. \\
 \addlinespace[2pt]
 Inference & PASS (memory) &
-Constant 17.9\,MB state $\forall n$ ($28$--$455\times$ less than KV-cache); measured $O(1)$-latency
-crossover at $n{\geq}32$k ($2.4$--$2.8\times$ faster at $n{=}65$k). \\
+Constant $0.56$\,MB analytic state ($28$--$455\times$ fewer floats than KV); measured constant
+$17.9$\,MB peak ($2.8$--$31\times$ less than TF); $O(1)$-latency crossover at $n{\geq}32$k
+($2.4$--$2.8\times$ faster at $n{=}65$k). \\
 \addlinespace[2pt]
 Causal ablation & PASS &
-$\quadtwo$ (3/3, 0.997) $\gg$ rand\_linear ($\approx$0.59) $\approx$ none ($\approx$0.52) $\gg$ TF
-(0.016). The gain is the monomials, not ``a bigger RNN.'' \\
+$\quadtwo$ (3/3, median 0.997) $\gg$ rand\_linear (0/3, $\approx$0.59) $\approx$ none (0/3,
+$\approx$0.52) $\gg$ TF (0/3, 0.016). The gain is the monomials, not ``a bigger RNN.'' \\
 \addlinespace[2pt]
 Length-extrapolation & WIN (relative) &
 Retention at $8\times$ train length: Prizma 0.398 vs.\ RoPE-TF 0.041 ($\sim$10$\times$). Absolute
@@ -257,9 +283,18 @@ exceeds Prizma-none (median 0.9583), and ignites fastest of the three (by step 1
 44--80k). At the smaller 130K scale (d64L2H2), Prizma-quad2 solves $D{=}128$ (3/3, seeds
 $[0.999, 0.997, 0.935]$, median 0.997) where the param-matched Transformer fails (0/3, 0.016). The
 smallest Transformer that solves $D{=}128$ on our coarse 4-point grid $\{130, 461, 857, 3300\}$K is
-d128L2H4 (461K), giving a $\geq$3.5$\times$ parameter-efficiency gap. We flag that one quad2 seed
+d128L2H4 (461K), giving a $\geq$3.5$\times$ parameter-efficiency gap (Fig.~\ref{fig:mqar}). We flag that one quad2 seed
 (0.935) is borderline (clearing the 0.9 bar by 0.035) and that a denser Transformer sweep (200--450K)
 is needed to pin the true crossover.
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.7\linewidth]{fig4_mqar.pdf}
+\caption{MQAR ($D{=}128$) median accuracy vs.\ matched parameters (3 seeds; 5 for the 857K TF).
+Prizma-quad2 solves at 131K where the param-matched Transformer fails ($0.016$); the smallest
+Transformer solver on the coarse grid $\{130,461,857,3300\}$K is d128L2H4 at 461K, giving a
+$\geq$3.5$\times$ parameter-efficiency gap. All points trace to \texttt{results/gpu\_bench.json}.}
+\label{fig:mqar}
+\end{figure}
 
 \paragraph{Capacity question, resolved honestly.}
 A sufficiently large Transformer \emph{does} solve $D{=}128$ (d128L2H4/461K: 3/3, 0.9999;
@@ -287,12 +322,25 @@ $\sim$1889\,s vs.\ the Transformer's $\sim$361\,s ($\sim$5.2$\times$ slower to t
 \label{sec:infer}
 
 The structural advantage of a fixed-size carried state is constant inference memory. Decoding via
-\texttt{model.step()} (KV-cache for the Transformer, $O(1)$ state for Prizma-Seq) on an A100,
-Prizma-Seq's peak state is a \textbf{constant 17.9\,MB at every sequence length} (small config,
-$\dhd{=}32$, $\dphi{=}256$; 147{,}456 state floats), while the Transformer KV-cache grows linearly
-(49.5\,MB at $n{=}4$k $\to$ 561.7\,MB at $n{=}65$k). Analytically the KV/state ratio runs from
-$28.4\times$ at $n{=}4$k to $455\times$ at $n{=}65$k. The larger config shows the same pattern
-(Prizma 232\,MB constant vs.\ TF 491\,MB $\to$ 4532\,MB; $19.5\times$ at $n{=}65$k).
+\texttt{model.step()} (KV-cache for the Transformer, $O(1)$ state for Prizma-Seq) on an A100, the
+\emph{analytic} carried state is $\dhd\dphi$ floats per head; at the small config it totals
+$147{,}456$ fp32 floats $=0.56$\,MB, \emph{constant in $n$}, against a KV-cache that grows from
+$4{,}194{,}304$ floats ($n{=}4$k) to $67{,}108{,}864$ ($n{=}65$k) --- an analytic $28.4\times$ to
+$455\times$ float advantage. This shows up as a \emph{measured} peak process memory (model weights
+$+$ activations $+$ state) that is a \textbf{constant 17.9\,MB} for Prizma-Seq at every length,
+while the Transformer's measured peak grows from 49.5\,MB ($n{=}4$k) to 561.7\,MB ($n{=}65$k) --- a
+measured peak advantage of $2.8\times$ to $31.4\times$. The larger config shows the same pattern
+(Prizma 232\,MB constant vs.\ TF 491\,MB $\to$ 4532\,MB).
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.62\linewidth]{fig2_latency.pdf}\\[3pt]
+\includegraphics[width=0.95\linewidth]{fig3_memory.pdf}
+\caption{Inference profile (A100, small config). Top: per-step decode latency is flat for
+Prizma-Seq and crosses the Transformer at $n{=}32$k. Bottom: the carried state is constant in $n$ ---
+$28$--$455\times$ fewer floats than the KV-cache (right, analytic) and $2.8$--$31\times$ less
+measured peak memory (left). Data: \texttt{results/gpu\_latency.json}.}
+\label{fig:infer}
+\end{figure}
 
 \begin{table}[t]
 \centering
@@ -300,7 +348,8 @@ $28.4\times$ at $n{=}4$k to $455\times$ at $n{=}65$k. The larger config shows th
 \caption{Measured per-step decode latency (ms) and peak memory (MB) vs.\ sequence length $n$ on an
 A100 (small config: d128L4H4, $\dhd{=}32$, $\dphi{=}256$). Prizma-Seq latency is flat ($O(1)$); the
 Transformer grows. The latency crossover is at $n{=}32$k; below $\sim$16k Prizma-Seq is slower
-(overhead-bound).}
+(overhead-bound). Peak mem is measured process peak (weights $+$ activations $+$ state), not the
+$0.56$\,MB analytic state.}
 \label{tab:latency}
 \begin{tabular}{@{}lrrrrr@{}}
 \toprule
@@ -315,7 +364,7 @@ Prizma peak mem (MB)   & 17.9 & 17.9 & 17.9 & 17.9 & 17.9 \\
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:latency} reports measured per-step latency. Prizma-Seq's latency is statistically flat
+Table~\ref{tab:latency} and Figure~\ref{fig:infer} report measured per-step latency. Prizma-Seq's latency is statistically flat
 across a $16\times$ span of $n$ ($\sim$7\,ms throughout), while the Transformer grows from 4.47\,ms to
 16.95\,ms. The wall-clock \emph{latency} crossover is at $n{=}32{,}768$; at $n{=}65$k Prizma-Seq is
 $2.4\times$ faster (small config: 7.06 vs.\ 16.95\,ms) and $2.8\times$ faster on the larger config
@@ -327,7 +376,7 @@ such. The memory advantage, by contrast, holds at every length.
 \label{sec:ablation}
 
 To rule out the alternative explanation that the gain is merely ``a bigger recurrent state'' (a wider
-$\dphi$), we run a causal control at d64L2H2 (130K) on MQAR $D{=}128$ with three feature-map
+$\dphi$), we run a causal control (Fig.~\ref{fig:ablation}) at d64L2H2 (130K) on MQAR $D{=}128$ with three feature-map
 conditions plus the Transformer, all at fixed $\text{lr}{=}2\times10^{-3}$ (3 seeds):
 \begin{equation*}
 \underbrace{\quadtwo}_{\text{3/3, med }0.997} \;\gg\;
@@ -335,6 +384,16 @@ conditions plus the Transformer, all at fixed $\text{lr}{=}2\times10^{-3}$ (3 se
 \underbrace{\text{none}}_{\text{0/3, med }0.518} \;\gg\;
 \underbrace{\text{TF}}_{\text{0/3, }0.016}.
 \end{equation*}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.62\linewidth]{fig5_ablation.pdf}
+\caption{Causal control at 130K (d64L2H2, MQAR $D{=}128$, 3 seeds; error bars span the seed range).
+Only \quadtwo{} clears the bar (3/3); \texttt{rand\_linear} (a $\dphi{=}256$ random \emph{linear}
+lift) behaves like no feature map, and both sit far below \quadtwo. The recall gain is the quadratic
+monomials, not state width. Data: \texttt{results/gpu\_bench.json}.}
+\label{fig:ablation}
+\end{figure}
+
 The \texttt{rand\_linear} control is a same-dimension random \emph{linear} map (rank $\leq\dhd$, so it
 expands $\dphi$ to 256 without adding any nonlinear structure). It performs like the no-map baseline,
 not like \quadtwo. This isolates the effect: the recall gain comes from the \emph{quadratic monomials}
@@ -354,8 +413,8 @@ Prizma-Seq $\sim$5$\times$ slower to train (char-LM: 1889\,s vs.\ 361\,s per arm
 \item \textbf{Latency win is long-context-only.} The measured per-step latency crossover is at
 $n{\geq}32$k; below $\sim$16k Prizma-Seq is $\sim$1.3--1.6$\times$ slower. The memory advantage holds
 at all lengths; the latency advantage does not.
-\item \textbf{No per-FLOP claim.} Prizma-Seq costs $2.14\times$ the Transformer's forward FLOPs per
-token at the headline scale. The two FLOP-matched Transformer arms (d128L9H4: 1/3; d208L4H4: 0/3,
+\item \textbf{No per-FLOP claim.} Prizma-Seq costs $2.14\times$ (as-coded; $1.78\times$
+kernel-ideal) the Transformer's forward FLOPs per token at the headline scale. The two FLOP-matched Transformer arms (d128L9H4: 1/3; d208L4H4: 0/3,
 median 0.022) were optimization-confounded (consistent with a learning-rate-transfer artifact, since
 the same-depth narrower d128L4H4 solves), so they are excluded from the verdict and we make
 \textbf{no per-FLOP claim}. Equal-parameter parity already addresses ``is it just compute?''.
@@ -415,6 +474,8 @@ character LM, constant-memory inference with a long-context latency crossover, a
 attributing the gain to the quadratic monomials. It is a \emph{candidate} efficient-attention
 replacement in the tested regime --- not a proven alternative. The open frontiers we do not claim
 are large-scale LM parity, per-FLOP advantage, and backprop-free parity.
+
+\paragraph{Funding.} This work received no external funding.
 
 \bibliographystyle{plain}
 \bibliography{refs}
