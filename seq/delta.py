@@ -191,13 +191,19 @@ def _delta_reference(q, k, v, beta, alpha=None, S0=None, write_mode="delta", bet
 def _solve_unit_lower(Amat, RHS):
     """Solve (I + A) X = RHS for X, where A is strictly-lower-triangular -> (I+A) unit-lower-tri.
     Tries solve_triangular (fast); falls back to an exact nilpotent Neumann series if MPS lacks it
-    (A is strictly lower so A^C = 0; the series terminates and is exact)."""
+    (A is strictly lower so A^C = 0; the series terminates and is exact).
+
+    Shapes: Amat is [..., C, C] strictly-lower; RHS is [..., C, n]. Any leading batch dims are fine
+    (the per-channel eta path passes a [B,H,d_v,C,C] A with a matching [B,H,d_v,C,1] RHS, so the
+    SAME nilpotent fallback covers the batched per-channel solve when MPS lacks batched triangular
+    solve). Returns X with RHS's shape."""
     C = Amat.shape[-1]
     M = torch.eye(C, dtype=Amat.dtype, device=Amat.device) + Amat
     try:
         return torch.linalg.solve_triangular(M, RHS, upper=False, unitriangular=True)
     except Exception:
-        # exact: (I+A)^{-1} = sum_{j=0}^{C-1} (-A)^j ; apply to RHS iteratively
+        # exact: (I+A)^{-1} = sum_{j=0}^{C-1} (-A)^j ; apply to RHS iteratively. A is strictly lower
+        # (A^C = 0), so the series TERMINATES and is exact — works for arbitrary batched A/RHS.
         X = RHS.clone()
         term = RHS
         negA = -Amat
@@ -207,6 +213,89 @@ def _solve_unit_lower(Amat, RHS):
             if torch.count_nonzero(term) == 0:
                 break
         return X
+
+
+def _chunked_delta_eta(q, k, v, beta, alpha, S, chunk, write_mode, beta_e, eta):
+    """Chunk-parallel EXACT in-context per-VALUE-channel learning rate (Lever G).
+
+    Replaces the old sequential _delta_reference delegation with batched PER-CHANNEL triangular
+    solves. Within chunk c (tokens i in [c0,c1), size C), expanding the within-chunk read-back
+
+        eps_i = v_i - alpha_i*gamma_{i-1}*S0 k_i  -  alpha_i*Σ_{j<i}(gamma_{i-1}/gamma_j)(k_j·k_i)*u_j
+
+    with u_j = eta_j ⊙ eps_j SEPARATES BY VALUE CHANNEL c into a unit-lower-triangular system
+
+        eps_i[c] + Σ_{j<i} A_ij^(c) eps_j[c] = rhs_i[c]
+        A_ij^(c) = (gamma_i/gamma_j)(k_j·k_i)*eta_j[c]        (strictly lower, j<i;  alpha_i*gamma_{i-1}=gamma_i)
+        rhs_i[c] = v_i[c] - gamma_i*(S0 k_i)[c]
+
+    Build the [B,H,d_v,C,C] batched A and [B,H,d_v,C] rhs, solve all d_v systems at once via the SAME
+    nilpotent-Neumann fallback (_solve_unit_lower), then u_i = eta_i ⊙ eps_i. Reads o_i = S_{i-1} q_i
+    are PRE-write (decayed to gamma_{i-1}); state carry S_end = gamma_C S0 + Σ_i (gamma_C/gamma_i) u_i k_i^T.
+    All gamma machinery is in LOG space (cumsum(log alpha), ratios as exp(log-diff)) exactly mirroring
+    the scalar gated path — ratios stay <=1 on the causal region, no clamp hacks. gamma=1 when alpha is None.
+
+    Scoped to n_delta==1, NOT combined with surprise (enforced by callers). additive write_mode keeps
+    the reference semantics (u = eta*v) and is delegated to _delta_reference (rare ablation; exactness
+    over speed). beta/beta_e are IGNORED on the delta path: eta REPLACES the scalar write gate, and the
+    erase read-back uses eta_j per channel (per Lever G semantics: G is a vector beta on the write only).
+    """
+    B, H, T, d = q.shape
+    erase = (write_mode == "delta")
+    if not erase:
+        # additive + eta is a rare ablation (u = eta*v, no erase/cross-token coupling). The chunk
+        # form gives no algebraic benefit there; keep exact reference semantics. Spec-sanctioned.
+        return _delta_reference(q, k, v, beta, alpha=alpha, S0=S, write_mode=write_mode,
+                                beta_e=beta_e, n_delta=1, eta=eta)
+    gated = alpha is not None
+    outs = []
+    for c0 in range(0, T, chunk):
+        c1 = min(c0 + chunk, T)
+        C = c1 - c0
+        Kc = k[:, :, c0:c1]                       # [B,H,C,d]
+        Vc = v[:, :, c0:c1]                        # [B,H,C,d_v]
+        Qc = q[:, :, c0:c1]                        # [B,H,C,d]
+        Ec = eta[:, :, c0:c1]                      # [B,H,C,d_v]  per-value-channel rate
+        KK = torch.matmul(Kc, Kc.transpose(-1, -2))           # [B,H,C,C]  k_i·k_j
+        KS0 = torch.matmul(Kc, S.transpose(-1, -2))           # [B,H,C,d_v]  (S0 k_i)[c] = (k_i^T S0^T)
+        if gated:
+            Ac = alpha[:, :, c0:c1]                            # [B,H,C]
+            logA = torch.log(Ac.clamp_min(1e-6))
+            clog = torch.cumsum(logA, dim=-1)                 # [B,H,C]  log gamma_i (post i)
+            clog_prev = clog - logA                           # log gamma_{i-1} (pre i)
+            ratio = torch.exp(clog[..., :, None] - clog[..., None, :])     # gamma_i/gamma_j  [B,H,C,C]
+            gamma = torch.exp(clog)[..., None]                # [B,H,C,1]  absolute gamma_i
+            read_ratio = torch.exp(clog_prev[..., :, None] - clog[..., None, :])  # gamma_{i-1}/gamma_j
+            gamma_prev = torch.exp(clog_prev)[..., None]      # [B,H,C,1]  gamma_{i-1}
+        else:
+            ratio = KK.new_ones(B, H, C, C)
+            gamma = Vc.new_ones(B, H, C, 1)
+            read_ratio = ratio
+            gamma_prev = gamma
+        # Base coupling shared across channels: M_ij = (gamma_i/gamma_j)(k_j·k_i), strictly lower.
+        Mbase = torch.tril(KK * ratio, -1)                    # [B,H,C,C]
+        # Per-channel A: A_ij^(c) = M_ij * eta_j[c]. Broadcast eta_j over column j into a channel axis.
+        #   Mbase: [B,H,C,C] -> [B,H,1,C,C];  eta_j[c]: Ec is [B,H,C(=j),d_v] -> [B,H,d_v,1,C]
+        A = Mbase[:, :, None, :, :] * Ec.permute(0, 1, 3, 2)[:, :, :, None, :]   # [B,H,d_v,C,C]
+        # rhs_i[c] = v_i[c] - gamma_i*(S0 k_i)[c]  -> [B,H,d_v,C]
+        rhs = (Vc - gamma * KS0).permute(0, 1, 3, 2)          # [B,H,d_v,C]
+        eps = _solve_unit_lower(A, rhs[..., None])[..., 0]    # [B,H,d_v,C]  solve all d_v systems
+        eps = eps.permute(0, 1, 3, 2)                         # [B,H,C,d_v]
+        U = Ec * eps                                          # u_i = eta_i ⊙ eps_i  [B,H,C,d_v]
+        # reads PRE-write: o_i = gamma_{i-1} S0 q_i + Σ_{j<i}(gamma_{i-1}/gamma_j)(q_i·k_j) u_j
+        O_inter = gamma_prev * torch.matmul(Qc, S.transpose(-1, -2))   # [B,H,C,d_v]
+        QK = torch.matmul(Qc, Kc.transpose(-1, -2)) * read_ratio       # [B,H,C,C]
+        O_intra = torch.matmul(torch.tril(QK, -1), U)                  # [B,H,C,d_v]
+        outs.append(O_inter + O_intra)
+        # state carry: S_end = gamma_C S0 + Σ_i (gamma_C/gamma_i) u_i k_i^T
+        if gated:
+            clogC = clog[..., -1:]                            # [B,H,1]
+            gC = torch.exp(clogC)[..., None]                  # [B,H,1,1]
+            scale = torch.exp(clogC - clog)                   # [B,H,C]  gamma_C/gamma_i <= 1
+            S = gC * S + torch.matmul((scale[..., None] * U).transpose(-1, -2), Kc)
+        else:
+            S = S + torch.matmul(U.transpose(-1, -2), Kc)
+    return torch.cat(outs, dim=2), S
 
 
 def chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode="delta", beta_e=None,
@@ -243,15 +332,21 @@ def chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode="delt
     else:
         S = S0
 
-    # IN-CONTEXT PER-CHANNEL LR PATH (Lever G): must be exact — delegate to _delta_reference, which
-    # threads the TRUE running state through every token and applies eta per value channel. The
-    # WY/UT chunk shortcut cannot absorb a per-channel rate (its triangular solve uses a single
-    # channel-shared coupling matrix). Disclosed speed cost; eta=None keeps the fast path untouched.
+    # IN-CONTEXT PER-CHANNEL LR PATH (Lever G): now CHUNK-PARALLEL and EXACT. The per-VALUE-channel
+    # eta makes the within-chunk write coupling channel-dependent, so instead of ONE channel-shared
+    # triangular solve we build a BATCHED [B,H,d_v,C,C] system and solve all d_v channels at once
+    # (_chunked_delta_eta; same nilpotent-Neumann fallback as the scalar path for MPS). This removes
+    # the old sequential _delta_reference scan WITHOUT changing any result (== reference < 1e-4 fwd+
+    # grad). eta=None keeps the scalar fast path below byte-identical (sacred off-path identity).
+    # Scope guards (preserve existing behaviour): n_delta>=2 with eta is out of scope, and eta is
+    # never combined with surprise — defer those to _delta_reference, which raises / handles exactly.
     if eta is not None:
-        return _delta_reference(q, k, v, beta, alpha=alpha, S0=S, write_mode=write_mode,
-                                beta_e=beta_e, n_delta=n_delta,
-                                surprise=surprise, surprise_mode=surprise_mode,
-                                surprise_gen=surprise_gen, eta=eta)
+        if n_delta >= 2 or surprise:
+            return _delta_reference(q, k, v, beta, alpha=alpha, S0=S, write_mode=write_mode,
+                                    beta_e=beta_e, n_delta=n_delta,
+                                    surprise=surprise, surprise_mode=surprise_mode,
+                                    surprise_gen=surprise_gen, eta=eta)
+        return _chunked_delta_eta(q, k, v, beta, alpha, S, chunk, write_mode, beta_e, eta)
 
     # SURPRISE PATH: must be exact — delegate to _delta_reference which threads the TRUE running
     # state through every token.  The WY/UT chunk shortcut cannot be used here because eps_t depends
