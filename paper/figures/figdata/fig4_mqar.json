@@ -1,0 +1,93 @@
+{
+ "task": "MQAR D=128, best accuracy, MQAR-vs-params",
+ "source_file": "results/gpu_bench.json",
+ "points": [
+  {
+   "arch": "Prizma-quad2",
+   "params_k": 131,
+   "scale": "d64L2H2",
+   "median_acc": 0.9966659545898438,
+   "seeds": [
+    0.9987907409667969,
+    0.9966659545898438,
+    0.9348831176757812
+   ],
+   "solve_rate": "3/3",
+   "source": "gpu_bench.json:p2eff.Prizma-quad2-d64L2H2.s{0,1,2}"
+  },
+  {
+   "arch": "Transformer",
+   "params_k": 130,
+   "scale": "d64L2H2",
+   "median_acc": 0.01629638671875,
+   "seeds": [
+    0.01575469970703125,
+    0.01629638671875,
+    0.016460418701171875
+   ],
+   "solve_rate": "0/3",
+   "source": "gpu_bench.json:p1.TF.d64L2H2.s{0,1,2}"
+  },
+  {
+   "arch": "Transformer",
+   "params_k": 461,
+   "scale": "d128L2H4",
+   "median_acc": 0.9999122619628906,
+   "seeds": [
+    0.9999122619628906,
+    0.999908447265625,
+    1.0
+   ],
+   "solve_rate": "3/3",
+   "source": "gpu_bench.json:p1.TF.d128L2H4.s{0,1,2} (smallest TF solver)"
+  },
+  {
+   "arch": "Prizma-quad2",
+   "params_k": 862,
+   "scale": "d128L4H4",
+   "median_acc": 0.9982795715332031,
+   "seeds": [
+    0.9991264343261719,
+    0.9982795715332031,
+    0.9954643249511719
+   ],
+   "solve_rate": "3/3",
+   "source": "gpu_bench.json:p2.Prizma-quad2.s{0,1,2}"
+  },
+  {
+   "arch": "Transformer",
+   "params_k": 857,
+   "scale": "d128L4H4",
+   "median_acc": 0.9994621276855469,
+   "seeds": [
+    0.9787445068359375,
+    0.9995079040527344,
+    0.9998054504394531,
+    0.9860153198242188,
+    0.9994621276855469
+   ],
+   "solve_rate": "3/3",
+   "source": "gpu_bench.json:p2.TF.s{0..4}"
+  },
+  {
+   "arch": "Transformer",
+   "params_k": 3271,
+   "scale": "d256L4H8",
+   "median_acc": 0.9999237060546875,
+   "seeds": [
+    0.9996833801269531,
+    0.9999465942382812,
+    0.9999237060546875
+   ],
+   "solve_rate": "3/3",
+   "source": "gpu_bench.json:p1.TF.d256L4H8.s{0,1,2}"
+  }
+ ],
+ "grid_k": [
+  130,
+  461,
+  857,
+  3300
+ ],
+ "efficiency_gap": "Prizma solves at 131K; smallest TF solver 461K => 3.5x"
+}
