@@ -318,6 +318,36 @@ it is seed-fragile at this scale: P1 was 2/3 with a 0.785 failure.)
 | **Precision/surprise signal used causally for gating** | Prizma | new (tested in B6) |
 | **Task-free continual SEQUENCE modeling** | Prizma | new axis (secondary) |
 
+## v2 SOTA-landscape + levers (2026-06-08 — METHODS built; powered RESULTS pending the running campaign)
+This session built out the evidence apparatus so the §4 legs can flip to *powered, decisive* verdicts
+against the **SOTA landscape**, not just one Transformer. All of the below is reviewed code (each via
+implement→spec-review→quality-review; protected forwards byte-identical; 143→162 tests). **No results are
+claimed here yet** — the powered numbers come from the running A100/L4 campaign + the landscape `--full`
+runs, and will be filled into "Results vs the bar" with the scope rider when they land.
+
+**SOTA baselines (faithful, non-strawman, param-matched at matched d/L/H):**
+| Arm | Module | Family | Param-vs-TF | Rigor |
+|---|---|---|---|---|
+| **GLA** (Gated Linear Attention) | `seq/gla.py` | gated linear attention | +1.58% | recurrent + chunk-parallel (chunk==recurrent <1e-7) + O(1) `step()==forward()` guard |
+| **Mamba-2 (SSD)** | `seq/mamba2.py` | structured state-space | +0.62% | scalar-A SSD + short conv + D-skip + z-gate; same chunk/recurrent/O(1) rigor |
+(plus the existing tuned **Transformer** `seq/transformer.py` and Samba-**hybrid** `seq/hybrid.py`.)
+
+**Head-to-head apparatus:** `seq/landscape.py` runs the 4 arms (TF / Prizma / GLA / Mamba-2) powered +
+LR-swept + seed-pinned on (a) the recall diagnostics (MQAR-hard / induction / selective-copy) and (b)
+char-LM **BPC** (`--charlm`), with a Holm-corrected verdict layer {BEATS / PARITY / WORSE / INCONCLUSIVE}
+(a statistical tie where Prizma leads reads INCONCLUSIVE, never WORSE) + an identical-model negative
+control. `seq/landscape_report.py` renders the persisted verdict JSONs into this report's Pareto tables
+(torch-free; renders only JSON-present numbers, no per-FLOP spin).
+
+**New model levers (off-path byte-identical — published v1 numbers unaffected):**
+- **Lever F** `seq/delta_fused.py` — fused chunked-delta via `torch.compile(chunked_delta)` (Inductor→Triton
+  on CUDA, provably-equivalent), exact eager fallback off-CUDA. A hand-written `@triton.jit` WY/UT kernel is
+  DEFERRED to be developed+verified ON the A100 (never shipped blind).
+- **Lever G (now chunk-parallel)** `seq/delta.py` — the per-VALUE-channel in-context rate `eta` was a
+  sequential `_delta_reference` scan; it is now an EXACT chunk-parallel **batched per-channel triangular
+  solve** (the within-chunk recurrence separates into `d_v` independent `(I+A^(c))eps^(c)=rhs^(c)` systems).
+  `eta=None` byte-identical (max|d|=0.0); `eta==_delta_reference` <1e-5 fwd+grad (pure+gated, cpu+mps).
+
 ## Open frontiers (explicitly NOT claimed)
 - Large-scale LM parity (we test ≤1.4M params, char-level).
 - Backprop-free parity (local/DFA mode is a bonus axis with a measured tax, never a gate).
