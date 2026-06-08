@@ -235,9 +235,9 @@ Char-LM is reported as competitive \emph{within} the $+0.05$ margin, \emph{not} 
 \textbf{Leg} & \textbf{Verdict} & \textbf{Headline} \\
 \midrule
 MQAR ($D{=}128$) & PASS &
-Parity at 860K matched params (\quadtwo{} median 0.998 vs.\ TF 0.9995); solves at 130K where the
-matched TF fails (0/3) and the smallest grid TF solver needs $\geq$461K $\Rightarrow$
-$\geq$3.5$\times$ param-efficiency (coarse grid). \\
+Parity at 860K matched params (\quadtwo{} median 0.998, seeds $[0.996,0.998,0.999]$ vs.\ TF 0.9995);
+solves at 130K (3/3, seeds $[0.935,0.997,0.999]$) where the matched TF fails (0/3) and the smallest
+grid TF solver needs $\geq$461K $\Rightarrow$ $\geq$3.5$\times$ param-efficiency (coarse grid). \\
 \addlinespace[2pt]
 Induction & PASS &
 \quadtwo{} median 0.9995 (3/3) vs.\ TF 0.9956. \emph{Non-discriminating:} Prizma-none also solves
@@ -257,8 +257,8 @@ $17.9$\,MB peak ($2.8$--$31\times$ less than TF); $O(1)$-latency crossover at $n
 ($2.4$--$2.8\times$ faster at $n{=}65$k). \\
 \addlinespace[2pt]
 Causal ablation & PASS &
-$\quadtwo$ (3/3, 0.997) $\gg$ rand\_linear ($\approx$0.59) $\approx$ none ($\approx$0.52) $\gg$ TF
-(0.016). The gain is the monomials, not ``a bigger RNN.'' \\
+$\quadtwo$ (3/3, median 0.997) $\gg$ rand\_linear (0/3, $\approx$0.59) $\approx$ none (0/3,
+$\approx$0.52) $\gg$ TF (0/3, 0.016). The gain is the monomials, not ``a bigger RNN.'' \\
 \addlinespace[2pt]
 Length-extrapolation & WIN (relative) &
 Retention at $8\times$ train length: Prizma 0.398 vs.\ RoPE-TF 0.041 ($\sim$10$\times$). Absolute
