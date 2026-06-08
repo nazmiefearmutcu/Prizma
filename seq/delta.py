@@ -42,12 +42,13 @@ In-context per-channel learning rate (Lever G — RWKV-7 "Goose" generalized del
   Decay (alpha) and the erase read-back are UNCHANGED — G is a vector-valued beta on the WRITE
   magnitude only. eta=None (default) -> the scalar-beta path, byte-identical to today.
 
-  SPEED NOTE: when eta is provided, chunked_delta delegates to _delta_reference for an EXACT
-  sequential scan (same correctness-first fallback the 'surprise' path uses). The WY/UT chunk
-  shortcut solves ONE triangular system (I+A) U = rhs whose coupling matrix A mixes the value
-  channels uniformly (a single scalar rate per token); a per-VALUE-channel eta makes the cross-token
-  write coupling channel-dependent, which a single channel-shared solve cannot represent exactly.
-  Correctness first; a per-channel chunked kernel is a future Pareto knob. eta is scoped to
+  SPEED NOTE: when eta is provided, chunked_delta is CHUNK-PARALLEL (no longer a sequential scan). A
+  single channel-shared WY/UT solve cannot represent a per-VALUE-channel rate, BUT the within-chunk
+  recurrence SEPARATES by value channel into d_v INDEPENDENT unit-lower-triangular systems
+  (I+A^(c)) eps^(c) = rhs^(c), with A_ij^(c) = alpha_i (gamma_{i-1}/gamma_j)(k_j·k_i) eta_j[c]. These
+  are solved BATCHED over the d_v channel axis per chunk, representing the per-channel rate EXACTLY
+  (== _delta_reference < 1e-4, fwd+grad). (write_mode='additive'+eta has no cross-token erase coupling
+  -> no chunk benefit -> it still delegates to _delta_reference; a rare ablation.) eta is scoped to
   n_delta==1 (NotImplementedError for n_delta>=2, mirroring how existing levers scope interactions).
 """
 from __future__ import annotations
@@ -318,13 +319,17 @@ def chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode="delt
     surprise_mode / surprise_gen: forwarded to _delta_reference (see module docstring).
     eta: optional in-context per-VALUE-channel learning rate (Lever G), shape [B,H,T,d_v]. When None
     (default), the scalar-beta fast WY/UT path is used byte-for-byte (no speed regression).
-    When provided, this delegates to _delta_reference for an EXACT SEQUENTIAL scan — the same
-    correctness-first fallback the 'surprise' path uses. RATIONALE: the WY/UT closed form solves a
-    single triangular system (I + A) U = rhs whose coupling matrix A = tril(beta_e * KK * ratio)
-    mixes the value channels UNIFORMLY (one scalar rate per token); a per-VALUE-channel eta makes the
-    cross-token write coupling channel-dependent, which a single channel-shared triangular solve
-    cannot represent exactly. Correctness takes priority; a per-channel chunked kernel is a future
-    Pareto knob. eta is scoped to n_delta==1 (NotImplementedError for n_delta>=2)."""
+    When provided, eta is solved CHUNK-PARALLEL via BATCHED PER-VALUE-CHANNEL triangular solves (no
+    longer the O(T*d^2) sequential scan). KEY INSIGHT: a single channel-shared WY/UT solve cannot
+    represent a per-channel rate, BUT the within-chunk recurrence SEPARATES by value channel c into
+    d_v INDEPENDENT unit-lower-triangular systems (I + A^(c)) eps^(c) = rhs^(c), with
+    A_ij^(c) = alpha_i (gamma_{i-1}/gamma_j)(k_j·k_i) eta_j[c]  (strictly lower, j<i). Solving them
+    batched over the d_v channel axis per chunk represents the per-channel rate EXACTLY
+    (== _delta_reference < 1e-4, fwd+grad; verified for pure and gated alpha on cpu+mps). (NOTE:
+    write_mode='additive' with eta has NO cross-token erase coupling, so the chunk form gives no
+    algebraic benefit there and it delegates to _delta_reference — a rare ablation where exactness,
+    not speed, is what matters.) eta is scoped to n_delta==1 (NotImplementedError for n_delta>=2) and
+    is not combined with surprise."""
     B, H, T, d = q.shape
     dv = v.shape[-1]                     # value-dim-aware init -> RECTANGULAR state S in R^{d_v x d_k}
     if S0 is None:                       #   (d_k=d). Byte-identical when d_v == d_k (every existing
