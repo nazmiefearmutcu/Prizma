@@ -166,8 +166,8 @@ single-step recurrence and the chunk-parallel training form agree
 $4.8\times10^{-7}$), so the cheap inference path is the exact same model as the trained one.
 
 The cost of the lift is FLOPs, not parameters or memory: the $\dphi{=}256$ expansion multiplies the
-delta-state FLOPs and brings Prizma-Seq's forward cost to $2.14\times$ the Transformer's per token
-at the headline scale (Section~\ref{sec:limits}). We make no per-FLOP claim and disclose this ratio
+delta-state FLOPs and brings Prizma-Seq's forward cost to $2.14\times$ (as-coded; $1.78\times$
+kernel-ideal) the Transformer's per token at the headline scale (Section~\ref{sec:limits}). We make no per-FLOP claim and disclose this ratio
 plainly.
 
 \section{Experimental setup}
@@ -187,7 +187,7 @@ The baseline is a tuned decoder-only Transformer with RMSNorm, SwiGLU, and RoPE,
 norms, embeddings, and tied head with Prizma-Seq so that only the mixer differs. A parameter-match
 auditor counts both models at each scale; the headline MQAR scale d128L4H4 is matched to
 \textbf{TF 857{,}216 vs.\ Prizma-quad2 862{,}368 params ($+0.6\%$)}, and the character-LM scale to
-TF 3{,}220{,}480 vs.\ Prizma-quad2 3{,}224{,}608 ($-0.13\%$). Scale notation is
+TF 3{,}220{,}480 vs.\ Prizma-quad2 3{,}224{,}608 ($+0.13\%$). Scale notation is
 $d\{$model$\}$L$\{$layers$\}$H$\{$heads$\}$; throughout, $\dhd{=}32$ and \quadtwo{} uses $\dphi{=}256$.
 
 \paragraph{Protocol and honesty notes.}
@@ -367,8 +367,8 @@ Prizma-Seq $\sim$5$\times$ slower to train (char-LM: 1889\,s vs.\ 361\,s per arm
 \item \textbf{Latency win is long-context-only.} The measured per-step latency crossover is at
 $n{\geq}32$k; below $\sim$16k Prizma-Seq is $\sim$1.3--1.6$\times$ slower. The memory advantage holds
 at all lengths; the latency advantage does not.
-\item \textbf{No per-FLOP claim.} Prizma-Seq costs $2.14\times$ the Transformer's forward FLOPs per
-token at the headline scale. The two FLOP-matched Transformer arms (d128L9H4: 1/3; d208L4H4: 0/3,
+\item \textbf{No per-FLOP claim.} Prizma-Seq costs $2.14\times$ (as-coded; $1.78\times$
+kernel-ideal) the Transformer's forward FLOPs per token at the headline scale. The two FLOP-matched Transformer arms (d128L9H4: 1/3; d208L4H4: 0/3,
 median 0.022) were optimization-confounded (consistent with a learning-rate-transfer artifact, since
 the same-depth narrower d128L4H4 solves), so they are excluded from the verdict and we make
 \textbf{no per-FLOP claim}. Equal-parameter parity already addresses ``is it just compute?''.
