@@ -36,10 +36,12 @@ $D{=}128$ at 130K parameters where the matched Transformer fails and the smalles
 solver on our coarse grid needs $\geq$461K ($\geq$3.5$\times$ parameter-efficiency); it solves
 induction (0.9995) and selective-copy (0.9991); and it is competitive on a text8 character LM
 (1.7496 vs.\ 1.7254 bits-per-character, within a pre-registered $+0.05$ margin --- it does
-\emph{not} beat the Transformer). At inference its state is a constant 17.9\,MB at every sequence
-length ($28$--$455\times$ less than a growing KV-cache), and a measured $O(1)$-latency crossover
-appears at $n{\geq}32\text{k}$ ($2.4$--$2.8\times$ faster at $n{=}65\text{k}$); below $\sim$16k it
-is $\sim$1.3--1.6$\times$ \emph{slower}. A causal ablation shows the gain is the quadratic
+\emph{not} beat the Transformer). At inference the carried state is a constant $0.56$\,MB ($147{,}456$ fp32 floats) at every
+sequence length --- analytically $28$--$455\times$ fewer floats than a growing KV-cache --- which
+shows up as a measured constant $17.9$\,MB peak (weights $+$ activations $+$ state) versus the
+Transformer's $49.5$--$561.7$\,MB, i.e.\ a $2.8$--$31\times$ measured peak-memory advantage; and a
+measured $O(1)$-latency crossover appears at $n{\geq}32\text{k}$ ($2.4$--$2.8\times$ faster at
+$n{=}65\text{k}$); below $\sim$16k it is $\sim$1.3--1.6$\times$ \emph{slower}. A causal ablation shows the gain is the quadratic
 monomials specifically ($\quadtwo\!\gg\!\text{rand\_linear}\!\approx\!\text{none}\!\gg\!\text{TF}$),
 not ``a bigger recurrent state.'' We make no per-FLOP, large-scale-LM, or backprop-free-parity
 claim; Prizma-Seq is a \emph{candidate} efficient-attention replacement in the tested regime, and
@@ -240,8 +242,9 @@ Prizma 1.7496 vs.\ TF 1.7254 BPC; margin $-0.024 < +0.05$. Within the bar; does 
 the TF. \\
 \addlinespace[2pt]
 Inference & PASS (memory) &
-Constant 17.9\,MB state $\forall n$ ($28$--$455\times$ less than KV-cache); measured $O(1)$-latency
-crossover at $n{\geq}32$k ($2.4$--$2.8\times$ faster at $n{=}65$k). \\
+Constant $0.56$\,MB analytic state ($28$--$455\times$ fewer floats than KV); measured constant
+$17.9$\,MB peak ($2.8$--$31\times$ less than TF); $O(1)$-latency crossover at $n{\geq}32$k
+($2.4$--$2.8\times$ faster at $n{=}65$k). \\
 \addlinespace[2pt]
 Causal ablation & PASS &
 $\quadtwo$ (3/3, 0.997) $\gg$ rand\_linear ($\approx$0.59) $\approx$ none ($\approx$0.52) $\gg$ TF
@@ -293,12 +296,15 @@ $\sim$1889\,s vs.\ the Transformer's $\sim$361\,s ($\sim$5.2$\times$ slower to t
 \label{sec:infer}
 
 The structural advantage of a fixed-size carried state is constant inference memory. Decoding via
-\texttt{model.step()} (KV-cache for the Transformer, $O(1)$ state for Prizma-Seq) on an A100,
-Prizma-Seq's peak state is a \textbf{constant 17.9\,MB at every sequence length} (small config,
-$\dhd{=}32$, $\dphi{=}256$; 147{,}456 state floats), while the Transformer KV-cache grows linearly
-(49.5\,MB at $n{=}4$k $\to$ 561.7\,MB at $n{=}65$k). Analytically the KV/state ratio runs from
-$28.4\times$ at $n{=}4$k to $455\times$ at $n{=}65$k. The larger config shows the same pattern
-(Prizma 232\,MB constant vs.\ TF 491\,MB $\to$ 4532\,MB; $19.5\times$ at $n{=}65$k).
+\texttt{model.step()} (KV-cache for the Transformer, $O(1)$ state for Prizma-Seq) on an A100, the
+\emph{analytic} carried state is $\dhd\dphi$ floats per head; at the small config it totals
+$147{,}456$ fp32 floats $=0.56$\,MB, \emph{constant in $n$}, against a KV-cache that grows from
+$4{,}194{,}304$ floats ($n{=}4$k) to $67{,}108{,}864$ ($n{=}65$k) --- an analytic $28.4\times$ to
+$455\times$ float advantage. This shows up as a \emph{measured} peak process memory (model weights
+$+$ activations $+$ state) that is a \textbf{constant 17.9\,MB} for Prizma-Seq at every length,
+while the Transformer's measured peak grows from 49.5\,MB ($n{=}4$k) to 561.7\,MB ($n{=}65$k) --- a
+measured peak advantage of $2.8\times$ to $31.4\times$. The larger config shows the same pattern
+(Prizma 232\,MB constant vs.\ TF 491\,MB $\to$ 4532\,MB).
 
 \begin{table}[t]
 \centering
@@ -306,7 +312,8 @@ $28.4\times$ at $n{=}4$k to $455\times$ at $n{=}65$k. The larger config shows th
 \caption{Measured per-step decode latency (ms) and peak memory (MB) vs.\ sequence length $n$ on an
 A100 (small config: d128L4H4, $\dhd{=}32$, $\dphi{=}256$). Prizma-Seq latency is flat ($O(1)$); the
 Transformer grows. The latency crossover is at $n{=}32$k; below $\sim$16k Prizma-Seq is slower
-(overhead-bound).}
+(overhead-bound). Peak mem is measured process peak (weights $+$ activations $+$ state), not the
+$0.56$\,MB analytic state.}
 \label{tab:latency}
 \begin{tabular}{@{}lrrrrr@{}}
 \toprule
