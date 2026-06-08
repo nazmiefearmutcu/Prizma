@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/nazmiefearmutcu/Prizma/actions/workflows/ci.yml/badge.svg)](https://github.com/nazmiefearmutcu/Prizma/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Last commit](https://img.shields.io/github/last-commit/nazmiefearmutcu/Prizma)](https://github.com/nazmiefearmutcu/Prizma/commits)
+[![Stars](https://img.shields.io/github/stars/nazmiefearmutcu/Prizma?style=social)](https://github.com/nazmiefearmutcu/Prizma/stargazers)
 
 Two small-scale research threads built the same way: a **pre-registered falsifiable bar**, a
 **parameter/FLOP-matched** baseline, an **adversarial referee audit**, and **honest, binding
