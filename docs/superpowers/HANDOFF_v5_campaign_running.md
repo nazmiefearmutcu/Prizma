@@ -89,10 +89,23 @@ copy: `base64 -w0 results/<name>.json` and reconstruct locally. Save each verdic
   campaign sessions don't use it. To verify Lever F's CUDA path on a freed A100 later, re-`git archive`
   the current HEAD and make a fresh gist.
 
-## 6. Relaunch commands (if a VM resets)
-- S2: `cd /content/prizma && nohup python3 -u seq/recall_gate.py --full > logs_s2.txt 2>&1 & echo S2_PID $!`
-- S1: `cd /content/prizma && nohup python3 -u gpu_charlm2.py --v2 --seeds 0 1 2 3 4 5 6 7 8 9 > logs_s1.txt 2>&1 & echo S1_PID $!`
-- S34: `cd /content/prizma && nohup bash -c 'python3 -u gpu_ablation.py > logs_s3.txt 2>&1; python3 -u gpu_latency.py > logs_s4lat.txt 2>&1; python3 -u gpu_lengen.py > logs_s4len.txt 2>&1; echo ALLDONE > s34_done.txt' >/dev/null 2>&1 & echo S34_PID $!`
+## 6. Relaunch — RUN IN A FOREGROUND NOTEBOOK CELL, NOT A TERMINAL (idle-disconnect lesson)
+⚠️ **CRITICAL CORRECTION to the §0/§1 terminal+nohup method.** On 2026-06-08 all 3 runtimes hit Colab
+Pro+'s **idle timeout at ~2.5 h** ("Runtime disconnected due to inactivity") and the ephemeral results
+were LOST. ROOT CAUSE: a terminal `nohup` process does NOT count as runtime activity — the *kernel* was
+idle, so Colab tore the VMs down. A **running notebook CELL** DOES count as activity (and qualifies for
+Pro+ background execution that survives tab-close). So launch each session in ONE foreground cell that
+bootstraps AND runs the workload. Type into the CELL (double-click it first to grab Monaco focus; the
+`!` prefix is correct Colab shell syntax). Keep commands quote/paren-free so Monaco doesn't auto-close.
+Monitor via the CELL OUTPUT (DOM-readable: `get_page_text`), and exfiltrate the result JSON when the cell
+COMPLETES (the kernel is busy while it runs). The crash-safe JSON makes a fresh-VM restart resumable —
+restore the last exfiltrated JSON to `/content/prizma/results/` before re-running to skip done cells.
+
+GIST=`https://gist.githubusercontent.com/nazmiefearmutcu/fe9c44feff67ff0a807f888c72e976f8/raw/264408a24c469d06557991a7e47c2beb49ef3784/prizma_v2_b64.txt`
+- **S2 cell:** `!mkdir -p /content/prizma && curl -sL $GIST | base64 -d | tar xz -C /content/prizma && cd /content/prizma && python3 -u seq/recall_gate.py --full 2>&1 | tee logs_s2.txt`
+- **S1 cell:** `!mkdir -p /content/prizma && curl -sL $GIST | base64 -d | tar xz -C /content/prizma && cd /content/prizma && python3 -u gpu_charlm2.py --v2 --seeds 0 1 2 3 4 5 6 7 8 9 2>&1 | tee logs_s1.txt`
+- **S34 cell:** `!mkdir -p /content/prizma && curl -sL $GIST | base64 -d | tar xz -C /content/prizma && cd /content/prizma && python3 -u gpu_ablation.py 2>&1 | tee logs_s3.txt && python3 -u gpu_latency.py 2>&1 | tee logs_s4lat.txt && python3 -u gpu_lengen.py 2>&1 | tee logs_s4len.txt`
+(Substitute the literal raw URL for `$GIST` when typing into the cell — there is no shell var in a `!` line.)
 
 ---
 
