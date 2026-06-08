@@ -8,11 +8,11 @@ THE QUESTION THIS RUNNER ANSWERS.
   selective-copy — the SAME task factories seq/recall_gate.py uses, so the numbers are comparable).
 
   landscape.py is recall_gate.py GENERALIZED from the TF-vs-Prizma 2-arm gate to the 4-arm SOTA
-  landscape. It REUSES the campaign primitives verbatim — it does NOT reinvent training, stats, or
-  the LR sweep:
-    seq.gpu_harness : make_arm, make_cfg, sweep_then_seeds, powered_summary, h2h, holm_family,
+  landscape. It REUSES the campaign primitives — it does NOT reinvent training, stats, or the LR
+  sweep (the mixed-length recall task wrapper below mirrors recall_gate.py's composition):
+    seq.gpu_harness : make_arm, make_cfg, sweep_then_seeds, h2h, holm_family,
                       negative_control, load_results, _save, get_device
-    seq.stats       : superiority_test, margin_superiority (the powered Student-t machinery)
+    seq.stats       : summarize, solve_rate, superiority_test, margin_superiority, tost_equivalence
     seq.tasks       : MixedMQAR, SelectiveCopy, Induction (the recall diagnostics)
 
 TWO LAYERS (cleanly separated so the verdict is UNIT-TESTABLE WITHOUT TRAINING):
@@ -22,8 +22,8 @@ TWO LAYERS (cleanly separated so the verdict is UNIT-TESTABLE WITHOUT TRAINING):
           * pareto_table : every arm ranked best-first (by mean; ascending if lower_is_better) with
                            its POWERED summary (real Student-t CI95 via seq.stats.summarize),
                            solve-rate, per-seed accs and disclosed param count,
-          * pairwise     : Prizma-vs-EACH-baseline {BEATS / PARITY / WORSE} via h2h
-                           (margin_superiority + TOST), with the comparison family Holm-corrected,
+          * pairwise     : Prizma-vs-EACH-baseline {BEATS / PARITY / WORSE / INCONCLUSIVE} via h2h
+                           (margin_superiority + TOST + reverse check), comparison family Holm-corrected,
           * the lower-is-LOSS sign handled correctly (BEATS/WORSE flip when lower_is_better=True).
 
   (B) TRAINING RUNNER  run_landscape(...):
@@ -62,47 +62,51 @@ import argparse
 import os
 import sys
 
-import numpy as np
-
 # Dual-invocation import (works as `python3.13 -m seq.landscape` AND `python3.13 seq/landscape.py`):
 # in the bare-script case __package__ is empty and the relative import fails, so we put the repo root
 # on sys.path and retry with absolute imports (the deferred torch/harness imports use the same idiom).
+# NOTE: only the torch-FREE stats helpers are imported here, so the pure verdict layer below stays
+# importable + unit-testable without torch.
 try:
-    from .stats import summarize, solve_rate, superiority_test, margin_superiority
+    from .stats import summarize, solve_rate, superiority_test, margin_superiority, tost_equivalence
 except ImportError:                                  # run as a bare script: bootstrap sys.path
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-    from seq.stats import summarize, solve_rate, superiority_test, margin_superiority
+    from seq.stats import summarize, solve_rate, superiority_test, margin_superiority, tost_equivalence
 
 
-# The TUNED Prizma-v2 knob set — the SINGLE source of truth, mirroring the campaign Prizma arm used by
-# seq/recall_gate.py (feat_map='quad2_lowrank', the v2 lean 0-trainable-param lever) and gpu_charlm2.py
-# (V2_GATE_KW = out_gate/state_norm/decoupled_gate/gated). The landscape Prizma MUST match the campaign
-# Prizma so the head-to-head is the same model the rest of the v2 study reports.
-PRIZMA_V2_KNOBS = dict(out_gate=True, state_norm=True, decoupled_gate=True, gated=True,
-                       feat_map="quad2_lowrank")
+# The Prizma arm config for the RECALL diagnostics. The landscape runs seq/recall_gate.py's tasks
+# (MQAR-hard / induction / selective-copy), so the Prizma arm MUST match recall_gate.py's REAL-run
+# Prizma (seq/recall_gate.py:457) to stay comparable: feat_map='quad2_lowrank' (the v2 lean
+# 0-trainable-param recall lever) with the forget/output GATES OFF — the diagnostic recall tasks need a
+# CLEAN OVERWRITE, not forgetting (see seq/delta.py's module docstring). The char-LM-tuned gate superset
+# (out_gate/state_norm/decoupled_gate/gated, used by gpu_charlm2.py) belongs to a SEPARATE char-LM
+# landscape leg, NOT here — using it on recall tasks would be a different model than the campaign reports.
+PRIZMA_V2_KNOBS = dict(feat_map="quad2_lowrank")
 
 
 # ============================================================ PURE VERDICT LAYER ==
 # (no torch import here on purpose: this layer must be importable + testable without training)
 
 def _pair_verdict(cand, base, *, margin, lower_is_better, holm_reject):
-    """Prizma-vs-one-baseline BEATS / PARITY / WORSE, Holm-aware, sign-correct.
+    """Prizma-vs-one-baseline BEATS / PARITY / WORSE / INCONCLUSIVE, Holm-aware, sign-correct.
 
-    Reuses seq.gpu_harness.h2h's exact test machinery (superiority/margin_superiority + TOST) but
-    collapses its WIN/EQUIVALENT/INCONCLUSIVE into the landscape's BEATS/PARITY/WORSE labels:
+    Mirrors seq.gpu_harness.h2h's four-way semantics (WIN / EQUIVALENT / INCONCLUSIVE, plus an explicit
+    LOSE) — crucially it does NOT collapse a noisy tie into a loss:
 
-      higher-is-acc (default):
-        BEATS  iff the Holm-corrected one-sided superiority of cand>base is rejected (cand strictly
-               better), PARITY iff TOST-equivalent within margin, else WORSE.
-      lower-is-LOSS (lower_is_better=True, e.g. BPC):
-        BEATS  iff Holm-corrected margin_superiority(cand, base, margin) (cand's loss lower by >=
-               margin), PARITY iff TOST-equivalent within margin, else WORSE.
+      BEATS        Prizma is the PROVEN winner: the Holm-corrected one-sided superiority of cand>base is
+                   rejected (higher-is-acc: superiority_test; lower-is-LOSS: margin_superiority).
+      PARITY       TOST-equivalent within +/-margin (a statistically demonstrated tie).
+      WORSE        the BASELINE is the proven winner: the REVERSE one-sided test (base>cand) is
+                   significant. This reverse check is raw/uncorrected + directional (the Holm family
+                   covered only cand>base); it exists solely to separate a real deficit from noise.
+      INCONCLUSIVE neither side is proven and it is not equivalent — an UNDER-POWERED call. A comparison
+                   where Prizma even LEADS on the mean but isn't significant lands HERE, never WORSE
+                   (the bug this fixes: a statistical tie must not read as 'Prizma loses').
 
-    `holm_reject` is the FAMILY-WISE corrected decision for THIS comparison (threaded in by the
-    caller from holm_family over the whole pairwise family), so a BEATS label always reflects the
-    corrected decision, never a raw single-test flag.
+    `holm_reject` is the FAMILY-WISE corrected decision for THIS comparison (threaded in by the caller
+    from holm_family over the whole pairwise family), so a BEATS label always reflects the corrected
+    decision, never a raw single-test flag.
     """
-    from .stats import tost_equivalence
     tost = tost_equivalence(cand, base, margin)
     if lower_is_better:
         test = margin_superiority(cand, base, margin)   # delta = mean(base)-mean(cand); + = cand better
@@ -111,19 +115,26 @@ def _pair_verdict(cand, base, *, margin, lower_is_better, holm_reject):
         test = superiority_test(cand, base)             # delta = mean(cand)-mean(base); + = cand better
         delta = test["delta"]
 
-    beats = bool(holm_reject)
-    if beats:
+    rev = None
+    if bool(holm_reject):
         verdict = "BEATS"
     elif tost["equivalent"]:
         verdict = "PARITY"
     else:
-        verdict = "WORSE"
+        # Not proven ahead (Holm) and not equivalent. Distinguish a genuine DEFICIT (baseline proven
+        # better -> WORSE) from an under-powered tie (-> INCONCLUSIVE) via the REVERSE one-sided test.
+        if lower_is_better:
+            rev = margin_superiority(base, cand, margin)   # base's loss lower by >= margin => base better
+        else:
+            rev = superiority_test(base, cand)             # base acc higher => base better
+        verdict = "WORSE" if bool(rev["significant"]) else "INCONCLUSIVE"
 
     return {
         "verdict": verdict,
         "delta": float(delta),                 # signed so + always means Prizma better (both metrics)
         "test": test,
         "tost": tost,
+        "reverse_test": rev,                   # the base>cand check (only computed for WORSE/INCONCLUSIVE)
         "equivalent": bool(tost["equivalent"]),
         "raw_p": float(test["p_value"]),
         "margin": margin,

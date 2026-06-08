@@ -37,11 +37,13 @@ def test_module_imports_and_public_surface():
     assert callable(ls.run_landscape), "training runner must exist"
     assert callable(ls.main), "CLI entry must exist"
     assert callable(ls._build_parser), "arg-guard parser must be unit-testable"
-    # the tuned Prizma-v2 knob set must mirror the campaign (recall_gate / gpu_charlm2) config.
+    # The Prizma arm config must mirror seq/recall_gate.py's REAL-run Prizma (this runner uses recall
+    # tasks): feat_map='quad2_lowrank' with the forget/output GATES OFF — recall diagnostics need a clean
+    # overwrite, not the char-LM gate superset. (See PRIZMA_V2_KNOBS docstring + seq/delta.py.)
     assert isinstance(ls.PRIZMA_V2_KNOBS, dict)
-    for k in ("out_gate", "state_norm", "decoupled_gate", "gated"):
-        assert ls.PRIZMA_V2_KNOBS.get(k) is True, f"v2 knob {k} must be True (campaign parity)"
     assert ls.PRIZMA_V2_KNOBS.get("feat_map") == "quad2_lowrank"
+    for k in ("out_gate", "state_norm", "decoupled_gate", "gated"):
+        assert k not in ls.PRIZMA_V2_KNOBS, f"recall Prizma must NOT set the char-LM gate knob {k}"
 
 
 # ===================================================== PURE VERDICT: ranking =====
@@ -204,12 +206,12 @@ def test_smoke_end_to_end_writes_json_with_all_arms_and_resumes():
             assert kind in present, f"{kind} must appear (present or skipped-with-reason): {present}"
         # 4 runnable arms expected on CPU at this tiny scale.
         assert len(task_block["pareto_table"]) == 4, task_block["pareto_table"]
-        # Prizma is compared against each of the 3 baselines (BEATS/PARITY/WORSE labels exist).
+        # Prizma is compared against each of the 3 baselines (BEATS/PARITY/WORSE/INCONCLUSIVE labels).
         # the pairwise dict is keyed by the FULL arm name (e.g. 'TF.d48L1H2'); match by kind prefix.
         pair_kinds = {k.split(".")[0]: pv for k, pv in task_block["pairwise"].items()}
         assert set(pair_kinds) == {"TF", "GLA", "Mamba2"}, pair_kinds
         for b in ("TF", "GLA", "Mamba2"):
-            assert pair_kinds[b]["verdict"] in ("BEATS", "PARITY", "WORSE")
+            assert pair_kinds[b]["verdict"] in ("BEATS", "PARITY", "WORSE", "INCONCLUSIVE")
 
         # NEGATIVE-CONTROL integrity leg present (two byte-identical arms must not differ).
         nc = rep["negative_control"]
