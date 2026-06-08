@@ -183,7 +183,8 @@ def landscape_verdict(arm_accs, *, cand_key="Prizma", margin=0.05, lower_is_bett
       lower_is_better: False (accuracy, higher=better, default) or True (loss/BPC, lower=better).
       params        : optional {arm_name -> int} param count, disclosed per table row (spreads are
                       shown, not hidden). Missing arms record params=None.
-      solve_thresh  : per-arm solve-rate threshold (fraction of seeds with score >= thresh).
+      solve_thresh  : per-arm solve-rate threshold — fraction of seeds with score >= thresh, or <= thresh
+                      when lower_is_better (so a BPC solve-rate counts the seeds BELOW the bar).
 
     Returns:
       {pareto_table, pairwise, pair_order, cand_key, margin, lower_is_better, solve_thresh}
@@ -210,7 +211,10 @@ def landscape_verdict(arm_accs, *, cand_key="Prizma", margin=0.05, lower_is_bett
             "median": s["median"],
             "ci95": s["ci95"],
             "sd": s["sd"],
-            "solve_rate": solve_rate(xs, thresh=solve_thresh),
+            # solve-rate is SIGN-AWARE: higher-is-acc counts seeds >= thresh; lower-is-LOSS (BPC) counts
+            # seeds <= thresh (seq.stats.solve_rate is >=-only, so flip it for the lower_is_better leg).
+            "solve_rate": ((sum(1 for x in xs if float(x) <= solve_thresh) / len(xs))
+                           if lower_is_better else solve_rate(xs, thresh=solve_thresh)),
             "accs": [float(x) for x in xs],
         })
     # rank: higher mean is better (acc) -> descending; lower is better (loss) -> ascending.
@@ -614,7 +618,7 @@ def _charlm_negative_control(res, scale, T, data, hp, device, seeds, grid, resul
 
 
 def run_landscape_charlm(scale=(256, 4, 4), seeds=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), smoke=False,
-                         results_path=None, lr_grid=None, margin=0.05, parity_margin=0.05,
+                         results_path=None, lr_grid=None, margin=0.05,
                          solve_thresh=0.9, log=False):
     """Run the 4-arm char-LM BPC head-to-head (TF vs Prizma-charLM vs GLA vs Mamba-2) on the char-LM
     corpus, compute the powered Pareto-BPC table + Holm-corrected pairwise verdicts (lower_is_better),
@@ -633,9 +637,9 @@ def run_landscape_charlm(scale=(256, 4, 4), seeds=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
                      is printed); 4 arms + the 2-arm negative control, 2 seeds, 1-LR grid, short cap.
       results_path : explicit results JSON path (default $PRIZMA_RESULTS/gpu_landscape_charlm.json).
       lr_grid      : LR sweep grid (default seq.lrsweep.DEFAULT_GRID; smoke uses a single-LR grid).
-      margin       : the BPC superiority win bar (Prizma beats baseline by >= this) used by the verdict.
-      parity_margin: the TOST equivalence band (BPC units) — defaults equal to `margin`.
-      solve_thresh : per-arm solve-rate threshold (BPC <= thresh counts as solved).
+      margin       : the BPC superiority win bar AND the TOST equivalence band (BPC units) — the verdict
+                     reuses the single `margin` for both (the h2h convention), so there is no separate band.
+      solve_thresh : per-arm solve-rate threshold (BPC <= thresh counts as solved; lower-is-better).
 
     Returns the landscape_charlm_report dict (tasks, negative_control, meta).
     """
@@ -657,7 +661,7 @@ def run_landscape_charlm(scale=(256, 4, 4), seeds=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
                   betas=(0.9, 0.95), eval_every=60, eval_batches=6)
         lr_grid = lr_grid or (2e-3,)              # ONE LR -> each arm is just 2 tiny trains
         slice_chars = 40_000                      # small slice (90/10 -> ~36k train / 4k test)
-        margin, parity_margin, solve_thresh = 0.05, 0.05, 3.0   # low BPC bar so the smoke is shaped
+        margin, solve_thresh = 0.05, 3.0   # low BPC bar so the smoke is shaped
         print("=" * 78, flush=True)
         print("  *** CHAR-LM SMOKE MODE: PLUMBING-ONLY ***", flush=True)
         print("  These BPC numbers validate that the char-LM landscape leg wires together (pre-flight", flush=True)
@@ -700,7 +704,7 @@ def run_landscape_charlm(scale=(256, 4, 4), seeds=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
     rep["meta"] = {
         "scale": f"d{scale[0]}L{scale[1]}H{scale[2]}", "seeds": list(seeds), "arms": list(ARM_KINDS),
         "prizma_knobs": dict(PRIZMA_CHARLM_KNOBS), "corpus": corpus, "ctx": T,
-        "margin": margin, "parity_margin": parity_margin, "solve_thresh": solve_thresh,
+        "margin": margin, "solve_thresh": solve_thresh,
         "lr_grid": list(lr_grid), "hp": dict(hp), "device": device.type,
         "random_baseline_bpc": round(data.rand_bpc, 4),
     }
