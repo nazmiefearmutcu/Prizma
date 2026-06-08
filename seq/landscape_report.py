@@ -116,11 +116,14 @@ def _sorted_rows(rows, lower_is_better):
     JSON might not be, so the renderer enforces best-first itself (stable; rows with no mean sink last).
     No numbers are changed — only the row ORDER — so this never invents or alters a value."""
     def key(r):
-        m = r.get("mean")
-        # rows missing a mean sort to the end regardless of direction.
-        if m is None:
+        # rows with a missing OR non-numeric mean sink to the end (partial-JSON safe — honors the
+        # module's 'never raises on partial JSON' contract; a corrupt/hand-built string mean must not
+        # crash the whole render). Same try/except discipline as the _fmt_* sibling formatters.
+        try:
+            mv = float(r.get("mean"))
+        except (TypeError, ValueError):
             return (1, 0.0)
-        return (0, float(m) if lower_is_better else -float(m))
+        return (0, mv if lower_is_better else -mv)
     return sorted(rows, key=key)
 
 
