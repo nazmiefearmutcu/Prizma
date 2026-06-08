@@ -214,6 +214,12 @@ is analytically counted from closed-form float counts; inference \emph{latency} 
 wall-clock on an A100 (median of 5 reps, 2 warmup). All experiments are small scale on the named
 tasks --- exactly what the bar pre-registered.
 
+\paragraph{Reproducibility and availability.}
+All numbers are produced by reproducible scripts; the raw result JSONs, the experiment configs, and
+the figure-generation code are committed at \url{https://github.com/nazmiefearmutcu/Prizma} (see
+\texttt{results/} and \texttt{paper/figures/}). Each figure in this paper traces to a named JSON
+under \texttt{results/}; the per-figure provenance map is \texttt{paper/figures/figdata/PROVENANCE.md}.
+
 \section{Results}
 \label{sec:results}
 
@@ -467,6 +473,8 @@ character LM, constant-memory inference with a long-context latency crossover, a
 attributing the gain to the quadratic monomials. It is a \emph{candidate} efficient-attention
 replacement in the tested regime --- not a proven alternative. The open frontiers we do not claim
 are large-scale LM parity, per-FLOP advantage, and backprop-free parity.
+
+\paragraph{Funding.} This work received no external funding.
 
 \bibliographystyle{plain}
 \bibliography{refs}
