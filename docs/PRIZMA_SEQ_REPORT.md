@@ -318,12 +318,12 @@ it is seed-fragile at this scale: P1 was 2/3 with a 0.785 failure.)
 | **Precision/surprise signal used causally for gating** | Prizma | new (tested in B6) |
 | **Task-free continual SEQUENCE modeling** | Prizma | new axis (secondary) |
 
-## v2 SOTA-landscape + levers (2026-06-08 — METHODS built; powered RESULTS pending the running campaign)
+## v2 SOTA-landscape + levers (2026-06-08 — METHODS built; RECALL leg powered+LANDED, char-LM/landscape pending)
 This session built out the evidence apparatus so the §4 legs can flip to *powered, decisive* verdicts
 against the **SOTA landscape**, not just one Transformer. All of the below is reviewed code (each via
-implement→spec-review→quality-review; protected forwards byte-identical; 143→162 tests). **No results are
-claimed here yet** — the powered numbers come from the running A100/L4 campaign + the landscape `--full`
-runs, and will be filled into "Results vs the bar" with the scope rider when they land.
+implement→spec-review→quality-review; protected forwards byte-identical; 143→162 tests). **The RECALL leg
+has now LANDED** (powered n=10, A100; see "Results vs the bar" below); the char-LM **BPC** leg (S1) and the
+4-arm GLA/Mamba-2 landscape `--full` runs are still on the GPU and remain explicitly PENDING.
 
 **SOTA baselines (faithful, non-strawman, param-matched at matched d/L/H):**
 | Arm | Module | Family | Param-vs-TF | Rigor |
@@ -347,6 +347,29 @@ control. `seq/landscape_report.py` renders the persisted verdict JSONs into this
   sequential `_delta_reference` scan; it is now an EXACT chunk-parallel **batched per-channel triangular
   solve** (the within-chunk recurrence separates into `d_v` independent `(I+A^(c))eps^(c)=rhs^(c)` systems).
   `eta=None` byte-identical (max|d|=0.0); `eta==_delta_reference` <1e-5 fwd+grad (pure+gated, cpu+mps).
+
+**Results vs the bar — RECALL leg (powered, n=10 seeds, A100, LANDED 2026-06-08; `results/campaign_2026-06-08/recall_gate.json`):**
+The TOST-parity gate (±0.05, flip-test guarded) **was NOT MET on any of the three recall legs**, so the honest
+recall claim **DOWNGRADES to "competitive"** — *not* a tested parity, and not a win:
+
+| Recall leg | TF mean (solve) | Prizma mean (solve) | Δ (Prizma−TF) | 90% CI | TOST-equiv | not-worse | flip-test |
+|---|---|---|---|---|---|---|---|
+| MQAR-hard | 0.840 (0.80) | 0.880 (0.80) | +0.040 | (−0.195, +0.275) | ✗ | ✗ | ✓ (bigger TF solves) |
+| Induction | 0.533 (0.50) | 0.818 (0.80) | +0.285 | (−0.056, +0.625) | ✗ | ✗ | ✓ |
+| Selective-copy | 0.975 (0.80) | 0.996 (1.00) | +0.022 | (−0.009, +0.052) | ✗ | ✓ | ✓ |
+
+_Read honestly: on point estimates Prizma's mean **and** solve-rate are ≥ TF on all three legs, but **no leg
+clears powered TOST-equivalence** at ±0.05 — selective-copy misses only because the upper CI (0.052) grazes
+just past the margin, while MQAR-hard/induction miss because the **Transformer baseline is high-variance** (on
+induction TF is bimodal: ~half its seeds collapse to ~0.06 while the rest reach ~0.99, so its CI is wide enough
+that equivalence cannot be certified even though Prizma is the more *reliable* arm). This is a
+conservative-against-a-noisy-baseline NON-result for parity, recorded as such; it is
+**not** evidence that Prizma beats attention on recall. (The identical-model negative control is a property of the
+landscape/harness legs, not this recall gate, so none is claimed here.)_
+
+> Scope rider (binding): ≤2M params (+1 confirmation 10–50M); char-LM + diagnostics; NOT a frontier/MMLU/
+> long-context claim; per-FLOP "dramatic" stays conditional unless all axes hold + powered. Char-LM BPC (S1) +
+> the 4-arm GLA/Mamba-2 landscape remain PENDING (on the GPU now).
 
 ## Open frontiers (explicitly NOT claimed)
 - Large-scale LM parity (we test ≤1.4M params, char-level).
