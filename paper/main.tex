@@ -5,6 +5,7 @@
 \usepackage{amssymb}
 \usepackage{booktabs}
 \usepackage{graphicx}
+\graphicspath{{figures/}}
 \usepackage{microtype}
 \usepackage{xcolor}
 \usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
@@ -151,8 +152,8 @@ S_t \;=\; \alpha_t\, S_{t-1} \;+\; \beta_t\,\varepsilon^{\phi}_t\,\phi(k_t)^{\to
 \qquad o_t \;=\; S_{t-1}\,\phi(q_t).
 \label{eq:rectstate}
 \end{equation}
-This is the paper's contribution: the \emph{rectangular delta-state framing}. The
-predictive-coding reading carries over with the lifted key: the write
+This is the paper's contribution: the \emph{rectangular delta-state framing}
+(Fig.~\ref{fig:arch}). The predictive-coding reading carries over with the lifted key: the write
 $\beta_t\varepsilon^{\phi}_t\phi(k_t)^{\top}$ is one gradient step on
 $F_t(S)=\tfrac12\lVert v_t - S\,\phi(k_t)\rVert^2$, whose gradient is
 $\partial F_t/\partial S = -\varepsilon^{\phi}_t\phi(k_t)^{\top}$. The recall ceiling is
@@ -164,6 +165,15 @@ case: per-step cost is $O(\dhd\dphi)$ and the carried state is constant in $n$. 
 single-step recurrence and the chunk-parallel training form agree
 ($\lVert\text{step}-\text{forward}\rVert<10^{-6}$: none $3.6\times10^{-7}$, \quadtwo{}
 $4.8\times10^{-7}$), so the cheap inference path is the exact same model as the trained one.
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.92\linewidth]{fig1_architecture.pdf}
+\caption{The \quadtwo{} lift makes the per-head delta-state \emph{rectangular}
+($\dhd\times\dphi$) at zero added parameters; the per-token write and read stay matrix--vector
+products over a state whose size $\dhd\dphi$ is independent of the sequence length $n$, so $O(1)$
+inference is preserved.}
+\label{fig:arch}
+\end{figure}
 
 The cost of the lift is FLOPs, not parameters or memory: the $\dphi{=}256$ expansion multiplies the
 delta-state FLOPs and brings Prizma-Seq's forward cost to $2.14\times$ (as-coded; $1.78\times$
@@ -266,9 +276,18 @@ exceeds Prizma-none (median 0.9583), and ignites fastest of the three (by step 1
 44--80k). At the smaller 130K scale (d64L2H2), Prizma-quad2 solves $D{=}128$ (3/3, seeds
 $[0.999, 0.997, 0.935]$, median 0.997) where the param-matched Transformer fails (0/3, 0.016). The
 smallest Transformer that solves $D{=}128$ on our coarse 4-point grid $\{130, 461, 857, 3300\}$K is
-d128L2H4 (461K), giving a $\geq$3.5$\times$ parameter-efficiency gap. We flag that one quad2 seed
+d128L2H4 (461K), giving a $\geq$3.5$\times$ parameter-efficiency gap (Fig.~\ref{fig:mqar}). We flag that one quad2 seed
 (0.935) is borderline (clearing the 0.9 bar by 0.035) and that a denser Transformer sweep (200--450K)
 is needed to pin the true crossover.
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.7\linewidth]{fig4_mqar.pdf}
+\caption{MQAR ($D{=}128$) median accuracy vs.\ matched parameters (3 seeds; 5 for the 857K TF).
+Prizma-quad2 solves at 131K where the param-matched Transformer fails ($0.016$); the smallest
+Transformer solver on the coarse grid $\{130,461,857,3300\}$K is d128L2H4 at 461K, giving a
+$\geq$3.5$\times$ parameter-efficiency gap. All points trace to \texttt{results/gpu\_bench.json}.}
+\label{fig:mqar}
+\end{figure}
 
 \paragraph{Capacity question, resolved honestly.}
 A sufficiently large Transformer \emph{does} solve $D{=}128$ (d128L2H4/461K: 3/3, 0.9999;
@@ -306,6 +325,16 @@ while the Transformer's measured peak grows from 49.5\,MB ($n{=}4$k) to 561.7\,M
 measured peak advantage of $2.8\times$ to $31.4\times$. The larger config shows the same pattern
 (Prizma 232\,MB constant vs.\ TF 491\,MB $\to$ 4532\,MB).
 
+\begin{figure}[t]\centering
+\includegraphics[width=0.62\linewidth]{fig2_latency.pdf}\\[3pt]
+\includegraphics[width=0.95\linewidth]{fig3_memory.pdf}
+\caption{Inference profile (A100, small config). Top: per-step decode latency is flat for
+Prizma-Seq and crosses the Transformer at $n{=}32$k. Bottom: the carried state is constant in $n$ ---
+$28$--$455\times$ fewer floats than the KV-cache (right, analytic) and $2.8$--$31\times$ less
+measured peak memory (left). Data: \texttt{results/gpu\_latency.json}.}
+\label{fig:infer}
+\end{figure}
+
 \begin{table}[t]
 \centering
 \small
@@ -328,7 +357,7 @@ Prizma peak mem (MB)   & 17.9 & 17.9 & 17.9 & 17.9 & 17.9 \\
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:latency} reports measured per-step latency. Prizma-Seq's latency is statistically flat
+Table~\ref{tab:latency} and Figure~\ref{fig:infer} report measured per-step latency. Prizma-Seq's latency is statistically flat
 across a $16\times$ span of $n$ ($\sim$7\,ms throughout), while the Transformer grows from 4.47\,ms to
 16.95\,ms. The wall-clock \emph{latency} crossover is at $n{=}32{,}768$; at $n{=}65$k Prizma-Seq is
 $2.4\times$ faster (small config: 7.06 vs.\ 16.95\,ms) and $2.8\times$ faster on the larger config
@@ -340,7 +369,7 @@ such. The memory advantage, by contrast, holds at every length.
 \label{sec:ablation}
 
 To rule out the alternative explanation that the gain is merely ``a bigger recurrent state'' (a wider
-$\dphi$), we run a causal control at d64L2H2 (130K) on MQAR $D{=}128$ with three feature-map
+$\dphi$), we run a causal control (Fig.~\ref{fig:ablation}) at d64L2H2 (130K) on MQAR $D{=}128$ with three feature-map
 conditions plus the Transformer, all at fixed $\text{lr}{=}2\times10^{-3}$ (3 seeds):
 \begin{equation*}
 \underbrace{\quadtwo}_{\text{3/3, med }0.997} \;\gg\;
@@ -348,6 +377,16 @@ conditions plus the Transformer, all at fixed $\text{lr}{=}2\times10^{-3}$ (3 se
 \underbrace{\text{none}}_{\text{0/3, med }0.518} \;\gg\;
 \underbrace{\text{TF}}_{\text{0/3, }0.016}.
 \end{equation*}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.62\linewidth]{fig5_ablation.pdf}
+\caption{Causal control at 130K (d64L2H2, MQAR $D{=}128$, 3 seeds; error bars span the seed range).
+Only \quadtwo{} clears the bar (3/3); \texttt{rand\_linear} (a $\dphi{=}256$ random \emph{linear}
+lift) behaves like no feature map, and both sit far below \quadtwo. The recall gain is the quadratic
+monomials, not state width. Data: \texttt{results/gpu\_bench.json}.}
+\label{fig:ablation}
+\end{figure}
+
 The \texttt{rand\_linear} control is a same-dimension random \emph{linear} map (rank $\leq\dhd$, so it
 expands $\dphi$ to 256 without adding any nonlinear structure). It performs like the no-map baseline,
 not like \quadtwo. This isolates the effect: the recall gain comes from the \emph{quadratic monomials}
