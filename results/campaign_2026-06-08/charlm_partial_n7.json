@@ -1,0 +1,44 @@
+{
+  "note": "PARTIAL char-LM (S1) \u2014 A100 disconnected at Prizma final s7; n=7 Prizma vs n=10 TF; captured from cell output (per-seed best_bpc, val-selected).",
+  "corpus": "text8",
+  "scale": "d256L4H4 ctx256",
+  "metric": "BPC (lower better)",
+  "TF": {
+    "n": 10,
+    "mean": 1.72433,
+    "sd": 0.009148120025447853,
+    "min": 1.7061,
+    "max": 1.7355,
+    "seeds": [
+      1.7061,
+      1.7224,
+      1.7214,
+      1.7132,
+      1.7287,
+      1.7283,
+      1.7355,
+      1.7352,
+      1.7327,
+      1.7198
+    ]
+  },
+  "Prizma": {
+    "n": 7,
+    "mean": 1.7448714285714286,
+    "sd": 0.002761839079678736,
+    "min": 1.7417,
+    "max": 1.7507,
+    "seeds": [
+      1.7436,
+      1.7464,
+      1.7417,
+      1.7426,
+      1.7507,
+      1.7444,
+      1.7447
+    ]
+  },
+  "delta_PZ_minus_TF": 0.02054142857142871,
+  "within_margin_0p05": true,
+  "verdict": "competitive (Prizma ~0.02 BPC behind TF, within +-0.05; NOT a win; n=7 disconnect-truncated)"
+}

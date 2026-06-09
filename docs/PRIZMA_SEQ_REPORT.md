@@ -318,7 +318,7 @@ it is seed-fragile at this scale: P1 was 2/3 with a 0.785 failure.)
 | **Precision/surprise signal used causally for gating** | Prizma | new (tested in B6) |
 | **Task-free continual SEQUENCE modeling** | Prizma | new axis (secondary) |
 
-## v2 SOTA-landscape + levers (2026-06-08 — METHODS built; RECALL leg powered+LANDED, char-LM/landscape pending)
+## v2 SOTA-landscape + levers (2026-06-08 — METHODS built; RECALL + char-LM legs LANDED, 4-arm landscape pending)
 This session built out the evidence apparatus so the §4 legs can flip to *powered, decisive* verdicts
 against the **SOTA landscape**, not just one Transformer. All of the below is reviewed code (each via
 implement→spec-review→quality-review; protected forwards byte-identical; 143→162 tests). **The RECALL leg
@@ -368,8 +368,25 @@ conservative-against-a-noisy-baseline NON-result for parity, recorded as such; i
 landscape/harness legs, not this recall gate, so none is claimed here.)_
 
 > Scope rider (binding): ≤2M params (+1 confirmation 10–50M); char-LM + diagnostics; NOT a frontier/MMLU/
-> long-context claim; per-FLOP "dramatic" stays conditional unless all axes hold + powered. Char-LM BPC (S1) +
-> the 4-arm GLA/Mamba-2 landscape remain PENDING (on the GPU now).
+> long-context claim; per-FLOP "dramatic" stays conditional unless all axes hold + powered. The char-LM leg has
+> now LANDED (below); the 4-arm GLA/Mamba-2 landscape remains PENDING.
+
+**Results vs the bar — CHAR-LM leg (text8, A100, LANDED 2026-06-09; `results/campaign_2026-06-08/charlm_partial_n7.json`):**
+The B4 bar (test BPC ≤ TF+0.05, val-selected best) is **MET** — Prizma-v2 is competitive within the margin, but
+*reliably* a hair behind (not a tie, not a win):
+
+| Arm | n | mean BPC ± sd | range | vs B4 bar (≤ TF+0.05) |
+| --- | --- | --- | --- | --- |
+| TF-v2 | 10 | 1.7243 ± 0.0091 | 1.706–1.736 | — |
+| **Prizma-v2** | 7 | 1.7449 ± 0.0028 | 1.742–1.751 | **PASS** (Δ = +0.0205 < +0.05) |
+
+_text8 (V=27, T=256, 10M train), d256L4H4, AdamW wd=0.1, val-based early-stop, param-match −0.16%, dropout-free
+(weight_decay-only — note the new opt-in `dropout` lever `16cdfdb` that closes Prizma's regularizer gap for a fair
+symmetric-dropout rerun). The gap is statistically **real** (Welch t≈6.7), so Prizma is NOT as good as the tuned
+Transformer on char-LM — it is **competitive within the ±0.05 tolerance**, ~0.02 BPC behind, and ~5× slower per
+step at this scale. **Honest n caveat:** the A100 disconnected at Prizma final s7, so Prizma is **n=7 (s0–s6)** vs
+TF n=10; the 7 Prizma seeds are extremely tight (sd 0.0028) so the verdict is robust to the 3 lost seeds, but it
+is disconnect-truncated, not a clean n=10. Supersedes the earlier n=2 B4 row (§4)._
 
 ## Open frontiers (explicitly NOT claimed)
 - Large-scale LM parity (we test ≤1.4M params, char-level).
