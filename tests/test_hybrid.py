@@ -14,6 +14,8 @@ Covered:
       rel), printing the actual spread.
   (e) a tiny FAST smoke: 2 train_model steps on a small MQAR run without error and
       produce a finite loss.
+  (f) streaming parity: the composed step() (PrizmaSeqBlock.step O(1) + Block.step KV-cached)
+      must numerically EQUAL forward() to < 1e-4, including a learned_pos=True case.
 """
 from __future__ import annotations
 
@@ -121,9 +123,7 @@ def test_train_smoke_finite_loss():
 
 # --------------------------------------------------------------------------- #
 # (f) streaming parity: the composed step() (PrizmaSeqBlock.step O(1) + Block.step KV-cached)
-#     must numerically EQUAL forward() to < 1e-4, including a learned_pos=True case (the
-#     char-LM parity setting). The hybrid is O(n) overall (attention KV cache) — this checks
-#     CORRECTNESS of the streaming path, not an O(1) claim.
+#     must numerically EQUAL forward() to < 1e-4, including a learned_pos=True case.
 # --------------------------------------------------------------------------- #
 @pytest.mark.parametrize("learned_pos", [False, True])
 def test_step_equals_forward(learned_pos):

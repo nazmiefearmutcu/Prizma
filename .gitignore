@@ -35,3 +35,7 @@ seq/data/text8
 *.pt
 *.ckpt
 *.safetensors
+
+# ── Lock files ───────────────────────────────────────────
+*.lock
+

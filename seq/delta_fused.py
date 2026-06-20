@@ -40,26 +40,99 @@ import torch
 from seq.delta import chunked_delta
 
 
-# Module-cached, lazily-built compiled callable. Only ever populated on the CUDA fast path.
+def _solve_unit_lower_compile(Amat, RHS):
+    """Compile-friendly unit lower triangular solve. Direct call to solve_triangular (no try/except)."""
+    C = Amat.shape[-1]
+    M = torch.eye(C, dtype=Amat.dtype, device=Amat.device) + Amat
+    return torch.linalg.solve_triangular(M, RHS, upper=False, unitriangular=True)
+
+
+def _chunked_delta_fast_path(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode="delta", beta_e=None):
+    """Specialized fast-path helper for compiled execution.
+
+    Assumes n_delta=1, eta=None, surprise=False. Uses compile-friendly operations
+    without Python exceptions or graph breaks to maximize Inductor fusion."""
+    B, H, T, d = q.shape
+    dv = v.shape[-1]
+    if S0 is None:
+        S = torch.zeros(B, H, dv, d, dtype=q.dtype, device=q.device)
+    else:
+        S = S0.clone()
+
+    gated = alpha is not None
+    erase = (write_mode == "delta")
+    decoupled = (beta_e is not None)
+
+    outs = []
+    for c0 in range(0, T, chunk):
+        c1 = min(c0 + chunk, T)
+        C = c1 - c0
+        Kc = k[:, :, c0:c1]                      # [B,H,C,d]
+        Vc = v[:, :, c0:c1]
+        Qc = q[:, :, c0:c1]
+        Bc = beta[:, :, c0:c1]                    # [B,H,C]  write gate beta_w
+        Bec = beta_e[:, :, c0:c1] if decoupled else Bc   # [B,H,C]  erase gate beta_e
+        if gated:
+            Ac = alpha[:, :, c0:c1]               # [B,H,C]  in [0.5,1]
+            logA = torch.log(Ac.clamp_min(1e-6))
+            clog = torch.cumsum(logA, dim=-1)                    # [B,H,C]  log gamma_i (post i)
+            clog_prev = clog - logA                              # log gamma_{i-1} (pre i)
+            KK = torch.matmul(Kc, Kc.transpose(-1, -2))          # [B,H,C,C]  k_i·k_j
+            ratio = torch.exp(clog[..., :, None] - clog[..., None, :])         # gamma_i/gamma_j
+            A = torch.tril(Bec[..., :, None] * (KK * ratio), -1) if erase else torch.zeros_like(KK)
+            KS0 = torch.matmul(Kc, S.transpose(-1, -2))          # [B,H,C,d]  (k_i^T S0^T)
+            gamma = torch.exp(clog)[..., None]                   # [B,H,C,1] absolute (genuine small)
+            if erase:
+                rhs = Bc[..., None] * Vc - Bec[..., None] * (gamma * KS0)
+            else:
+                rhs = Bc[..., None] * Vc
+            U = _solve_unit_lower_compile(A, rhs)                # [B,H,C,d]
+            read_ratio = torch.exp(clog_prev[..., :, None] - clog[..., None, :])   # gamma_{i-1}/gamma_j
+            O_inter = torch.exp(clog_prev)[..., None] * torch.matmul(Qc, S.transpose(-1, -2))
+            QK = torch.matmul(Qc, Kc.transpose(-1, -2)) * read_ratio
+            O_intra = torch.matmul(torch.tril(QK, -1), U)
+            Oc = O_inter + O_intra
+            clogC = clog[..., -1:]                               # [B,H,1]
+            gC = torch.exp(clogC)[..., None]                     # [B,H,1,1]
+            scale = torch.exp(clogC - clog)                      # [B,H,C]  gamma_C/gamma_i <= 1
+            S = gC * S + torch.matmul((scale[..., None] * U).transpose(-1, -2), Kc)
+        else:
+            KK = torch.matmul(Kc, Kc.transpose(-1, -2))          # [B,H,C,C]
+            A = torch.tril(Bec[..., :, None] * KK, -1) if erase else torch.zeros_like(KK)
+            KS0 = torch.matmul(Kc, S.transpose(-1, -2))          # [B,H,C,d]
+            if erase:
+                rhs = Bc[..., None] * Vc - Bec[..., None] * KS0
+            else:
+                rhs = Bc[..., None] * Vc
+            U = _solve_unit_lower_compile(A, rhs)                # [B,H,C,d]
+            O_inter = torch.matmul(Qc, S.transpose(-1, -2))      # [B,H,C,d]
+            QK = torch.matmul(Qc, Kc.transpose(-1, -2))
+            O_intra = torch.matmul(torch.tril(QK, -1), U)
+            Oc = O_inter + O_intra
+            S = S + torch.matmul(U.transpose(-1, -2), Kc)        # S0 + U^T K
+        outs.append(Oc)
+    return torch.cat(outs, dim=2), S
+
+
+# Module-cached, lazily-built compiled callable. Only ever populated on the fast path.
 # Stays None for the entire lifetime of a CPU/MPS process (tested by tests/test_fused.py).
 _COMPILED_CHUNKED_DELTA = None
 
 
 def _get_compiled():
-    """Lazily create and cache torch.compile(chunked_delta). Called ONLY on the CUDA fast path.
+    """Lazily create and cache torch.compile(_chunked_delta_fast_path). Called ONLY on the fast path.
 
-    fullgraph=False tolerates any minor graph breaks gracefully (correctness is unchanged — eager
-    runs the broken region); dynamic=False lets Inductor specialize on the static production shapes
-    for maximal fusion. The compiled callable is semantically identical to chunked_delta."""
+    fullgraph=True guarantees that there are no graph breaks, ensuring maximum operator fusion.
+    dynamic=False lets Inductor specialize on static production shapes for maximum speed."""
     global _COMPILED_CHUNKED_DELTA
     if _COMPILED_CHUNKED_DELTA is None:
-        _COMPILED_CHUNKED_DELTA = torch.compile(chunked_delta, fullgraph=False, dynamic=False)
+        _COMPILED_CHUNKED_DELTA = torch.compile(_chunked_delta_fast_path, fullgraph=True, dynamic=False)
     return _COMPILED_CHUNKED_DELTA
 
 
 # --- test-only accessors (private): let tests assert compile is NOT triggered on non-cuda ----------
 def _get_compiled_for_test():
-    """Return the module-cached compiled handle (None until the CUDA fast path builds it)."""
+    """Return the module-cached compiled handle (None until the fast path builds it)."""
     return _COMPILED_CHUNKED_DELTA
 
 
@@ -76,11 +149,13 @@ def fused_chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode
     `backend="auto"` kwarg. Returns the same `(O, S)` tuple.
 
     Fast (fused, compiled) path is used ONLY when ALL of these hold:
-        q.is_cuda  AND  (not surprise)  AND  (eta is None)  AND  (n_delta == 1)
-        AND  backend in ("auto", "compile").
+        (backend == "compile" or (backend == "auto" and q.is_cuda))
+        AND  (not surprise)  AND  (eta is None)  AND  (n_delta == 1)
+
     On the fast path we call a lazily-created, module-cached
-    ``torch.compile(chunked_delta, fullgraph=False, dynamic=False)`` with the SAME kwargs —
-    TorchInductor emits fused Triton kernels. By construction this equals `chunked_delta`.
+    ``torch.compile(_chunked_delta_fast_path, fullgraph=True, dynamic=False)`` with the SAME kwargs —
+    TorchInductor emits fused Triton kernels. If compilation or compiled execution fails,
+    we catch the error and fall back to eager `chunked_delta` execution.
 
     In EVERY other case (CPU/MPS, surprise, eta given, n_delta>=2, or backend=="eager") this returns
     the EXACT eager `chunked_delta(...)` — byte-identical to the SACRED reference.
@@ -90,20 +165,30 @@ def fused_chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode
     if backend not in ("auto", "compile", "eager"):
         raise ValueError(
             f"Unknown backend {backend!r}. Choose 'auto', 'compile', or 'eager'.")
+
+    is_device_supported = q.is_cuda or (backend == "compile")
     use_fused = (
-        q.is_cuda
+        is_device_supported
         and (not surprise)
         and (eta is None)
         and (n_delta == 1)
         and backend in ("auto", "compile")
     )
     if use_fused:
-        # CUDA fast path: TorchInductor-fused Triton kernels, same math as chunked_delta.
-        compiled = _get_compiled()
-        return compiled(q, k, v, beta, alpha=alpha, S0=S0, chunk=chunk, write_mode=write_mode,
-                        beta_e=beta_e, n_delta=n_delta, surprise=surprise,
-                        surprise_mode=surprise_mode, surprise_gen=surprise_gen, eta=eta)
-    # EXACT eager fallback (CPU/MPS, surprise, eta, n_delta>=2, or backend="eager").
+        try:
+            compiled = _get_compiled()
+            return compiled(q, k, v, beta, alpha=alpha, S0=S0, chunk=chunk,
+                            write_mode=write_mode, beta_e=beta_e)
+        except Exception as e:
+            import warnings
+            warnings.warn(
+                f"Torch compilation or compiled execution failed: {e}. "
+                "Falling back to eager chunked_delta implementation.",
+                RuntimeWarning
+            )
+
+    # EXACT eager fallback (CPU/MPS, surprise, eta, n_delta>=2, or backend=="eager",
+    # or upon compilation/compiled execution failure).
     return chunked_delta(q, k, v, beta, alpha=alpha, S0=S0, chunk=chunk, write_mode=write_mode,
                          beta_e=beta_e, n_delta=n_delta, surprise=surprise,
                          surprise_mode=surprise_mode, surprise_gen=surprise_gen, eta=eta)

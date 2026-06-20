@@ -100,6 +100,10 @@ except Exception:  # ImportError or any backend init failure -> stay on the eage
 # DRAFT @triton.jit kernel — supported simple case ONLY (no surprise, eta=None, n_delta==1,
 # write_mode=="delta", beta_e is None). FORWARD-ONLY. PENDING A100 NUMERICAL VERIFICATION.
 # =================================================================================================
+_chunked_delta_fwd_kernel = None
+_chunked_delta_bwd_kernel = None
+TritonChunkedDeltaFunction = None
+
 if _HAS_TRITON:  # pragma: no cover - never compiled/executed on this CPU/MPS machine
 
     @triton.jit
@@ -116,20 +120,17 @@ if _HAS_TRITON:  # pragma: no cover - never compiled/executed on this CPU/MPS ma
         stride_ob, stride_oh, stride_ot, stride_od,
         stride_eb, stride_eh, stride_ev, stride_ek,
         T, C, c0,
-        DK: tl.constexpr, DV: tl.constexpr, BLOCK_C: tl.constexpr,
+        DK: tl.constexpr, DV: tl.constexpr,
+        BLOCK_DK: tl.constexpr, BLOCK_DV: tl.constexpr, BLOCK_C: tl.constexpr,
         GATED: tl.constexpr,
     ):
-        """One program handles ONE (b, h) and ONE chunk [c0, c0+C). Forward only, fp32 accum.
-
-        DRAFT — verify on A100. Assumes the whole chunk fits one program: C <= BLOCK_C,
-        d_k == DK <= block, d_v == DV <= block. The triangular solve is an explicit forward
-        substitution over the C rows (row i needs rows j<i only)."""
+        """One program handles ONE (b, h) and ONE chunk [c0, c0+C). Forward only, fp32 accum."""
         pid_b = tl.program_id(0)
         pid_h = tl.program_id(1)
 
         row = tl.arange(0, BLOCK_C)                      # token index within the chunk [0, BLOCK_C)
-        dk = tl.arange(0, DK)                            # key/query channel index
-        dv = tl.arange(0, DV)                            # value channel index
+        dk = tl.arange(0, BLOCK_DK)                      # key/query channel index
+        dv = tl.arange(0, BLOCK_DV)                      # value channel index
         rmask = row < C                                  # ragged-tail row mask
 
         # --- load chunk tensors: Kc/Qc [C, DK], Vc [C, DV], beta [C] -------------------------------
@@ -164,7 +165,7 @@ if _HAS_TRITON:  # pragma: no cover - never compiled/executed on this CPU/MPS ma
         S0 = tl.load(s_base + dv[:, None] * stride_sv + dk[None, :] * stride_sk,
                      mask=(dv[:, None] < DV) & (dk[None, :] < DK), other=0.0).to(tl.float32)
 
-        # KK[i,j] = k_i . k_j   [C, C]   (ieee: match eager true-fp32 matmul, not A100 TF32)
+        # KK[i,j] = k_i . k_j   [C, C]
         KK = tl.dot(Kc, tl.trans(Kc), input_precision='ieee')
         # ratio[i,j] = gamma_i / gamma_j
         ratio = tl.exp(clog[:, None] - clog[None, :])
@@ -179,15 +180,13 @@ if _HAS_TRITON:  # pragma: no cover - never compiled/executed on this CPU/MPS ma
         rhs = Bc[:, None] * Vc - Bc[:, None] * (gamma[:, None] * KS0)
 
         # --- triangular solve (I + A) U = rhs by FORWARD SUBSTITUTION over rows i ------------------
-        #     U_i = rhs_i - sum_{j<i} A[i,j] * U_j   (unit diagonal). Sequential over C rows; the
-        #     part a blind kernel most easily gets wrong, so it is written explicitly here.
-        U = tl.zeros([BLOCK_C, DV], tl.float32)
+        U = tl.zeros([BLOCK_C, BLOCK_DV], tl.float32)
         for i in range(0, BLOCK_C):
-            # coeff_j = A[i, j] for j<i  ->  contribution sum_j coeff_j * U_j
-            a_row = tl.where(row < i, tl.sum(tl.where(row[:, None] == i, A, 0.0), axis=0), 0.0)  # [C]
-            contrib = tl.sum(a_row[:, None] * U, axis=0)         # [DV]
-            rhs_i = tl.sum(tl.where(row[:, None] == i, rhs, 0.0), axis=0)   # [DV] = rhs row i
-            u_i = rhs_i - contrib                                # unit diagonal
+            row_mask = (row == i).to(tl.float32)
+            a_row = tl.sum(A * row_mask[:, None], axis=0)
+            contrib = tl.sum(a_row[:, None] * U, axis=0)
+            rhs_i = tl.sum(rhs * row_mask[:, None], axis=0)
+            u_i = rhs_i - contrib
             U = tl.where((row[:, None] == i) & (i < C), u_i[None, :], U)
 
         # --- PRE-write reads: o_i = gamma_{i-1} (S0 q_i) + sum_{j<i}(gamma_{i-1}/gamma_j)(q_i.k_j)U_j
@@ -204,8 +203,6 @@ if _HAS_TRITON:  # pragma: no cover - never compiled/executed on this CPU/MPS ma
                  mask=tok_mask[:, None] & (dv[None, :] < DV))
 
         # --- state carry: S_end = gamma_C * S0 + sum_i (gamma_C/gamma_i) U_i k_i^T  [DV, DK] -------
-        # log gamma_C is clog of the LAST valid row. clog = cumsum(log alpha) is NON-INCREASING
-        # (alpha<=1), so the last valid row == the MIN over valid rows (matches eager clog[...,-1:]).
         clogC = tl.min(tl.where(rmask, clog, 1e30), axis=0)
         gC = tl.exp(clogC)
         scale = tl.where(rmask, tl.exp(clogC - clog), 0.0)         # gamma_C/gamma_i <= 1   [C]
@@ -215,46 +212,321 @@ if _HAS_TRITON:  # pragma: no cover - never compiled/executed on this CPU/MPS ma
         tl.store(se_base + dv[:, None] * stride_ev + dk[None, :] * stride_ek, S_end,
                  mask=(dv[:, None] < DV) & (dk[None, :] < DK))
 
+    @triton.jit
+    def _chunked_delta_bwd_kernel(
+        Q_ptr, K_ptr, V_ptr, BETA_ptr, ALPHA_ptr, S0_ptr,
+        DO_ptr, DS_ptr,
+        DQ_ptr, DK_ptr, DV_ptr, DBETA_ptr, DALPHA_ptr, DS0_ptr,
+        # strides (in elements) for the [B, H, T, d] / [B, H, d_v, d_k] layouts
+        stride_qb, stride_qh, stride_qt, stride_qd,
+        stride_kb, stride_kh, stride_kt, stride_kd,
+        stride_vb, stride_vh, stride_vt, stride_vd,
+        stride_bb, stride_bh, stride_bt,
+        stride_ab, stride_ah, stride_at,
+        stride_sb, stride_sh, stride_sv, stride_sk,
+        stride_dob, stride_doh, stride_dot, stride_dod,
+        stride_dsb, stride_dsh, stride_dsv, stride_dsk,
+        stride_dqb, stride_dqh, stride_dqt, stride_dqd,
+        stride_dkb, stride_dkh, stride_dkt, stride_dkd,
+        stride_dvb, stride_dvh, stride_dvt, stride_dvd,
+        stride_dbb, stride_dbh, stride_dbt,
+        stride_dab, stride_dah, stride_dat,
+        stride_ds0b, stride_ds0h, stride_ds0v, stride_ds0k,
+        T, C, c0,
+        DK: tl.constexpr, DV: tl.constexpr,
+        BLOCK_DK: tl.constexpr, BLOCK_DV: tl.constexpr, BLOCK_C: tl.constexpr,
+        GATED: tl.constexpr,
+    ):
+        """One program handles ONE (b, h) and ONE chunk [c0, c0+C). Backward gradient updates, fp32 accum."""
+        pid_b = tl.program_id(0)
+        pid_h = tl.program_id(1)
 
-def _triton_chunked_delta(q, k, v, beta, alpha, S0, chunk):
-    """Run the DRAFT Triton forward kernel chunk-by-chunk, carrying state S across chunks.
+        row = tl.arange(0, BLOCK_C)                      # token index within the chunk [0, BLOCK_C)
+        dk = tl.arange(0, BLOCK_DK)                      # key/query channel index
+        dv = tl.arange(0, BLOCK_DV)                      # value channel index
+        rmask = row < C                                  # ragged-tail row mask
 
-    PENDING A100 VERIFICATION. Only called when the supported-simple-case predicate holds AND
-    q.is_cuda AND Triton importable. Returns (O, S_end) matching chunked_delta's shapes/semantics
-    for the simple case. Forward only — see module docstring caveats."""
-    B, H, T, dk = q.shape
-    dv = v.shape[-1]
-    gated = alpha is not None
+        # --- load chunk tensors and entry state ----------------------------------------------------
+        q_base = Q_ptr + pid_b * stride_qb + pid_h * stride_qh
+        k_base = K_ptr + pid_b * stride_kb + pid_h * stride_kh
+        v_base = V_ptr + pid_b * stride_vb + pid_h * stride_vh
+        b_base = BETA_ptr + pid_b * stride_bb + pid_h * stride_bh
+        s_base = S0_ptr + pid_b * stride_sb + pid_h * stride_sh
 
-    O = torch.empty(B, H, T, dv, dtype=q.dtype, device=q.device)
-    if S0 is None:
-        S = torch.zeros(B, H, dv, dk, dtype=q.dtype, device=q.device)
-    else:
-        S = S0
-    # one program per (b, h); BLOCK_C must cover the chunk size (next power of two >= chunk)
-    BLOCK_C = triton.next_power_of_2(chunk)
-    alpha_arg = alpha if gated else torch.empty(0, device=q.device, dtype=q.dtype)
+        tok = c0 + row
+        tok_mask = tok < T
+        Qc = tl.load(q_base + tok[:, None] * stride_qt + dk[None, :] * stride_qd,
+                     mask=tok_mask[:, None] & (dk[None, :] < DK), other=0.0).to(tl.float32)
+        Kc = tl.load(k_base + tok[:, None] * stride_kt + dk[None, :] * stride_kd,
+                     mask=tok_mask[:, None] & (dk[None, :] < DK), other=0.0).to(tl.float32)
+        Vc = tl.load(v_base + tok[:, None] * stride_vt + dv[None, :] * stride_vd,
+                     mask=tok_mask[:, None] & (dv[None, :] < DV), other=0.0).to(tl.float32)
+        Bc = tl.load(b_base + tok * stride_bt, mask=tok_mask, other=0.0).to(tl.float32)
+        S0 = tl.load(s_base + dv[:, None] * stride_sv + dk[None, :] * stride_sk,
+                     mask=(dv[:, None] < DV) & (dk[None, :] < DK), other=0.0).to(tl.float32)
 
-    for c0 in range(0, T, chunk):
-        C = min(chunk, T - c0)
-        S_in = S.contiguous()
-        S_out = torch.empty_like(S_in)
-        grid = (B, H)
-        _chunked_delta_fwd_kernel[grid](
-            q, k, v, beta, alpha_arg, S_in, O, S_out,
-            q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-            k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-            v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-            beta.stride(0), beta.stride(1), beta.stride(2),
-            *((alpha.stride(0), alpha.stride(1), alpha.stride(2)) if gated else (0, 0, 0)),
-            S_in.stride(0), S_in.stride(1), S_in.stride(2), S_in.stride(3),
-            O.stride(0), O.stride(1), O.stride(2), O.stride(3),
-            S_out.stride(0), S_out.stride(1), S_out.stride(2), S_out.stride(3),
-            T, C, c0,
-            DK=dk, DV=dv, BLOCK_C=BLOCK_C, GATED=gated,
-        )
-        S = S_out
-    return O, S
+        # --- load incoming gradients dO [C, DV] and dS_end [DV, DK] --------------------------------
+        do_base = DO_ptr + pid_b * stride_dob + pid_h * stride_doh
+        ds_base = DS_ptr + pid_b * stride_dsb + pid_h * stride_dsh
+        dOc = tl.load(do_base + tok[:, None] * stride_dot + dv[None, :] * stride_dod,
+                      mask=tok_mask[:, None] & (dv[None, :] < DV), other=0.0).to(tl.float32)
+        dS_end = tl.load(ds_base + dv[:, None] * stride_dsv + dk[None, :] * stride_dsk,
+                         mask=(dv[:, None] < DV) & (dk[None, :] < DK), other=0.0).to(tl.float32)
+
+        # --- cumulative decay in LOG space (mirror eager forward) ----------------------------------
+        if GATED:
+            a_base = ALPHA_ptr + pid_b * stride_ab + pid_h * stride_ah
+            Ac = tl.load(a_base + tok * stride_at, mask=tok_mask, other=1.0).to(tl.float32)
+            logA = tl.log(tl.maximum(Ac, 1e-6))
+            clog = tl.cumsum(logA, axis=0)               # log gamma_i (post i)  [C]
+            clog_prev = clog - logA                      # log gamma_{i-1} (pre i)
+        else:
+            clog = tl.zeros([BLOCK_C], tl.float32)
+            clog_prev = tl.zeros([BLOCK_C], tl.float32)
+
+        KK = tl.dot(Kc, tl.trans(Kc), input_precision='ieee')
+        ratio = tl.exp(clog[:, None] - clog[None, :])
+        lower = (row[:, None] > row[None, :]) & rmask[:, None] & rmask[None, :]
+        A = tl.where(lower, Bc[:, None] * (KK * ratio), 0.0)
+
+        KS0 = tl.dot(Kc, tl.trans(S0), input_precision='ieee')
+        gamma = tl.exp(clog)
+        rhs = Bc[:, None] * Vc - Bc[:, None] * (gamma[:, None] * KS0)
+
+        # --- forward solve (I + A) U = rhs ---------------------------------------------------------
+        U = tl.zeros([BLOCK_C, BLOCK_DV], tl.float32)
+        for i in range(0, BLOCK_C):
+            row_mask = (row == i).to(tl.float32)
+            a_row = tl.sum(A * row_mask[:, None], axis=0)
+            contrib = tl.sum(a_row[:, None] * U, axis=0)
+            rhs_i = tl.sum(rhs * row_mask[:, None], axis=0)
+            u_i = rhs_i - contrib
+            U = tl.where((row[:, None] == i) & (i < C), u_i[None, :], U)
+
+        # --- recompute Oc for log-alpha gradients --------------------------------------------------
+        gamma_prev = tl.exp(clog_prev)
+        O_inter = gamma_prev[:, None] * tl.dot(Qc, tl.trans(S0), input_precision='ieee')
+        QK = tl.dot(Qc, tl.trans(Kc), input_precision='ieee')
+        read_ratio = tl.exp(clog_prev[:, None] - clog[None, :])
+        QK_ratio = tl.where(lower, QK * read_ratio, 0.0)
+        O_intra = tl.dot(QK_ratio, U, input_precision='ieee')
+        Oc = O_inter + O_intra
+
+        # --- Compute dU_direct [C, DV] -------------------------------------------------------------
+        clogC = tl.min(tl.where(rmask, clog, 1e30), axis=0)
+        scale_C = tl.where(rmask, tl.exp(clogC - clog), 0.0)
+        dSe_K = tl.dot(Kc, tl.trans(dS_end), input_precision='ieee')
+        
+        read_ratio_bwd = tl.exp(clog_prev[:, None] - clog[None, :])
+        M = tl.where(row[:, None] > row[None, :], QK * read_ratio_bwd, 0.0)
+        dU_direct_o = tl.dot(tl.trans(M), dOc, input_precision='ieee')
+        dU_direct = scale_C[:, None] * dSe_K + dU_direct_o
+
+        # --- backward solve (I + A)^T dU = dU_direct -----------------------------------------------
+        dU = tl.zeros([BLOCK_C, BLOCK_DV], tl.float32)
+        for i in range(BLOCK_C - 1, -1, -1):
+            row_mask = (row == i).to(tl.float32)
+            a_col = tl.sum(A * row_mask[None, :], axis=1)
+            contrib = tl.sum(a_col[:, None] * dU, axis=0)
+            dU_direct_i = tl.sum(dU_direct * row_mask[:, None], axis=0)
+            du_i = dU_direct_i - contrib
+            dU = tl.where((row[:, None] == i) & (i < C), du_i[None, :], dU)
+
+        # --- gradient with respect to V: dVc [C, DV] -----------------------------------------------
+        dVc = Bc[:, None] * dU
+
+        # --- gradient with respect to A: dA [C, C] -------------------------------------------------
+        dA = tl.where(lower, -tl.dot(dU, tl.trans(U), input_precision='ieee'), 0.0)
+
+        # --- gradient with respect to beta: dBc [C] ------------------------------------------------
+        v_minus_gKS0 = Vc - gamma[:, None] * KS0
+        dbeta_rhs = tl.sum(dU * v_minus_gKS0, axis=1)
+        A_nobeta = KK * ratio
+        dbeta_A = tl.sum(dA * A_nobeta, axis=1)
+        dBc = dbeta_rhs + dbeta_A
+
+        # --- gradient with respect to Q: dQc [C, DK] -----------------------------------------------
+        dO_S0 = tl.dot(dOc, S0, input_precision='ieee')
+        dQ_inter = gamma_prev[:, None] * dO_S0
+        dO_U = tl.dot(dOc, tl.trans(U), input_precision='ieee')
+        P = tl.where(lower, dO_U * read_ratio, 0.0)
+        dQ_intra = tl.dot(P, Kc, input_precision='ieee')
+        dQc = dQ_inter + dQ_intra
+
+        # --- gradient with respect to K: dKc [C, DK] -----------------------------------------------
+        dU_S0 = tl.dot(dU, S0, input_precision='ieee')
+        dK_rhs = - (Bc * gamma)[:, None] * dU_S0
+        dA_scaled = dA * Bc[:, None] * ratio
+        dA_total = dA_scaled + tl.trans(dA_scaled)
+        dK_dA = tl.dot(dA_total, Kc, input_precision='ieee')
+        Q_coef = tl.where(row[:, None] > row[None, :], dO_U * read_ratio, 0.0)
+        dK_dO = tl.dot(tl.trans(Q_coef), Qc, input_precision='ieee')
+        dK_dS = scale_C[:, None] * tl.dot(U, dS_end, input_precision='ieee')
+        dKc = dK_rhs + dK_dA + dK_dO + dK_dS
+
+        # --- gradient with respect to entry state S0: dS0 [DV, DK] ---------------------------------
+        gC = tl.exp(clogC)
+        dS0_first = gC * dS_end
+        dS0_second = tl.dot(tl.trans(gamma_prev[:, None] * dOc), Qc, input_precision='ieee')
+        dS0_third = tl.dot(tl.trans((Bc * gamma)[:, None] * dU), Kc, input_precision='ieee')
+        dS0 = dS0_first + dS0_second - dS0_third
+
+        # --- gradient with respect to alpha: dalpha_val [C] ---------------------------------------
+        if GATED:
+            dclog_A = tl.sum(dA * A, axis=1) - tl.sum(dA * A, axis=0)
+            dclog_rhs = - tl.sum(dU * (Bc * gamma)[:, None] * KS0, axis=1)
+            
+            dclog_o = tl.sum(dOc * Oc, axis=1)
+            dclog_o_next = tl.sum(tl.where(row[:, None] == row[None, :] - 1, dclog_o[None, :], 0.0), axis=1)
+            
+            M_clog = tl.where(row[:, None] > row[None, :], read_ratio_bwd * QK * dO_U, 0.0)
+            dclog_dO = - tl.sum(M_clog, axis=0)
+            dclog_dS = - tl.sum(dK_dS * Kc, axis=1)
+            
+            scale = tl.where(rmask, tl.exp(clogC - clog), 0.0)
+            Uscaled = scale[:, None] * U
+            S_end = gC * S0 + tl.dot(tl.trans(Uscaled), Kc, input_precision='ieee')
+            dS_end_term = tl.sum(dS_end * S_end)
+            dclog_C_mask = (row == C - 1).to(tl.float32)
+            
+            d_clog = dclog_A + dclog_rhs + dclog_o_next + dclog_dO + dclog_dS + dS_end_term * dclog_C_mask
+            
+            d_log_alpha = tl.sum(tl.where(row[:, None] <= row[None, :], d_clog[None, :], 0.0), axis=1)
+            dalpha_val = d_log_alpha / tl.maximum(Ac, 1e-6)
+        else:
+            dalpha_val = tl.zeros([BLOCK_C], tl.float32)
+
+        # --- Store gradients to pointers ----------------------------------------------------------
+        dq_base = DQ_ptr + pid_b * stride_dqb + pid_h * stride_dqh
+        dk_base = DK_ptr + pid_b * stride_dkb + pid_h * stride_dkh
+        dv_base = DV_ptr + pid_b * stride_dvb + pid_h * stride_dvd
+        db_base = DBETA_ptr + pid_b * stride_dbb + pid_h * stride_dbh
+        ds0_base = DS0_ptr + pid_b * stride_ds0b + pid_h * stride_ds0h
+
+        tl.store(dq_base + tok[:, None] * stride_dqt + dk[None, :] * stride_dqd, dQc,
+                 mask=tok_mask[:, None] & (dk[None, :] < DK))
+        tl.store(dk_base + tok[:, None] * stride_dkt + dk[None, :] * stride_dkd, dKc,
+                 mask=tok_mask[:, None] & (dk[None, :] < DK))
+        tl.store(dv_base + tok[:, None] * stride_dvt + dv[None, :] * stride_dvd, dVc,
+                 mask=tok_mask[:, None] & (dv[None, :] < DV))
+        tl.store(db_base + tok * stride_dbt, dBc, mask=tok_mask)
+        tl.store(ds0_base + dv[:, None] * stride_ds0v + dk[None, :] * stride_ds0k, dS0,
+                 mask=(dv[:, None] < DV) & (dk[None, :] < DK))
+
+        if GATED:
+            da_base = DALPHA_ptr + pid_b * stride_dab + pid_h * stride_dah
+            tl.store(da_base + tok * stride_dat, dalpha_val, mask=tok_mask)
+
+    class TritonChunkedDeltaFunction(torch.autograd.Function):
+        @staticmethod
+        def forward(ctx, q, k, v, beta, alpha, S0, chunk):
+            B, H, T, dk = q.shape
+            dv = v.shape[-1]
+            gated = alpha is not None
+            num_chunks = (T + chunk - 1) // chunk
+            
+            S_history = torch.empty(num_chunks, B, H, dv, dk, dtype=q.dtype, device=q.device)
+            O = torch.empty(B, H, T, dv, dtype=q.dtype, device=q.device)
+            if S0 is None:
+                S = torch.zeros(B, H, dv, dk, dtype=q.dtype, device=q.device)
+            else:
+                S = S0
+                
+            BLOCK_C = triton.next_power_of_2(chunk)
+            BLOCK_DK = triton.next_power_of_2(dk)
+            BLOCK_DV = triton.next_power_of_2(dv)
+            alpha_arg = alpha if gated else torch.empty(0, device=q.device, dtype=q.dtype)
+            
+            for idx, c0 in enumerate(range(0, T, chunk)):
+                C = min(chunk, T - c0)
+                S_in = S.contiguous()
+                S_history[idx] = S_in
+                S_out = torch.empty_like(S_in)
+                grid = (B, H)
+                _chunked_delta_fwd_kernel[grid](
+                    q, k, v, beta, alpha_arg, S_in, O, S_out,
+                    q.stride(0), q.stride(1), q.stride(2), q.stride(3),
+                    k.stride(0), k.stride(1), k.stride(2), k.stride(3),
+                    v.stride(0), v.stride(1), v.stride(2), v.stride(3),
+                    beta.stride(0), beta.stride(1), beta.stride(2),
+                    *((alpha.stride(0), alpha.stride(1), alpha.stride(2)) if gated else (0, 0, 0)),
+                    S_in.stride(0), S_in.stride(1), S_in.stride(2), S_in.stride(3),
+                    O.stride(0), O.stride(1), O.stride(2), O.stride(3),
+                    S_out.stride(0), S_out.stride(1), S_out.stride(2), S_out.stride(3),
+                    T, C, c0,
+                    DK=dk, DV=dv, BLOCK_DK=BLOCK_DK, BLOCK_DV=BLOCK_DV, BLOCK_C=BLOCK_C, GATED=gated,
+                )
+                S = S_out
+                
+            ctx.save_for_backward(q, k, v, beta, alpha, S_history, S0)
+            ctx.chunk = chunk
+            ctx.gated = gated
+            return O, S
+
+        @staticmethod
+        def backward(ctx, grad_O, grad_S):
+            q, k, v, beta, alpha, S_history, S0 = ctx.saved_tensors
+            chunk = ctx.chunk
+            gated = ctx.gated
+            B, H, T, dk = q.shape
+            dv = v.shape[-1]
+            
+            dq = torch.zeros_like(q)
+            dk_t = torch.zeros_like(k)
+            dv_t = torch.zeros_like(v)
+            dbeta = torch.zeros_like(beta)
+            dalpha = torch.zeros_like(alpha) if gated else None
+            
+            dS = grad_S.contiguous() if grad_S is not None else torch.zeros(B, H, dv, dk, dtype=q.dtype, device=q.device)
+            
+            BLOCK_C = triton.next_power_of_2(chunk)
+            BLOCK_DK = triton.next_power_of_2(dk)
+            BLOCK_DV = triton.next_power_of_2(dv)
+            
+            alpha_arg = alpha if gated else torch.empty(0, device=q.device, dtype=q.dtype)
+            dalpha_arg = dalpha if gated else torch.empty(0, device=q.device, dtype=q.dtype)
+            
+            num_chunks = (T + chunk - 1) // chunk
+            for idx in range(num_chunks - 1, -1, -1):
+                c0 = idx * chunk
+                C = min(chunk, T - c0)
+                S_in = S_history[idx].contiguous()
+                dS_in = torch.empty_like(dS)
+                grid = (B, H)
+                
+                _chunked_delta_bwd_kernel[grid](
+                    q, k, v, beta, alpha_arg, S_in,
+                    grad_O, dS,
+                    dq, dk_t, dv_t, dbeta, dalpha_arg, dS_in,
+                    q.stride(0), q.stride(1), q.stride(2), q.stride(3),
+                    k.stride(0), k.stride(1), k.stride(2), k.stride(3),
+                    v.stride(0), v.stride(1), v.stride(2), v.stride(3),
+                    beta.stride(0), beta.stride(1), beta.stride(2),
+                    *((alpha.stride(0), alpha.stride(1), alpha.stride(2)) if gated else (0, 0, 0)),
+                    S_in.stride(0), S_in.stride(1), S_in.stride(2), S_in.stride(3),
+                    grad_O.stride(0), grad_O.stride(1), grad_O.stride(2), grad_O.stride(3),
+                    dS.stride(0), dS.stride(1), dS.stride(2), dS.stride(3),
+                    dq.stride(0), dq.stride(1), dq.stride(2), dq.stride(3),
+                    dk_t.stride(0), dk_t.stride(1), dk_t.stride(2), dk_t.stride(3),
+                    dv_t.stride(0), dv_t.stride(1), dv_t.stride(2), dv_t.stride(3),
+                    dbeta.stride(0), dbeta.stride(1), dbeta.stride(2),
+                    *((dalpha.stride(0), dalpha.stride(1), dalpha.stride(2)) if gated else (0, 0, 0)),
+                    dS_in.stride(0), dS_in.stride(1), dS_in.stride(2), dS_in.stride(3),
+                    T, C, c0,
+                    dk, dv, BLOCK_DK, BLOCK_DV, BLOCK_C, gated,
+                )
+                dS = dS_in
+                
+            dS0 = dS if S0 is not None else None
+            return dq, dk_t, dv_t, dbeta, dalpha, dS0, None
+
+    def _triton_chunked_delta(q, k, v, beta, alpha, S0, chunk):
+        """Run the DRAFT Triton forward kernel chunk-by-chunk, carrying state S across chunks.
+        It uses TritonChunkedDeltaFunction to also support backward gradients."""
+        return TritonChunkedDeltaFunction.apply(q, k, v, beta, alpha, S0, chunk)
+else:
+    def _triton_chunked_delta(q, k, v, beta, alpha, S0, chunk):
+        raise NotImplementedError("Triton is not available")
 
 
 def _should_use_triton(q, k, v, beta, alpha, S0, surprise, eta, n_delta, write_mode, beta_e,

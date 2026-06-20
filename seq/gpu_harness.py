@@ -24,6 +24,7 @@ RNG-clean task instance, exactly like gpu_bench's task_fac).
 """
 from __future__ import annotations
 
+import fcntl
 import json
 import os
 import time
@@ -79,20 +80,45 @@ def _json_default(o):
 
 
 def _save(d, out_path):
-    """Atomic crash-safe write (json -> .tmp -> os.replace), reused from gpu_bench._save. os.replace
-    is atomic on the same filesystem, so a reader never observes a half-written results file and a
-    Colab disconnect mid-write cannot corrupt the ledger. `default=_json_default` makes the numpy
-    scalars in the powered-stats payload serializable (the payload this harness exists to persist)."""
+    """Atomic crash-safe write (json -> .tmp -> os.replace), reused from gpu_bench._save.
+    Uses fcntl.flock on a lockfile (out_path + ".lock") to implement a process-safe
+    load-merge-save mechanism."""
     os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
-    tmp = out_path + ".tmp"
-    with open(tmp, "w") as f:
-        json.dump(d, f, indent=2, default=_json_default)
-    os.replace(tmp, out_path)
+    lock_path = out_path + ".lock"
+    with open(lock_path, "a+") as lock_f:
+        fcntl.flock(lock_f.fileno(), fcntl.LOCK_EX)
+        
+        disk_res = {}
+        if os.path.exists(out_path):
+            try:
+                with open(out_path, "r") as f:
+                    disk_res = json.load(f)
+            except Exception:
+                pass
+        
+        disk_res.update(d)
+        
+        tmp = out_path + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(disk_res, f, indent=2, default=_json_default)
+        os.replace(tmp, out_path)
+        
+        d.clear()
+        d.update(disk_res)
 
 
 def load_results(out_path):
     """Load the resumable ledger (empty dict if absent)."""
-    return json.load(open(out_path)) if os.path.exists(out_path) else {}
+    if not os.path.exists(out_path):
+        return {}
+    lock_path = out_path + ".lock"
+    os.makedirs(os.path.dirname(os.path.abspath(lock_path)), exist_ok=True)
+    with open(lock_path, "a+") as lock_f:
+        fcntl.flock(lock_f.fileno(), fcntl.LOCK_SH)
+        if not os.path.exists(out_path):
+            return {}
+        with open(out_path, "r") as f:
+            return json.load(f)
 
 
 # ===================================================================== run_cell ==
@@ -156,7 +182,7 @@ def sweep_then_seeds(res, prefix, model_fac, task_fac, base_cfg: TrainConfig, de
         V, T = task.vocab, task.seq_len
         zero_arg_fac = lambda: model_fac(V, T)
         # sweep_lr internally uses build_and_train (seed-pinned) for every LR on the grid.
-        sweep = sweep_lr(zero_arg_fac, task, base_cfg, device, grid=grid, seed=seeds[0])
+        sweep = sweep_lr(zero_arg_fac, task, base_cfg, device, grid=grid, seed=0)
         res[sweep_key] = sweep
         if out_path is not None:
             _save(res, out_path)
