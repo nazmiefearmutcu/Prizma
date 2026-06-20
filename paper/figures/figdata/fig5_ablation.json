@@ -1,0 +1,51 @@
+{
+ "task": "MQAR D=128 best accuracy, d64L2H2 (130K), causal feature-map ablation",
+ "source_file": "results/gpu_bench.json",
+ "conditions": [
+  {
+   "name": "quad2",
+   "median_acc": 0.9966659545898438,
+   "seeds": [
+    0.9987907409667969,
+    0.9966659545898438,
+    0.9348831176757812
+   ],
+   "solved": "3/3",
+   "source": "gpu_bench.json:p2eff.Prizma-quad2-d64L2H2.s{0,1,2}"
+  },
+  {
+   "name": "rand_linear",
+   "median_acc": 0.5892906188964844,
+   "seeds": [
+    0.6681060791015625,
+    0.40752410888671875,
+    0.5892906188964844
+   ],
+   "solved": "0/3",
+   "source": "gpu_bench.json:p2eff.Prizma-randlin-d64L2H2.s{0,1,2}"
+  },
+  {
+   "name": "none",
+   "median_acc": 0.5182609558105469,
+   "seeds": [
+    0.5182609558105469,
+    0.3185920715332031,
+    0.7181854248046875
+   ],
+   "solved": "0/3",
+   "source": "gpu_bench.json:p2eff.Prizma-none-d64L2H2.s{0,1,2}"
+  },
+  {
+   "name": "TF",
+   "median_acc": 0.01629638671875,
+   "seeds": [
+    0.01575469970703125,
+    0.01629638671875,
+    0.016460418701171875
+   ],
+   "solved": "0/3",
+   "source": "gpu_bench.json:p1.TF.d64L2H2.s{0,1,2}"
+  }
+ ],
+ "scale": "d64L2H2 (130K), MQAR D=128"
+}

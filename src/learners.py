@@ -30,25 +30,209 @@ def softmax(z):
     return e / e.sum(axis=1, keepdims=True)
 
 
+def quantize(val, n_bits):
+    if n_bits is None:
+        return val
+    # Symmetric uniform quantization to 2**n_bits levels
+    qmin = - (2 ** (n_bits - 1))
+    qmax = (2 ** (n_bits - 1)) - 1
+    max_val = np.max(np.abs(val))
+    if max_val < 1e-8:
+        return val
+    scaled = val / max_val
+    q_scaled = np.round(scaled * qmax)
+    q_scaled = np.clip(q_scaled, qmin, qmax)
+    return (q_scaled / qmax) * max_val
+
+
+class Layer:
+    """A neural network layer wrapping weights and biases, support for quantization and analog noise."""
+    def __init__(self, W, b, analog_noise=0.0, n_bits=None):
+        self.W = W.copy()
+        self.b = b.copy()
+        self.analog_noise = analog_noise
+        self.n_bits = n_bits
+
+    def get_weights(self, rng=None):
+        W = self.W
+        b = self.b
+        if self.n_bits is not None:
+            W = quantize(W, self.n_bits)
+            b = quantize(b, self.n_bits)
+        if self.analog_noise > 0.0:
+            if rng is None:
+                rng = np.random.default_rng()
+            W = W + rng.normal(0.0, self.analog_noise, W.shape).astype(np.float32)
+            b = b + rng.normal(0.0, self.analog_noise, b.shape).astype(np.float32)
+        return W, b
+
+
+class Expert:
+    """An expert group wrapping its PGM states and parameters."""
+    def __init__(self, parent, index, gh, analog_noise=0.0, n_bits=None, settling_temp=0.0):
+        self.parent = parent
+        self.index = index
+        self.gh = gh
+        self.analog_noise = analog_noise
+        self.n_bits = n_bits
+        self.settling_temp = settling_temp
+
+    @property
+    def s_bar(self):
+        return self.parent._s_bar[self.index]
+    @s_bar.setter
+    def s_bar(self, val):
+        self.parent._s_bar[self.index] = val
+
+    @property
+    def omega(self):
+        return self.parent._omega[self.index]
+    @omega.setter
+    def omega(self, val):
+        self.parent._omega[self.index] = val
+
+    @property
+    def usage(self):
+        return self.parent._usage[self.index]
+    @usage.setter
+    def usage(self, val):
+        self.parent._usage[self.index] = val
+
+    @property
+    def tenure(self):
+        return self.parent._tenure[self.index]
+    @tenure.setter
+    def tenure(self, val):
+        self.parent._tenure[self.index] = val
+
+    @property
+    def win_count(self):
+        return self.parent._win_count[self.index]
+    @win_count.setter
+    def win_count(self, val):
+        self.parent._win_count[self.index] = val
+
+    @property
+    def gate(self):
+        return self.parent._gates[self.index]
+
+
 class Net:
     """Shared 2-layer readout over a frozen feature lift."""
 
-    def __init__(self, d_feat, H, K, seed, feedback="exact"):
-        rng = np.random.default_rng(seed)
-        self.W1 = rng.normal(0, 1.0 / np.sqrt(d_feat), (d_feat, H)).astype(np.float32)
-        self.b1 = np.zeros(H, np.float32)
-        self.W2 = rng.normal(0, 1.0 / np.sqrt(H), (H, K)).astype(np.float32)
-        self.b2 = np.zeros(K, np.float32)
+    def __init__(self, d_feat, H, K, seed, feedback="exact",
+                 analog_noise=0.0, n_bits=None,
+                 settling_steps=0, settling_lr=0.1, settling_temp=0.0):
+        self.rng = np.random.default_rng(seed)
+        W1 = self.rng.normal(0, 1.0 / np.sqrt(d_feat), (d_feat, H)).astype(np.float32)
+        b1 = np.zeros(H, np.float32)
+        W2 = self.rng.normal(0, 1.0 / np.sqrt(H), (H, K)).astype(np.float32)
+        b2 = np.zeros(K, np.float32)
         self.feedback = feedback
+        
+        # Create layers
+        self.layer1 = Layer(W1, b1, analog_noise=analog_noise, n_bits=n_bits)
+        self.layer2 = Layer(W2, b2, analog_noise=analog_noise, n_bits=n_bits)
+        
         if feedback == "random":
-            self.B = rng.normal(0, 1.0 / np.sqrt(K), (K, H)).astype(np.float32)  # delta(n,K) -> (n,H)
+            B = self.rng.normal(0, 1.0 / np.sqrt(K), (K, H)).astype(np.float32)  # delta(n,K) -> (n,H)
+            self.layer_feedback = Layer(B, np.zeros(H, np.float32), analog_noise=analog_noise, n_bits=n_bits)
+            
         self.H, self.K = H, K
+        self.analog_noise = analog_noise
+        self.n_bits = n_bits
+        self.settling_steps = settling_steps
+        self.settling_lr = settling_lr
+        self.settling_temp = settling_temp
 
-    def forward(self, Phi):
-        pre = Phi @ self.W1 + self.b1
+    @property
+    def W1(self):
+        return self.layer1.W
+    @W1.setter
+    def W1(self, val):
+        self.layer1.W = val
+
+    @property
+    def b1(self):
+        return self.layer1.b
+    @b1.setter
+    def b1(self, val):
+        self.layer1.b = val
+
+    @property
+    def W2(self):
+        return self.layer2.W
+    @W2.setter
+    def W2(self, val):
+        self.layer2.W = val
+
+    @property
+    def b2(self):
+        return self.layer2.b
+    @b2.setter
+    def b2(self, val):
+        self.layer2.b = val
+
+    @property
+    def B(self):
+        if hasattr(self, 'layer_feedback'):
+            return self.layer_feedback.W
+        raise AttributeError("No feedback matrix B when feedback is not 'random'")
+    @B.setter
+    def B(self, val):
+        if hasattr(self, 'layer_feedback'):
+            self.layer_feedback.W = val
+        else:
+            raise AttributeError("No feedback matrix B when feedback is not 'random'")
+
+    def forward(self, Phi, Y=None):
+        W1, b1 = self.layer1.get_weights(self.rng)
+        W2, b2 = self.layer2.get_weights(self.rng)
+        pre = Phi @ W1 + b1
         h = np.maximum(0.0, pre)
-        logits = h @ self.W2 + self.b2
+        if self.settling_steps > 0:
+            h = self._settle(Phi, h, Y, W1, b1, W2, b2)
+        logits = h @ W2 + b2
         return pre, h, logits
+
+    def _settle(self, Phi, h_init, Y, W1, b1, W2, b2):
+        h = h_init.copy()
+        bottom_up = Phi @ W1 + b1
+        
+        for step in range(self.settling_steps):
+            if Y is not None:
+                logits = h @ W2 + b2
+                P = softmax(logits)
+                if self.feedback == "random":
+                    B_val, _ = self.layer_feedback.get_weights(self.rng)
+                    df_top = (P - Y) @ B_val
+                else:
+                    df_top = (P - Y) @ W2.T
+                # Gate feedback with activation mask (h > 0)
+                df_top = df_top * (h > 0)
+            else:
+                df_top = 0.0
+                
+            df_bottom = h - bottom_up
+            dh = df_top + df_bottom
+            
+            # Langevin noise
+            noise = 0.0
+            if self.settling_temp > 0.0:
+                if hasattr(self, "experts"):
+                    noise_std = np.zeros(self.H, dtype=np.float32)
+                    for e in self.experts:
+                        sl = self.slices[e.index]
+                        noise_std[sl] = np.sqrt(2.0 * self.settling_temp * e.gate * self.settling_lr)
+                else:
+                    noise_std = np.sqrt(2.0 * self.settling_temp * self.settling_lr)
+                    
+                noise = self.rng.normal(0.0, 1.0, h.shape).astype(np.float32) * noise_std
+                
+            h = h - self.settling_lr * dh + noise
+            h = np.maximum(0.0, h)
+            
+        return h
 
     def predict_logits(self, Phi):
         return self.forward(Phi)[2]
@@ -60,15 +244,24 @@ class Net:
         version is DFA and is genuinely non-backprop.
         """
         n = len(Phi)
-        pre, h, logits = self.forward(Phi)
+        pre, h, logits = self.forward(Phi, Y)
         P = softmax(logits)
         delta = (P - Y) / n                                  # output error neurons (n,K)
+        
+        W2_val, b2_val = self.layer2.get_weights(self.rng)
         gW2 = h.T @ delta                                    # local: pre-activity (x) error
         gb2 = delta.sum(axis=0)
-        if self.feedback == "random":
-            dh = (delta @ self.B) * (pre > 0)                # DFA: fixed random feedback
+        
+        if self.settling_steps > 0:
+            W1_val, b1_val = self.layer1.get_weights(self.rng)
+            dh = ((Phi @ W1_val + b1_val) - h) / n
         else:
-            dh = (delta @ self.W2.T) * (pre > 0)             # PC feedback through generative W2
+            if self.feedback == "random":
+                B_val, _ = self.layer_feedback.get_weights(self.rng)
+                dh = (delta @ B_val) * (pre > 0)                # DFA: fixed random feedback
+            else:
+                dh = (delta @ W2_val.T) * (pre > 0)             # PC feedback through generative W2
+                
         gW1 = Phi.T @ dh
         gb1 = dh.sum(axis=0)
         loss = float(-np.log(P[np.arange(n), y] + 1e-12).mean())
@@ -95,7 +288,7 @@ class EWC:
 
     def __init__(self, lam=20.0):
         self.lam = lam
-        self.snaps = []   # (W1*,b1*,W2*,b2*)
+        self.snaps = []   # (W1*,b1*,W2*,b2)
         self.fish = []    # (F1,Fb1,F2,Fb2)
 
     def add(self, net, gW1, gb1, gW2, gb2):
@@ -127,8 +320,12 @@ class Prizma(Net):
                  eta_c=0.05, omega_max=20.0, omega_consol=5.0, usage_min=0.20,
                  usage_engage=0.05, load_balance=0.2, global_gate=True,
                  global_floor=0.18, solved_floor=0.12, tenure_min=40,
-                 lr_floor=0.0, reawaken=True, kappa=0.1):
-        super().__init__(d_feat, H, K, seed, feedback=feedback)
+                 lr_floor=0.0, reawaken=True, kappa=0.1,
+                 analog_noise=0.0, n_bits=None,
+                 settling_steps=0, settling_lr=0.1, settling_temp=0.0):
+        super().__init__(d_feat, H, K, seed, feedback=feedback,
+                         analog_noise=analog_noise, n_bits=n_bits,
+                         settling_steps=settling_steps, settling_lr=settling_lr, settling_temp=settling_temp)
         assert H % M == 0, "H must be divisible by M"
         self.M, self.gh = M, H // M
         self.slices = [slice(g * self.gh, (g + 1) * self.gh) for g in range(M)]
@@ -140,14 +337,57 @@ class Prizma(Net):
         self.global_gate, self.global_floor = global_gate, global_floor
         self.solved_floor, self.tenure_min = solved_floor, tenure_min
         self.lr_floor, self.reawaken, self.kappa = lr_floor, reawaken, kappa
+        
         # PGM state per group
-        self.s_bar = np.zeros(M, np.float32)         # surprise EMA (per-sample scale)
-        self.omega = np.zeros(M, np.float32)         # consolidation
-        self.usage = np.zeros(M, np.float32)         # running win fraction
-        self.tenure = np.zeros(M, np.int64)          # wins accrued since last consolidation phase
-        self.win_count = np.zeros(M, np.int64)
+        self._s_bar = np.zeros(M, np.float32)         # surprise EMA (per-sample scale)
+        self._omega = np.zeros(M, np.float32)         # consolidation
+        self._usage = np.zeros(M, np.float32)         # running win fraction
+        self._tenure = np.zeros(M, np.int64)          # wins accrued since last consolidation phase
+        self._win_count = np.zeros(M, np.int64)
+        self._gates = np.ones(M, np.float32)          # running gate values
+        
         self.gE = 1.0                                # slow EMA of global error (phase detector)
         self.was_solved = False                      # previous solved-state (rising-edge latch)
+
+        self.experts = [
+            Expert(self, g, self.gh, analog_noise=analog_noise, n_bits=n_bits, settling_temp=settling_temp)
+            for g in range(M)
+        ]
+
+    @property
+    def s_bar(self):
+        return self._s_bar
+    @s_bar.setter
+    def s_bar(self, val):
+        self._s_bar = val
+
+    @property
+    def omega(self):
+        return self._omega
+    @omega.setter
+    def omega(self, val):
+        self._omega = val
+
+    @property
+    def usage(self):
+        return self._usage
+    @usage.setter
+    def usage(self, val):
+        self._usage = val
+
+    @property
+    def tenure(self):
+        return self._tenure
+    @tenure.setter
+    def tenure(self, val):
+        self._tenure = val
+
+    @property
+    def win_count(self):
+        return self._win_count
+    @win_count.setter
+    def win_count(self, val):
+        self._win_count = val
 
     def _active_set(self, global_err, consolidated):
         """Build a stable active set of <=topk non-consolidated groups (ART-style):
@@ -186,6 +426,8 @@ class Prizma(Net):
             if len(winners) > 0:
                 gw = 1.0 / (1.0 + np.exp(-self.beta * (self.s_bar[winners] - self.floor)))
                 gates[winners] = self.lr_floor + (1 - self.lr_floor) * gw
+
+        self._gates = gates
 
         for g in winners if self.mode != "off" else range(self.M):
             ge = gates[g]

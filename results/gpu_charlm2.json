@@ -1,27 +1,522 @@
 {
-  "_provenance": "Reconstructed from the Colab cell printout (===CHARLM2_BAR=== / ===CHARLM2_RESULTS=== + per-arm log lines). E (session) ran gpu_charlm2.py with PRIZMA_RESULTS=/content/prizma_results (LOCAL on the Colab runtime, not Drive), so this file was assembled from the verbatim cell output. Per-step training-history arrays are omitted here (they live in the full file on the Colab runtime); every reported best_bpc/best_step/final/median/margin below is verbatim from the cell. Command: gpu_charlm2.py --skip_none --steps 12000 --lr_grid 2e-3 3e-3 (seeds 0,1).",
-  "_config": {
-    "runner": "gpu_charlm2.py",
-    "corpus": "text8",
-    "d": 256, "L": 4, "H": 4, "ctx": 256, "feat_n2": 256, "tf_dff": 704,
-    "steps": 12000, "batch_size": 48, "warmup": 1000, "grad_clip": 1.0,
-    "weight_decay": 0.1, "betas": [0.9, 0.95],
-    "eval_every": 250, "eval_batches": 40,
-    "lr_grid": [0.002, 0.003], "seeds": [0, 1], "device": "cuda",
-    "skip_none": true,
-    "params": {"TF": 3220480, "Prizma-quad2": 3224608},
-    "param_match_pct": -0.128,
-    "random_baseline_bpc": 4.7549,
+  "_config_v2": {
+    "runner": "gpu_charlm2.py --v2",
+    "corpus": "shakespeare",
+    "d": 64,
+    "L": 2,
+    "H": 2,
+    "ctx": 64,
+    "feat_n2": 16,
+    "tf_dff": 208,
+    "steps": 200,
+    "batch_size": 32,
+    "warmup": 40,
+    "grad_clip": 1.0,
+    "weight_decay": 0.1,
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "eval_every": 50,
+    "eval_batches": 10,
+    "lr_grid": [
+      0.002
+    ],
+    "seeds": [
+      0,
+      1
+    ],
+    "device": "mps",
+    "v2_gates": {
+      "out_gate": true,
+      "state_norm": true,
+      "decoupled_gate": true,
+      "gated": true
+    },
+    "params": {
+      "TF-v2": 117120,
+      "Prizma-v2": 116304,
+      "Hybrid-v2": 111336
+    },
+    "param_ref": "Prizma-v2",
+    "tf_param_match_pct": 0.702,
+    "hybrid_param_spread_pct": -4.272,
+    "random_baseline_bpc": 6.0224,
+    "smoke": true,
+    "smoke_disclaimer": "PLUMBING-ONLY: smoke BPC + verdict are from a tiny CPU config and are NOT a scientific result.",
     "dropout_used": false,
-    "early_stop_policy": "headline best_bpc = TEST BPC at the min-VAL checkpoint (val-based selection; unbiased). min_test_bpc kept as diagnostic.",
-    "text8_subset": {"train_chars": 10000000, "val_chars": 500000, "test_chars": 500000}
+    "early_stop_policy": "headline best_bpc = TEST BPC at the min-VAL checkpoint (unbiased); corpora without val fall back to min-over-test."
   },
-  "text8(V=27,T=256,train=10000000,val=500000,test=500000)|TF|lrsel|lr2e-03|s0": {"best_bpc": 1.7288, "best_step": 10500, "final_bpc": 1.7366, "lr": 0.002, "seed": 0, "steps": 12000, "sec": 361.9, "params": 3220480},
-  "text8(V=27,T=256,train=10000000,val=500000,test=500000)|TF|lrsel|lr3e-03|s0": {"best_bpc": 1.7253, "best_step": 9500, "final_bpc": 1.7354, "lr": 0.003, "seed": 0, "steps": 12000, "sec": 361.2, "params": 3220480},
-  "text8(V=27,T=256,train=10000000,val=500000,test=500000)|TF|final|lr3e-03|s1": {"best_bpc": 1.7256, "best_step": 10500, "final_bpc": 1.7323, "lr": 0.003, "seed": 1, "steps": 12000, "sec": 361.4, "params": 3220480},
-  "text8(V=27,T=256,train=10000000,val=500000,test=500000)|Prizma-quad2|lrsel|lr2e-03|s0": {"best_bpc": 1.7524, "best_step": 9500, "final_bpc": 1.7729, "lr": 0.002, "seed": 0, "steps": 12000, "sec": 1889.4, "params": 3224608},
-  "text8(V=27,T=256,train=10000000,val=500000,test=500000)|Prizma-quad2|lrsel|lr3e-03|s0": {"best_bpc": 1.7505, "best_step": 9500, "final_bpc": 1.7649, "lr": 0.003, "seed": 0, "steps": 12000, "sec": 1889.7, "params": 3224608},
-  "text8(V=27,T=256,train=10000000,val=500000,test=500000)|Prizma-quad2|final|lr3e-03|s1": {"best_bpc": 1.7488, "best_step": 10000, "final_bpc": 1.7619, "lr": 0.003, "seed": 1, "steps": 12000, "sec": 1890.3, "params": 3224608},
-  "_bar": {"rule": "Prizma-quad2 best_bpc <= TF best_bpc + 0.05 (param-matched, >=2 seeds)", "metric": "test_bits_per_char", "pass": true, "TF_median_best_bpc": 1.7254, "PRIZMA_quad2_median_best_bpc": 1.7496, "margin_tf_minus_prizma": -0.0242, "threshold": 0.05, "n_seeds": 2, "param_match_pct": -0.128, "random_baseline_bpc": 4.7549, "dropout_used": false, "model_selection": "val (TEST BPC @ min-VAL checkpoint); min-over-test kept as diagnostic"},
-  "charlm_summary": {"corpus": "text8", "metric": "test_bits_per_char", "per_arm": {"TF": {"best_lr": 0.003, "test_bpc_per_seed": [1.7253, 1.7256], "best_step_per_seed": [9500, 10500], "final_bpc_per_seed": [1.7354, 1.7323], "min_test_bpc_per_seed": [1.72528, 1.72562], "early_stop": "val", "mean_bpc": 1.7254, "median_bpc": 1.7254, "range": 0.0002, "params": 3220480}, "Prizma-quad2": {"best_lr": 0.003, "test_bpc_per_seed": [1.7505, 1.7488], "best_step_per_seed": [9500, 10000], "final_bpc_per_seed": [1.7649, 1.7619], "min_test_bpc_per_seed": [1.749, 1.74733], "early_stop": "val", "mean_bpc": 1.7496, "median_bpc": 1.7496, "range": 0.0009, "params": 3224608}}, "TF_median_bpc": 1.7254, "PRIZMA_quad2_median_bpc": 1.7496, "TF_mean_bpc": 1.7254, "PRIZMA_quad2_mean_bpc": 1.7496, "margin_tf_minus_prizma": -0.0242, "threshold": 0.05, "PASS": true, "param_match_pct": -0.128, "random_baseline_bpc": 4.7549, "verdict": "PASS: Prizma-quad2 within +0.05 of TF"}
+  "shakespeare(V=65,T=64,train=1003854,test=111540)|TF-v2|lrsel|lr2e-03|s0": {
+    "best_bpc": 3.26582,
+    "best_step": 200,
+    "final_bpc": 3.26582,
+    "min_test_bpc": 3.26582,
+    "early_stop": "test",
+    "params": 117120,
+    "lr": 0.002,
+    "seed": 0,
+    "steps": 200,
+    "sec": 2.6,
+    "history": [
+      [
+        50,
+        2.8415,
+        4.1331,
+        null
+      ],
+      [
+        100,
+        2.3668,
+        3.5084,
+        null
+      ],
+      [
+        150,
+        2.2912,
+        3.3335,
+        null
+      ],
+      [
+        200,
+        2.2755,
+        3.2658,
+        null
+      ]
+    ]
+  },
+  "shakespeare(V=65,T=64,train=1003854,test=111540)|TF-v2|final|lr2e-03|s1": {
+    "best_bpc": 3.23519,
+    "best_step": 200,
+    "final_bpc": 3.23519,
+    "min_test_bpc": 3.23519,
+    "early_stop": "test",
+    "params": 117120,
+    "lr": 0.002,
+    "seed": 1,
+    "steps": 200,
+    "sec": 1.5,
+    "history": [
+      [
+        50,
+        2.8343,
+        4.1034,
+        null
+      ],
+      [
+        100,
+        2.4485,
+        3.4787,
+        null
+      ],
+      [
+        150,
+        2.313,
+        3.2964,
+        null
+      ],
+      [
+        200,
+        2.2185,
+        3.2352,
+        null
+      ]
+    ]
+  },
+  "shakespeare(V=65,T=64,train=1003854,test=111540)|Prizma-v2|lrsel|lr2e-03|s0": {
+    "best_bpc": 3.41241,
+    "best_step": 200,
+    "final_bpc": 3.41241,
+    "min_test_bpc": 3.41241,
+    "early_stop": "test",
+    "params": 116304,
+    "lr": 0.002,
+    "seed": 0,
+    "steps": 200,
+    "sec": 6.9,
+    "history": [
+      [
+        50,
+        3.1758,
+        4.6114,
+        null
+      ],
+      [
+        100,
+        2.5989,
+        3.7815,
+        null
+      ],
+      [
+        150,
+        2.4074,
+        3.4945,
+        null
+      ],
+      [
+        200,
+        2.3671,
+        3.4124,
+        null
+      ]
+    ]
+  },
+  "shakespeare(V=65,T=64,train=1003854,test=111540)|Prizma-v2|final|lr2e-03|s1": {
+    "best_bpc": 3.344,
+    "best_step": 200,
+    "final_bpc": 3.344,
+    "min_test_bpc": 3.344,
+    "early_stop": "test",
+    "params": 116304,
+    "lr": 0.002,
+    "seed": 1,
+    "steps": 200,
+    "sec": 6.7,
+    "history": [
+      [
+        50,
+        3.1338,
+        4.5446,
+        null
+      ],
+      [
+        100,
+        2.576,
+        3.6674,
+        null
+      ],
+      [
+        150,
+        2.3746,
+        3.4287,
+        null
+      ],
+      [
+        200,
+        2.2993,
+        3.344,
+        null
+      ]
+    ]
+  },
+  "shakespeare(V=65,T=64,train=1003854,test=111540)|Hybrid-v2|lrsel|lr2e-03|s0": {
+    "best_bpc": 3.37797,
+    "best_step": 200,
+    "final_bpc": 3.37797,
+    "min_test_bpc": 3.37797,
+    "early_stop": "test",
+    "params": 111336,
+    "lr": 0.002,
+    "seed": 0,
+    "steps": 200,
+    "sec": 4.1,
+    "history": [
+      [
+        50,
+        3.1559,
+        4.5894,
+        null
+      ],
+      [
+        100,
+        2.5635,
+        3.7308,
+        null
+      ],
+      [
+        150,
+        2.3777,
+        3.4601,
+        null
+      ],
+      [
+        200,
+        2.3487,
+        3.378,
+        null
+      ]
+    ]
+  },
+  "shakespeare(V=65,T=64,train=1003854,test=111540)|Hybrid-v2|final|lr2e-03|s1": {
+    "best_bpc": 3.34793,
+    "best_step": 200,
+    "final_bpc": 3.34793,
+    "min_test_bpc": 3.34793,
+    "early_stop": "test",
+    "params": 111336,
+    "lr": 0.002,
+    "seed": 1,
+    "steps": 200,
+    "sec": 4.1,
+    "history": [
+      [
+        50,
+        3.0764,
+        4.4385,
+        null
+      ],
+      [
+        100,
+        2.5788,
+        3.6649,
+        null
+      ],
+      [
+        150,
+        2.3997,
+        3.4279,
+        null
+      ],
+      [
+        200,
+        2.3125,
+        3.3479,
+        null
+      ]
+    ]
+  },
+  "v2_verdict": {
+    "verdict": "WORSE",
+    "superiority": {
+      "delta": -0.12769999999999992,
+      "t": -4.209106383737682,
+      "df": 1.3848612297841516,
+      "p_value": 0.9527878914588023,
+      "significant": false,
+      "margin": 0.03
+    },
+    "parity": {
+      "delta": 0.12769999999999992,
+      "ci90": [
+        -0.023245175508865706,
+        0.2786451755088656
+      ],
+      "margin": 0.05,
+      "p_lower": 0.04032304305137207,
+      "p_upper": 0.8863050876364382,
+      "equivalent": false
+    },
+    "vs_hybrid_superiority": {
+      "delta": -0.015249999999999542,
+      "t": -1.2110266760039674,
+      "df": 1.3733037094511698,
+      "p_value": 0.8029440680289883,
+      "significant": false,
+      "margin": 0.03
+    },
+    "vs_hybrid_parity": {
+      "delta": 0.015249999999999542,
+      "ci90": [
+        -0.13669479476739835,
+        0.16719479476739743
+      ],
+      "margin": 0.05,
+      "p_lower": 0.13814423055221278,
+      "p_upper": 0.2431937241543387,
+      "equivalent": false
+    },
+    "per_arm": {
+      "TF-v2": {
+        "mean_bpc": 3.2504999999999997,
+        "median_bpc": 3.2504999999999997,
+        "n_seeds": 2,
+        "bpcs": [
+          3.2658,
+          3.2352
+        ]
+      },
+      "Prizma-v2": {
+        "mean_bpc": 3.3781999999999996,
+        "median_bpc": 3.3781999999999996,
+        "n_seeds": 2,
+        "bpcs": [
+          3.4124,
+          3.344
+        ]
+      },
+      "Hybrid-v2": {
+        "mean_bpc": 3.36295,
+        "median_bpc": 3.36295,
+        "n_seeds": 2,
+        "bpcs": [
+          3.378,
+          3.3479
+        ]
+      }
+    },
+    "margins": {
+      "superiority": 0.03,
+      "parity": 0.05
+    },
+    "candidate": "Prizma-v2",
+    "baseline": "TF-v2",
+    "scope_rider": "Scope: <=2M params, char-LM (text8/shakespeare) ONLY. Not a claim at scale or on other modalities.",
+    "param_ref": "Prizma-v2",
+    "tf_param_match_pct": 0.702,
+    "hybrid_param_spread_pct": -4.272,
+    "random_baseline_bpc": 6.0224,
+    "smoke": true,
+    "smoke_disclaimer": "PLUMBING-ONLY: tiny CPU config; the verdict above is NOT a scientific result."
+  },
+  "charlm_v2_summary": {
+    "corpus": "shakespeare",
+    "metric": "test_bits_per_char",
+    "per_arm": {
+      "TF-v2": {
+        "best_lr": 0.002,
+        "test_bpc_per_seed": [
+          3.2658,
+          3.2352
+        ],
+        "best_step_per_seed": [
+          200,
+          200
+        ],
+        "final_bpc_per_seed": [
+          3.2658,
+          3.2352
+        ],
+        "min_test_bpc_per_seed": [
+          3.26582,
+          3.23519
+        ],
+        "early_stop": "test",
+        "mean_bpc": 3.2505,
+        "median_bpc": 3.2505,
+        "range": 0.0153,
+        "params": 117120
+      },
+      "Prizma-v2": {
+        "best_lr": 0.002,
+        "test_bpc_per_seed": [
+          3.4124,
+          3.344
+        ],
+        "best_step_per_seed": [
+          200,
+          200
+        ],
+        "final_bpc_per_seed": [
+          3.4124,
+          3.344
+        ],
+        "min_test_bpc_per_seed": [
+          3.41241,
+          3.344
+        ],
+        "early_stop": "test",
+        "mean_bpc": 3.3782,
+        "median_bpc": 3.3782,
+        "range": 0.0342,
+        "params": 116304
+      },
+      "Hybrid-v2": {
+        "best_lr": 0.002,
+        "test_bpc_per_seed": [
+          3.378,
+          3.3479
+        ],
+        "best_step_per_seed": [
+          200,
+          200
+        ],
+        "final_bpc_per_seed": [
+          3.378,
+          3.3479
+        ],
+        "min_test_bpc_per_seed": [
+          3.37797,
+          3.34793
+        ],
+        "early_stop": "test",
+        "mean_bpc": 3.3629,
+        "median_bpc": 3.3629,
+        "range": 0.015,
+        "params": 111336
+      }
+    },
+    "v2_verdict": {
+      "verdict": "WORSE",
+      "superiority": {
+        "delta": -0.12769999999999992,
+        "t": -4.209106383737682,
+        "df": 1.3848612297841516,
+        "p_value": 0.9527878914588023,
+        "significant": false,
+        "margin": 0.03
+      },
+      "parity": {
+        "delta": 0.12769999999999992,
+        "ci90": [
+          -0.023245175508865706,
+          0.2786451755088656
+        ],
+        "margin": 0.05,
+        "p_lower": 0.04032304305137207,
+        "p_upper": 0.8863050876364382,
+        "equivalent": false
+      },
+      "vs_hybrid_superiority": {
+        "delta": -0.015249999999999542,
+        "t": -1.2110266760039674,
+        "df": 1.3733037094511698,
+        "p_value": 0.8029440680289883,
+        "significant": false,
+        "margin": 0.03
+      },
+      "vs_hybrid_parity": {
+        "delta": 0.015249999999999542,
+        "ci90": [
+          -0.13669479476739835,
+          0.16719479476739743
+        ],
+        "margin": 0.05,
+        "p_lower": 0.13814423055221278,
+        "p_upper": 0.2431937241543387,
+        "equivalent": false
+      },
+      "per_arm": {
+        "TF-v2": {
+          "mean_bpc": 3.2504999999999997,
+          "median_bpc": 3.2504999999999997,
+          "n_seeds": 2,
+          "bpcs": [
+            3.2658,
+            3.2352
+          ]
+        },
+        "Prizma-v2": {
+          "mean_bpc": 3.3781999999999996,
+          "median_bpc": 3.3781999999999996,
+          "n_seeds": 2,
+          "bpcs": [
+            3.4124,
+            3.344
+          ]
+        },
+        "Hybrid-v2": {
+          "mean_bpc": 3.36295,
+          "median_bpc": 3.36295,
+          "n_seeds": 2,
+          "bpcs": [
+            3.378,
+            3.3479
+          ]
+        }
+      },
+      "margins": {
+        "superiority": 0.03,
+        "parity": 0.05
+      },
+      "candidate": "Prizma-v2",
+      "baseline": "TF-v2",
+      "scope_rider": "Scope: <=2M params, char-LM (text8/shakespeare) ONLY. Not a claim at scale or on other modalities.",
+      "param_ref": "Prizma-v2",
+      "tf_param_match_pct": 0.702,
+      "hybrid_param_spread_pct": -4.272,
+      "random_baseline_bpc": 6.0224,
+      "smoke": true,
+      "smoke_disclaimer": "PLUMBING-ONLY: tiny CPU config; the verdict above is NOT a scientific result."
+    }
+  }
 }

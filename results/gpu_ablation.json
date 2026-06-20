@@ -19,7 +19,7 @@
     "best": 0.438507080078125,
     "plateau": 400,
     "params": 100680,
-    "sec": 9.5,
+    "sec": 10.7,
     "seed": 0,
     "lr": 0.002,
     "cap": 400
@@ -28,14 +28,14 @@
     "best": 0.373321533203125,
     "plateau": 400,
     "params": 100680,
-    "sec": 9.8,
+    "sec": 10.9,
     "seed": 1,
     "lr": 0.002,
     "cap": 400
   },
   "s3.surprise_norm.sweep": {
     "best_lr": 0.002,
-    "best_acc": 0.5477294921875,
+    "best_acc": 0.547760009765625,
     "grid": [
       {
         "lr": 0.001,
@@ -44,7 +44,7 @@
       },
       {
         "lr": 0.002,
-        "best_acc": 0.5477294921875,
+        "best_acc": 0.547760009765625,
         "steps_to_plateau": 400
       }
     ]
@@ -53,7 +53,7 @@
     "best": 0.5477294921875,
     "plateau": 400,
     "params": 100680,
-    "sec": 11.9,
+    "sec": 14.4,
     "seed": 0,
     "lr": 0.002,
     "cap": 400
@@ -62,7 +62,41 @@
     "best": 0.486114501953125,
     "plateau": 400,
     "params": 100680,
-    "sec": 15.1,
+    "sec": 14.8,
+    "seed": 1,
+    "lr": 0.002,
+    "cap": 400
+  },
+  "s3.surprise_random.sweep": {
+    "best_lr": 0.002,
+    "best_acc": 0.549224853515625,
+    "grid": [
+      {
+        "lr": 0.001,
+        "best_acc": 0.227813720703125,
+        "steps_to_plateau": 400
+      },
+      {
+        "lr": 0.002,
+        "best_acc": 0.549224853515625,
+        "steps_to_plateau": 400
+      }
+    ]
+  },
+  "s3.surprise_random.s0": {
+    "best": 0.549224853515625,
+    "plateau": 400,
+    "params": 100680,
+    "sec": 13.1,
+    "seed": 0,
+    "lr": 0.002,
+    "cap": 400
+  },
+  "s3.surprise_random.s1": {
+    "best": 0.50531005859375,
+    "plateau": 400,
+    "params": 100680,
+    "sec": 13.4,
     "seed": 1,
     "lr": 0.002,
     "cap": 400
@@ -87,7 +121,7 @@
     "best": 0.585205078125,
     "plateau": 400,
     "params": 100680,
-    "sec": 11.5,
+    "sec": 12.5,
     "seed": 0,
     "lr": 0.002,
     "cap": 400
@@ -96,7 +130,7 @@
     "best": 0.547149658203125,
     "plateau": 400,
     "params": 100680,
-    "sec": 13.2,
+    "sec": 12.7,
     "seed": 1,
     "lr": 0.002,
     "cap": 400
@@ -121,7 +155,7 @@
     "best": 0.297943115234375,
     "plateau": 400,
     "params": 109000,
-    "sec": 10.2,
+    "sec": 11.1,
     "seed": 0,
     "lr": 0.002,
     "cap": 400
@@ -130,107 +164,77 @@
     "best": 0.36041259765625,
     "plateau": 400,
     "params": 109000,
-    "sec": 10.2,
+    "sec": 11.7,
     "seed": 1,
     "lr": 0.002,
     "cap": 400
   },
   "negctrl.A.sweep": {
-    "best_lr": 0.003,
-    "best_acc": 0.74835205078125,
+    "best_lr": 0.002,
+    "best_acc": 0.438507080078125,
     "grid": [
-      {
-        "lr": 0.0005,
-        "best_acc": 0.186248779296875,
-        "steps_to_plateau": 400
-      },
       {
         "lr": 0.001,
         "best_acc": 0.22369384765625,
         "steps_to_plateau": 400
       },
       {
-        "lr": 0.0015,
-        "best_acc": 0.264251708984375,
-        "steps_to_plateau": 400
-      },
-      {
         "lr": 0.002,
         "best_acc": 0.438507080078125,
-        "steps_to_plateau": 400
-      },
-      {
-        "lr": 0.003,
-        "best_acc": 0.74835205078125,
         "steps_to_plateau": 400
       }
     ]
   },
   "negctrl.A.s0": {
-    "best": 0.74835205078125,
+    "best": 0.438507080078125,
     "plateau": 400,
     "params": 100680,
-    "sec": 10.0,
+    "sec": 10.8,
     "seed": 0,
-    "lr": 0.003,
+    "lr": 0.002,
     "cap": 400
   },
   "negctrl.A.s1": {
-    "best": 0.648223876953125,
+    "best": 0.373321533203125,
     "plateau": 400,
     "params": 100680,
-    "sec": 10.0,
+    "sec": 10.8,
     "seed": 1,
-    "lr": 0.003,
+    "lr": 0.002,
     "cap": 400
   },
   "negctrl.B.sweep": {
-    "best_lr": 0.003,
-    "best_acc": 0.70318603515625,
+    "best_lr": 0.002,
+    "best_acc": 0.37872314453125,
     "grid": [
-      {
-        "lr": 0.0005,
-        "best_acc": 0.201263427734375,
-        "steps_to_plateau": 400
-      },
       {
         "lr": 0.001,
         "best_acc": 0.235595703125,
         "steps_to_plateau": 400
       },
       {
-        "lr": 0.0015,
-        "best_acc": 0.256439208984375,
-        "steps_to_plateau": 400
-      },
-      {
         "lr": 0.002,
         "best_acc": 0.37872314453125,
-        "steps_to_plateau": 400
-      },
-      {
-        "lr": 0.003,
-        "best_acc": 0.70318603515625,
         "steps_to_plateau": 400
       }
     ]
   },
   "negctrl.B.s100": {
-    "best": 0.70318603515625,
+    "best": 0.37872314453125,
     "plateau": 400,
     "params": 100680,
-    "sec": 10.0,
+    "sec": 11.0,
     "seed": 100,
-    "lr": 0.003,
+    "lr": 0.002,
     "cap": 400
   },
   "negctrl.B.s101": {
-    "best": 0.819915771484375,
+    "best": 0.638336181640625,
     "plateau": 400,
     "params": 100680,
-    "sec": 10.2,
+    "sec": 11.1,
     "seed": 101,
-    "lr": 0.003,
+    "lr": 0.002,
     "cap": 400
   },
   "s3_report": {
@@ -315,7 +319,41 @@
           },
           {
             "lr": 0.002,
-            "best_acc": 0.5477294921875,
+            "best_acc": 0.547760009765625,
+            "steps_to_plateau": 400
+          }
+        ]
+      },
+      "surprise_random": {
+        "name": "Prizma.d64L2H2_surprise_gate=True_surprise_mode=random",
+        "best_lr": 0.002,
+        "params": 100680,
+        "summary": {
+          "n": 2,
+          "mean": 0.5272674560546875,
+          "median": 0.5272674560546875,
+          "sd": 0.031052449283674375,
+          "ci95": [
+            0.24827226844245326,
+            0.8062626436669218
+          ],
+          "min": 0.50531005859375,
+          "max": 0.549224853515625,
+          "solve_rate": 0.0
+        },
+        "accs": [
+          0.549224853515625,
+          0.50531005859375
+        ],
+        "lr_grid": [
+          {
+            "lr": 0.001,
+            "best_acc": 0.227813720703125,
+            "steps_to_plateau": 400
+          },
+          {
+            "lr": 0.002,
+            "best_acc": 0.549224853515625,
             "steps_to_plateau": 400
           }
         ]
@@ -389,12 +427,7 @@
         ]
       }
     },
-    "unrunnable_arms": {
-      "surprise_random": {
-        "name": "Prizma.d64L2H2_surprise_gate=True_surprise_mode=random",
-        "reason": "AssertionError: surprise_mode='random' requires surprise_gen"
-      }
-    },
+    "unrunnable_arms": {},
     "h2h_vs_baseline": {
       "surprise_norm": {
         "lower_is_better": false,
@@ -423,6 +456,33 @@
         "holm_p_adj": 0.13212453907151825,
         "holm_reject": false
       },
+      "surprise_random": {
+        "lower_is_better": false,
+        "tost": {
+          "delta": 0.1213531494140625,
+          "ci90": [
+            -0.0052425818648897116,
+            0.2479488806930147
+          ],
+          "margin": 0.05,
+          "p_lower": 0.03074003356459497,
+          "p_upper": 0.8857355392430872,
+          "equivalent": false
+        },
+        "margin": 0.05,
+        "superiority": {
+          "delta": 0.1213531494140625,
+          "t": 3.0879401897322847,
+          "df": 1.7526736962032197,
+          "p_value": 0.053403767205136246,
+          "significant": false
+        },
+        "delta": 0.1213531494140625,
+        "win_basis": "holm",
+        "verdict": "INCONCLUSIVE",
+        "holm_p_adj": 0.16021130161540875,
+        "holm_reject": false
+      },
       "surprise_constant": {
         "lower_is_better": false,
         "tost": {
@@ -447,7 +507,7 @@
         "delta": 0.1602630615234375,
         "win_basis": "holm",
         "verdict": "INCONCLUSIVE",
-        "holm_p_adj": 0.11060668937948526,
+        "holm_p_adj": 0.14747558583931367,
         "holm_reject": false
       },
       "inctx_lr": {
@@ -480,15 +540,15 @@
     },
     "surprise_verdict": {
       "vs_baseline_holm_reject": false,
-      "vs_random": "UNAVAILABLE (control unrunnable)",
+      "vs_random": "INCONCLUSIVE",
       "vs_constant": "INCONCLUSIVE",
       "beats_both_controls": false,
       "earns_novel_core_slot": false,
       "controls_available": {
-        "random": false,
+        "random": true,
         "constant": true
       },
-      "note": "INCONCLUSIVE: control(s) ['random'] unrunnable in this model build; cannot claim surprise-targeting beats BOTH controls.",
+      "note": null,
       "significance_basis": "all legs Holm-corrected: vs-baseline within the candidate family; vs-random/vs-constant within their own 2-test control family"
     },
     "inctx_lr_verdict": {
@@ -496,17 +556,17 @@
       "vs_baseline_holm_reject": false
     },
     "negative_control": {
-      "p_value": 0.7505618821492774,
+      "p_value": 0.7141932917535747,
       "significant": false,
       "pass": true,
-      "delta": -0.063262939453125,
+      "delta": -0.1026153564453125,
       "accs_a": [
-        0.74835205078125,
-        0.648223876953125
+        0.438507080078125,
+        0.373321533203125
       ],
       "accs_b": [
-        0.70318603515625,
-        0.819915771484375
+        0.37872314453125,
+        0.638336181640625
       ],
       "seeds_a": [
         0,

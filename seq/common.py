@@ -27,10 +27,15 @@ import torch.nn.functional as F
 
 
 def get_device(prefer="mps"):
+    # CUDA always wins when present (Colab/A100). The prior logic returned cuda ONLY when
+    # prefer=='cuda' was passed explicitly, so every runner using the default prefer='mps'
+    # silently fell back to CPU on a CUDA box (caught live during the A100 campaign — the
+    # recall-gate runner logged device=cpu while an A100 sat idle). Detect cuda first so the
+    # GPU is used by default; the mps/cpu paths below are unchanged for local Apple-silicon dev.
+    if torch.cuda.is_available():
+        return torch.device("cuda")
     if prefer == "mps" and torch.backends.mps.is_available():
         return torch.device("mps")
-    if prefer == "cuda" and torch.cuda.is_available():
-        return torch.device("cuda")
     return torch.device("cpu")
 
 

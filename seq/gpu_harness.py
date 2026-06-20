@@ -24,6 +24,7 @@ RNG-clean task instance, exactly like gpu_bench's task_fac).
 """
 from __future__ import annotations
 
+import fcntl
 import json
 import os
 import time
@@ -42,6 +43,8 @@ from .stats import (
 from .transformer import Transformer, TFConfig
 from .prizma_seq import PrizmaSeqLM, PrizmaSeqConfig
 from .hybrid import hybrid_factory
+from .gla import gla_factory
+from .mamba2 import mamba2_factory
 
 
 # =========================================================== recipe constants ====
@@ -77,20 +80,45 @@ def _json_default(o):
 
 
 def _save(d, out_path):
-    """Atomic crash-safe write (json -> .tmp -> os.replace), reused from gpu_bench._save. os.replace
-    is atomic on the same filesystem, so a reader never observes a half-written results file and a
-    Colab disconnect mid-write cannot corrupt the ledger. `default=_json_default` makes the numpy
-    scalars in the powered-stats payload serializable (the payload this harness exists to persist)."""
+    """Atomic crash-safe write (json -> .tmp -> os.replace), reused from gpu_bench._save.
+    Uses fcntl.flock on a lockfile (out_path + ".lock") to implement a process-safe
+    load-merge-save mechanism."""
     os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
-    tmp = out_path + ".tmp"
-    with open(tmp, "w") as f:
-        json.dump(d, f, indent=2, default=_json_default)
-    os.replace(tmp, out_path)
+    lock_path = out_path + ".lock"
+    with open(lock_path, "a+") as lock_f:
+        fcntl.flock(lock_f.fileno(), fcntl.LOCK_EX)
+        
+        disk_res = {}
+        if os.path.exists(out_path):
+            try:
+                with open(out_path, "r") as f:
+                    disk_res = json.load(f)
+            except Exception:
+                pass
+        
+        disk_res.update(d)
+        
+        tmp = out_path + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(disk_res, f, indent=2, default=_json_default)
+        os.replace(tmp, out_path)
+        
+        d.clear()
+        d.update(disk_res)
 
 
 def load_results(out_path):
     """Load the resumable ledger (empty dict if absent)."""
-    return json.load(open(out_path)) if os.path.exists(out_path) else {}
+    if not os.path.exists(out_path):
+        return {}
+    lock_path = out_path + ".lock"
+    os.makedirs(os.path.dirname(os.path.abspath(lock_path)), exist_ok=True)
+    with open(lock_path, "a+") as lock_f:
+        fcntl.flock(lock_f.fileno(), fcntl.LOCK_SH)
+        if not os.path.exists(out_path):
+            return {}
+        with open(out_path, "r") as f:
+            return json.load(f)
 
 
 # ===================================================================== run_cell ==
@@ -141,7 +169,10 @@ def sweep_then_seeds(res, prefix, model_fac, task_fac, base_cfg: TrainConfig, de
     Everything is cached + crash-safe: the sweep result is stored under f'{prefix}.sweep' and each
     seed cell under f'{prefix}.s{seed}', so a disconnect resumes exactly where it stopped.
 
-    Returns: {best_lr, lr_grid (list of {lr,best_acc,steps_to_plateau}), per_seed: [records], accs}.
+    Returns: {best_lr, lr_grid (list of {lr,best_acc,steps_to_plateau}), per_seed: [records], accs,
+              params}. `params` is the trainable-param count of the arm (from the first seed cell),
+    surfaced through the result dict so callers don't have to reach back into the raw ledger by a
+    reconstructed cellkey (e.g. res[f"...s{seeds[0]}"]["params"]).
     """
     sweep_key = f"{prefix}.sweep"
     if sweep_key in res and "best_lr" in res[sweep_key]:
@@ -151,7 +182,7 @@ def sweep_then_seeds(res, prefix, model_fac, task_fac, base_cfg: TrainConfig, de
         V, T = task.vocab, task.seq_len
         zero_arg_fac = lambda: model_fac(V, T)
         # sweep_lr internally uses build_and_train (seed-pinned) for every LR on the grid.
-        sweep = sweep_lr(zero_arg_fac, task, base_cfg, device, grid=grid, seed=seeds[0])
+        sweep = sweep_lr(zero_arg_fac, task, base_cfg, device, grid=grid, seed=0)
         res[sweep_key] = sweep
         if out_path is not None:
             _save(res, out_path)
@@ -167,6 +198,9 @@ def sweep_then_seeds(res, prefix, model_fac, task_fac, base_cfg: TrainConfig, de
         "lr_grid": sweep["grid"],
         "per_seed": per_seed,
         "accs": [rec["best"] for rec in per_seed],
+        # surface the arm's param count (identical across seeds) so callers read it from the result
+        # dict instead of reconstructing a cellkey into the raw ledger.
+        "params": per_seed[0]["params"],
     }
 
 
@@ -247,7 +281,7 @@ def holm_family(pvals, alpha=0.05):
 def make_arm(kind, d, L, H, **knobs):
     """Declarative arm spec -> (name, factory).
 
-    kind in {'tf','prizma','hybrid'}.
+    kind in {'tf','prizma','hybrid','gla','mamba2'}.
     factory has the (lambda V, T: nn.Module) signature so it drops into run_cell / sweep_then_seeds.
     For 'prizma' and 'hybrid', `knobs` forward the v2 PrizmaSeqConfig levers verbatim:
       out_gate, state_norm, decoupled_gate, surprise_gate, surprise_mode, n_delta,
@@ -283,7 +317,22 @@ def make_arm(kind, d, L, H, **knobs):
         fac = hybrid_factory(d, L, H, **knobs)   # returns lambda V, T: HybridSeqLM(...)
         return name, fac
 
-    raise ValueError(f"unknown arm kind {kind!r} (expected 'tf'|'prizma'|'hybrid')")
+    if kind == "gla":
+        # Faithful Gated Linear Attention SOTA baseline (seq.gla). knobs forward to GLAConfig
+        # (chunk, expand_k, expand_v, gate_low_rank_dim, gate_logit_normalizer, ...).
+        name = f"GLA.{scale}{_knob_tag()}"
+        fac = gla_factory(d, L, H, **knobs)      # returns lambda V, T: GLALM(...)
+        return name, fac
+
+    if kind == "mamba2":
+        # Faithful Mamba-2 (SSD / state-space duality) SOTA baseline (seq.mamba2). knobs forward to
+        # Mamba2Config (d_state, d_conv, chunk, ...).
+        name = f"Mamba2.{scale}{_knob_tag()}"
+        fac = mamba2_factory(d, L, H, **knobs)   # returns lambda V, T: Mamba2LM(...)
+        return name, fac
+
+    raise ValueError(
+        f"unknown arm kind {kind!r} (expected 'tf'|'prizma'|'hybrid'|'gla'|'mamba2')")
 
 
 # ============================================================ negative_control ==
@@ -291,7 +340,7 @@ NEGCTRL_SEED_OFFSET = 100
 
 
 def negative_control(res, scale, task_fac, base_cfg: TrainConfig, device, seeds, out_path,
-                     seed_offset=NEGCTRL_SEED_OFFSET):
+                     seed_offset=NEGCTRL_SEED_OFFSET, grid=DEFAULT_GRID):
     """The INTEGRITY CANARY. Build TWO arms with the SAME (byte-identical) Prizma config but draw
     DIFFERENT per-seed seeds for arm B (seeds vs seeds+offset), run sweep_then_seeds for each, and
     assert via superiority_test that they are NOT significantly different (p should sit comfortably
@@ -310,14 +359,20 @@ def negative_control(res, scale, task_fac, base_cfg: TrainConfig, device, seeds,
     pipeline (stats, seeding, or eval) is broken — so this MUST be present and pass before any real
     'win' is trusted.
 
+    `grid` is the LR sweep grid; it is THREADED into both arms' sweep_then_seeds so the negative
+    control sweeps over the SAME grid as the campaign (instead of silently falling back to
+    DEFAULT_GRID). The smoke passes its short grid; the full run passes the campaign grid.
+
     Returns {p_value, significant, pass, accs_a, accs_b, delta, seeds_a, seeds_b}.
     """
     d, L, H = scale
     _, fac = make_arm("prizma", d, L, H)          # baseline Prizma, no knobs — identical config
     seeds_a = tuple(seeds)
     seeds_b = tuple(s + seed_offset for s in seeds)   # SAME arch, DIFFERENT seeds (the real canary)
-    ra = sweep_then_seeds(res, "negctrl.A", fac, task_fac, base_cfg, device, seeds_a, out_path=out_path)
-    rb = sweep_then_seeds(res, "negctrl.B", fac, task_fac, base_cfg, device, seeds_b, out_path=out_path)
+    ra = sweep_then_seeds(res, "negctrl.A", fac, task_fac, base_cfg, device, seeds_a,
+                          grid=grid, out_path=out_path)
+    rb = sweep_then_seeds(res, "negctrl.B", fac, task_fac, base_cfg, device, seeds_b,
+                          grid=grid, out_path=out_path)
     st = superiority_test(ra["accs"], rb["accs"])
     return {
         "p_value": st["p_value"],

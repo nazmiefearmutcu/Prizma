@@ -78,10 +78,23 @@ class PrizmaSeqConfig:
     # --- surprise-gated write (Lever A) ---
     surprise_gate: bool = False   # if True, scale write by g_t = 1+tanh(||eps_t||) (default OFF = identical)
     surprise_mode: str = 'norm'   # 'norm' | 'random' | 'constant' — controls for R9 ablation
+    surprise_seed: int = 1234     # deterministic seed for the surprise_mode='random' generator (R8/R9):
+                                  #   the block re-seeds an OWNED torch.Generator to this value each
+                                  #   forward, so the random control gates are reproducible across calls.
+                                  #   Ignored by 'norm'/'constant' (which need no generator).
     # --- in-context per-channel learning rate (Lever G, RWKV-7 "Goose" generalized delta) ---
     inctx_lr: bool = False        # if True, replace scalar write gate beta_t with a per-VALUE-channel
                                   #   rate eta_t = beta_cap * sigmoid(W_eta x_t) in R^{d_h}, modulating
                                   #   the delta write per state channel. Default OFF = byte-identical.
+    # --- residual + embedding dropout (regularizer-gap lever) ---
+    dropout: float = 0.0          # opt-in residual+embedding dropout. Default 0.0 == BYTE-IDENTICAL:
+                                  #   nn.Dropout(0.0) is an identity that draws NO rng, so the default
+                                  #   forward (and any downstream rng) is unchanged. Closes the
+                                  #   architectural regularizer gap vs TFConfig (transformer.py has
+                                  #   attention dropout; PrizmaSeqConfig had NONE), so gpu_charlm2.py
+                                  #   ran dropout-free to avoid regularizing only the TF (unfair) and
+                                  #   leaned on weight_decay alone. Enabling this UNBLOCKS a fair
+                                  #   symmetric-dropout char-LM experiment. NOT a BPC claim — capability.
 
     def __post_init__(self):
         if self.d_ff is None:
@@ -95,6 +108,12 @@ class PrizmaSeqConfig:
         # Lever G is scoped to n_delta==1 (per-channel eta is not combined with DeltaProduct).
         assert not (self.inctx_lr and self.n_delta >= 2), \
             "inctx_lr (per-channel eta) is only implemented for n_delta==1, not n_delta>=2."
+        # inctx_lr (Lever G) and surprise_gate (Lever A) are the TWO novel-core CANDIDATES for the S3
+        # ablation; enabling both is a SILENT FOOTGUN — the delta kernel branch is
+        # `if eta is not None: ... elif surprise:`, so eta wins and surprise is silently ignored. Reject
+        # the invalid combo so each S3 arm enables exactly one novel-core lever.
+        assert not (self.inctx_lr and self.surprise_gate), \
+            "inctx_lr and surprise_gate are mutually exclusive novel-core candidates; enable exactly one."
         # d_phi = delta key/query dim after the optional feature map (= d_h when 'none').
         # 'rand_linear' = a FIXED random linear map d_h->d_phi (a CONTROL: it stays in a d_h-rank
         # subspace so it must give NO capacity gain, proving the quad2 MONOMIALS are what help).
@@ -170,6 +189,8 @@ class PrizmaSeqBlock(nn.Module):
         ]) if cfg.n_delta >= 2 else None
         self.norm2 = RMSNorm(d)
         self.mlp = SwiGLU(TFConfig(d_model=d, d_ff=cfg.d_ff))
+        # opt-in residual dropout (default 0.0 == identity, draws no rng -> byte-identical).
+        self.drop = nn.Dropout(cfg.dropout)
         self.win_scale = dh ** -0.5
         self.d_phi = cfg.d_phi
         if cfg.feat_map == "quad2":
@@ -324,11 +345,19 @@ class PrizmaSeqBlock(nn.Module):
             else:
                 # n_delta=1: standard path (byte-identical when surprise_gate=False, with phi and beta_e)
                 # Lever G: eta (per-value-channel LR) threads through; eta=None keeps the fast path.
+                # Lever A 'random' control needs an explicit torch.Generator (_surprise_gate asserts
+                # gen is not None for mode='random'). Own a reproducible one on the COMPUTE device,
+                # re-seeded each forward so two passes match byte-for-byte (R8/R9). 'norm'/'constant'
+                # need no generator -> surprise_gen stays None and the path is byte-identical to before.
+                surprise_gen = None
+                if self.cfg.surprise_gate and self.cfg.surprise_mode == 'random':
+                    surprise_gen = torch.Generator(device=q.device).manual_seed(self.cfg.surprise_seed)
                 o_delta, _ = chunked_delta(self._phi(q), self._phi(k), v, beta, alpha,
                                            chunk=self.cfg.chunk, write_mode=self.cfg.write_mode,
                                            beta_e=beta_e,
                                            surprise=self.cfg.surprise_gate,
                                            surprise_mode=self.cfg.surprise_mode,
+                                           surprise_gen=surprise_gen,
                                            eta=eta)   # [B,H,T,d_h]
             # delta state keyed by phi(q),phi(k) (dim d_phi); values stay d_h -> state [B,H,d_h,d_phi]
             if self.state_rms is not None:
@@ -340,8 +369,9 @@ class PrizmaSeqBlock(nn.Module):
         o = o.transpose(1, 2).reshape(B, T, d)                                     # merge heads
         if self.W_g is not None:
             o = o * torch.sigmoid(self.W_g(self.norm1(h)))   # gate on block input (pre-conv normed)
-        h = h + self.W_o(o)
-        h = h + self.mlp(self.norm2(h))
+        # opt-in residual dropout on the mixer + MLP outputs (p=0 => identity, no rng -> byte-identical)
+        h = h + self.drop(self.W_o(o))
+        h = h + self.drop(self.mlp(self.norm2(h)))
         return h
 
     # ---- O(1)-per-step inference path (for B5 latency / true streaming) ---- #
@@ -422,8 +452,9 @@ class PrizmaSeqBlock(nn.Module):
         o = (o_delta + o_win).reshape(B, 1, -1)
         if self.W_g is not None:
             o = o * torch.sigmoid(self.W_g(self.norm1(h_t)))   # gate on block input, mirrors forward
-        h = h_t + self.W_o(o)
-        h = h + self.mlp(self.norm2(h))
+        # mirror forward's residual dropout (at p=0/eval it is identity -> step()==forward() guard holds)
+        h = h_t + self.drop(self.W_o(o))
+        h = h + self.drop(self.mlp(self.norm2(h)))
         return h, (S, rk, rv, cring, pos + 1)
 
 
@@ -433,6 +464,8 @@ class PrizmaSeqLM(nn.Module):
         self.cfg = cfg
         self.tok = nn.Embedding(cfg.vocab, cfg.d_model)
         self.pos = nn.Embedding(cfg.max_len, cfg.d_model) if cfg.learned_pos else None
+        # opt-in embedding dropout (default 0.0 == identity, no rng -> byte-identical).
+        self.drop = nn.Dropout(cfg.dropout)
         self.blocks = nn.ModuleList([PrizmaSeqBlock(cfg) for _ in range(cfg.n_layers)])
         self.nf = RMSNorm(cfg.d_model)
         self.head = nn.Linear(cfg.d_model, cfg.vocab, bias=False)
@@ -452,6 +485,7 @@ class PrizmaSeqLM(nn.Module):
         h = self.tok(idx)
         if self.pos is not None:
             h = h + self.pos(torch.arange(T, device=idx.device))[None]
+        h = self.drop(h)   # embedding dropout (p=0 => identity, no rng -> byte-identical)
         for blk in self.blocks:
             h = blk(h)
         return self.head(self.nf(h))
@@ -477,6 +511,7 @@ class PrizmaSeqLM(nn.Module):
         if self.pos is not None:
             p = state[0][4] if state else 0
             h = h + self.pos(torch.tensor([p], device=tok.device))[None]
+        h = self.drop(h)   # mirror forward's embedding dropout (p=0/eval => identity)
         new = []
         for blk, st in zip(self.blocks, state):
             h, st2 = blk.step(h, st)

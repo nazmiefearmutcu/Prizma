@@ -1,7 +1,7 @@
 # Prizma-Seq v2 — Pareto-Dominance Design Spec
 
 > **Date:** 2026-06-07 · **Status:** approved (owner) → writing-plans next
-> **Repo:** `/Volumes/disk 2/Desktop_Migrate_2026-05-28/Projeler/proje/PRISM`
+> **Repo:** `/Volumes/disk 2/Desktop_Migrate_2026-05-28/Projeler/proje/Prizma`
 > **Predecessor record:** `docs/PRIZMA_SEQ_REPORT.md`, `committee/round1_synthesis.md`, `docs/TRANSFORMER_ALTERNATIVE_BRIEF.md`
 
 ## 0. Mission (owner, locked)

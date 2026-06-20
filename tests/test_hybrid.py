@@ -14,9 +14,12 @@ Covered:
       rel), printing the actual spread.
   (e) a tiny FAST smoke: 2 train_model steps on a small MQAR run without error and
       produce a finite loss.
+  (f) streaming parity: the composed step() (PrizmaSeqBlock.step O(1) + Block.step KV-cached)
+      must numerically EQUAL forward() to < 1e-4, including a learned_pos=True case.
 """
 from __future__ import annotations
 
+import pytest
 import torch
 
 from seq.hybrid import HybridSeqLM, hybrid_factory
@@ -116,3 +119,23 @@ def test_train_smoke_finite_loss():
     res = train_model(m, task, cfg, device, seed=0)
     assert math.isfinite(res.final_loss), f"non-finite loss: {res.final_loss}"
     assert len(res.history) >= 1
+
+
+# --------------------------------------------------------------------------- #
+# (f) streaming parity: the composed step() (PrizmaSeqBlock.step O(1) + Block.step KV-cached)
+#     must numerically EQUAL forward() to < 1e-4, including a learned_pos=True case.
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize("learned_pos", [False, True])
+def test_step_equals_forward(learned_pos):
+    m = hybrid_factory(64, 4, 2, learned_pos=learned_pos)(32, 64)
+    m.train(False)
+    torch.manual_seed(0)
+    x = torch.randint(0, 32, (2, 40))
+    y = m(x)                                          # parallel forward
+    st = m.init_state(2, torch.device("cpu"))
+    outs = []
+    for t in range(x.shape[1]):
+        lg, st = m.step(x[:, t:t + 1], st)
+        outs.append(lg)
+    d = (y - torch.cat(outs, dim=1)).abs().max().item()
+    assert d < 1e-4, f"hybrid step()!=forward() (learned_pos={learned_pos}): max|d|={d:.2e}"

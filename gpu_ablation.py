@@ -116,7 +116,9 @@ def run_ablation(*, scale, task_fac, device, seeds, grid, cap, eval_every, smoke
         summ = powered_summary(r["accs"], solve_thresh=SOLVE_THRESH)
         arm_results[tag] = {"name": name, "best_lr": r["best_lr"], "lr_grid": r["lr_grid"],
                             "accs": r["accs"], "summary": summ,
-                            "params": res[f"s3.{tag}.s{seeds[0]}"]["params"]}
+                            # params now comes back through sweep_then_seeds' result dict (no fragile
+                            # reconstructed-cellkey reach into the raw ledger).
+                            "params": r["params"]}
         ci = summ["ci95"]
         print(f"   best_lr={r['best_lr']:.1e}  solve={summ['solve_rate']:.2f}  "
               f"median={summ['median']:.3f}  mean={summ['mean']:.3f} "
@@ -207,7 +209,7 @@ def run_ablation(*, scale, task_fac, device, seeds, grid, cap, eval_every, smoke
 
     # ---- negative control (integrity canary) ---------------------------------------------------- #
     print("\n-- negative control: two byte-identical Prizma arms must NOT differ --", flush=True)
-    nc = negative_control(res, scale, task_fac, base_cfg, device, seeds, out_path=OUT)
+    nc = negative_control(res, scale, task_fac, base_cfg, device, seeds, out_path=OUT, grid=grid)
     print(f"   p={nc['p_value']:.3f}  significant={nc['significant']}  PASS={nc['pass']}", flush=True)
 
     # ---- persist the full report ---------------------------------------------------------------- #

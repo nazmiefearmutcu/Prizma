@@ -1,0 +1,146 @@
+\begin{thebibliography}{10}
+
+\bibitem{arora2024zoology}
+Simran Arora, Sabri Eyuboglu, Aman Timalsina, Isys Johnson, Michael Poli, James
+  Zou, Atri Rudra, and Christopher R{\'e}.
+\newblock Zoology: Measuring and improving recall in efficient language models.
+\newblock In {\em International Conference on Learning Representations (ICLR)},
+  2024.
+
+\bibitem{arora2024based}
+Simran Arora, Sabri Eyuboglu, Michael Zhang, Aman Timalsina, Silas Alberti,
+  Dylan Zinsley, James Zou, Atri Rudra, and Christopher R{\'e}.
+\newblock Simple linear attention language models balance the recall-throughput
+  tradeoff.
+\newblock In {\em International Conference on Machine Learning (ICML)}, 2024.
+
+\bibitem{choromanski2021performer}
+Krzysztof Choromanski, Valerii Likhosherstov, David Dohan, Xingyou Song,
+  Andreea Gane, Tamas Sarlos, Peter Hawkins, Jared Davis, Afroz Mohiuddin,
+  Lukasz Kaiser, David Belanger, Lucy Colwell, and Adrian Weller.
+\newblock Rethinking attention with performers.
+\newblock In {\em International Conference on Learning Representations (ICLR)},
+  2021.
+
+\bibitem{dao2024mamba2}
+Tri Dao and Albert Gu.
+\newblock Transformers are ssms: Generalized models and efficient algorithms
+  through structured state space duality.
+\newblock In {\em International Conference on Machine Learning (ICML)}, 2024.
+
+\bibitem{de2024griffin}
+Soham De, Samuel~L. Smith, Anushan Fernando, Aleksandar Botev, George
+  Cristian-Muraru, Albert Gu, Ruba Haroun, Leonard Berrada, Yutian Chen,
+  Srivatsan Srinivasan, Guillaume Desjardins, Arnaud Doucet, David Budden,
+  Yee~Whye Teh, Razvan Pascanu, Nando De~Freitas, and Caglar Gulcehre.
+\newblock Griffin: Mixing gated linear recurrences with local attention for
+  efficient language models.
+\newblock {\em arXiv preprint arXiv:2402.19427}, 2024.
+
+\bibitem{friston2010free}
+Karl Friston.
+\newblock The free-energy principle: A unified brain theory?
+\newblock {\em Nature Reviews Neuroscience}, 11(2):127--138, 2010.
+
+\bibitem{gu2024mamba}
+Albert Gu and Tri Dao.
+\newblock Mamba: Linear-time sequence modeling with selective state spaces.
+\newblock In {\em Conference on Language Modeling (COLM)}, 2024.
+
+\bibitem{gu2022s4}
+Albert Gu, Karan Goel, and Christopher R{\'e}.
+\newblock Efficiently modeling long sequences with structured state spaces.
+\newblock In {\em International Conference on Learning Representations (ICLR)},
+  2022.
+
+\bibitem{katharopoulos2020transformers}
+Angelos Katharopoulos, Apoorv Vyas, Nikolaos Pappas, and Fran{\c{c}}ois
+  Fleuret.
+\newblock Transformers are rnns: Fast autoregressive transformers with linear
+  attention.
+\newblock In {\em International Conference on Machine Learning (ICML)}, 2020.
+
+\bibitem{kingma2015adam}
+Diederik~P. Kingma and Jimmy Ba.
+\newblock Adam: A method for stochastic optimization.
+\newblock In {\em International Conference on Learning Representations (ICLR)},
+  2015.
+
+\bibitem{loshchilov2019adamw}
+Ilya Loshchilov and Frank Hutter.
+\newblock Decoupled weight decay regularization.
+\newblock In {\em International Conference on Learning Representations (ICLR)},
+  2019.
+
+\bibitem{mahoney2011text8}
+Matt Mahoney.
+\newblock Large text compression benchmark.
+\newblock \url{http://mattmahoney.net/dc/text.html}, 2011.
+
+\bibitem{nokland2016dfa}
+Arild N{\o}kland.
+\newblock Direct feedback alignment provides learning in deep neural networks.
+\newblock In {\em Advances in Neural Information Processing Systems (NeurIPS)},
+  2016.
+
+\bibitem{rao1999predictive}
+Rajesh P.~N. Rao and Dana~H. Ballard.
+\newblock Predictive coding in the visual cortex: A functional interpretation
+  of some extra-classical receptive-field effects.
+\newblock {\em Nature Neuroscience}, 2(1):79--87, 1999.
+
+\bibitem{schlag2021linear}
+Imanol Schlag, Kazuki Irie, and J{\"u}rgen Schmidhuber.
+\newblock Linear transformers are secretly fast weight programmers.
+\newblock In {\em International Conference on Machine Learning (ICML)}, 2021.
+
+\bibitem{shazeer2020glu}
+Noam Shazeer.
+\newblock Glu variants improve transformer.
+\newblock {\em arXiv preprint arXiv:2002.05202}, 2020.
+
+\bibitem{su2021roformer}
+Jianlin Su, Yu~Lu, Shengfeng Pan, Ahmed Murtadha, Bo~Wen, and Yunfeng Liu.
+\newblock Roformer: Enhanced transformer with rotary position embedding.
+\newblock {\em arXiv preprint arXiv:2104.09864}, 2021.
+
+\bibitem{touvron2023llama}
+Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne
+  Lachaux, Timoth{\'e}e Lacroix, Baptiste Rozi{\`e}re, Naman Goyal, Eric
+  Hambro, Faisal Azhar, et~al.
+\newblock Llama: Open and efficient foundation language models.
+\newblock {\em arXiv preprint arXiv:2302.13971}, 2023.
+
+\bibitem{vaswani2017attention}
+Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,
+  Aidan~N. Gomez, Lukasz Kaiser, and Illia Polosukhin.
+\newblock Attention is all you need.
+\newblock In {\em Advances in Neural Information Processing Systems (NeurIPS)},
+  2017.
+
+\bibitem{yang2024gateddeltanet}
+Songlin Yang, Jan Kautz, and Ali Hatamizadeh.
+\newblock Gated delta networks: Improving mamba2 with delta rule.
+\newblock {\em arXiv preprint arXiv:2412.06464}, 2024.
+
+\bibitem{yang2024deltanet}
+Songlin Yang, Bailin Wang, Yu~Zhang, Yikang Shen, and Yoon Kim.
+\newblock Parallelizing linear transformers with the delta rule over sequence
+  length.
+\newblock In {\em Advances in Neural Information Processing Systems (NeurIPS)},
+  2024.
+
+\bibitem{zhang2019rmsnorm}
+Biao Zhang and Rico Sennrich.
+\newblock Root mean square layer normalization.
+\newblock In {\em Advances in Neural Information Processing Systems (NeurIPS)},
+  2019.
+
+\bibitem{zhang2024hedgehog}
+Michael Zhang, Kush Bhatia, Hermann Kumbong, and Christopher R{\'e}.
+\newblock The hedgehog and the porcupine: Expressive linear attentions with
+  softmax mimicry.
+\newblock In {\em International Conference on Learning Representations (ICLR)},
+  2024.
+
+\end{thebibliography}

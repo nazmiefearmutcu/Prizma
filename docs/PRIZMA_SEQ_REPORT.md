@@ -318,6 +318,76 @@ it is seed-fragile at this scale: P1 was 2/3 with a 0.785 failure.)
 | **Precision/surprise signal used causally for gating** | Prizma | new (tested in B6) |
 | **Task-free continual SEQUENCE modeling** | Prizma | new axis (secondary) |
 
+## v2 SOTA-landscape + levers (2026-06-08 — METHODS built; RECALL + char-LM legs LANDED, 4-arm landscape pending)
+This session built out the evidence apparatus so the §4 legs can flip to *powered, decisive* verdicts
+against the **SOTA landscape**, not just one Transformer. All of the below is reviewed code (each via
+implement→spec-review→quality-review; protected forwards byte-identical; 143→162 tests). **The RECALL leg
+has now LANDED** (powered n=10, A100; see "Results vs the bar" below); the char-LM **BPC** leg (S1) and the
+4-arm GLA/Mamba-2 landscape `--full` runs are still on the GPU and remain explicitly PENDING.
+
+**SOTA baselines (faithful, non-strawman, param-matched at matched d/L/H):**
+| Arm | Module | Family | Param-vs-TF | Rigor |
+|---|---|---|---|---|
+| **GLA** (Gated Linear Attention) | `seq/gla.py` | gated linear attention | +1.58% | recurrent + chunk-parallel (chunk==recurrent <1e-7) + O(1) `step()==forward()` guard |
+| **Mamba-2 (SSD)** | `seq/mamba2.py` | structured state-space | +0.62% | scalar-A SSD + short conv + D-skip + z-gate; same chunk/recurrent/O(1) rigor |
+(plus the existing tuned **Transformer** `seq/transformer.py` and Samba-**hybrid** `seq/hybrid.py`.)
+
+**Head-to-head apparatus:** `seq/landscape.py` runs the 4 arms (TF / Prizma / GLA / Mamba-2) powered +
+LR-swept + seed-pinned on (a) the recall diagnostics (MQAR-hard / induction / selective-copy) and (b)
+char-LM **BPC** (`--charlm`), with a Holm-corrected verdict layer {BEATS / PARITY / WORSE / INCONCLUSIVE}
+(a statistical tie where Prizma leads reads INCONCLUSIVE, never WORSE) + an identical-model negative
+control. `seq/landscape_report.py` renders the persisted verdict JSONs into this report's Pareto tables
+(torch-free; renders only JSON-present numbers, no per-FLOP spin).
+
+**New model levers (off-path byte-identical — published v1 numbers unaffected):**
+- **Lever F** `seq/delta_fused.py` — fused chunked-delta via `torch.compile(chunked_delta)` (Inductor→Triton
+  on CUDA, provably-equivalent), exact eager fallback off-CUDA. A hand-written `@triton.jit` WY/UT kernel is
+  DEFERRED to be developed+verified ON the A100 (never shipped blind).
+- **Lever G (now chunk-parallel)** `seq/delta.py` — the per-VALUE-channel in-context rate `eta` was a
+  sequential `_delta_reference` scan; it is now an EXACT chunk-parallel **batched per-channel triangular
+  solve** (the within-chunk recurrence separates into `d_v` independent `(I+A^(c))eps^(c)=rhs^(c)` systems).
+  `eta=None` byte-identical (max|d|=0.0); `eta==_delta_reference` <1e-5 fwd+grad (pure+gated, cpu+mps).
+
+**Results vs the bar — RECALL leg (powered, n=10 seeds, A100, LANDED 2026-06-08; `results/campaign_2026-06-08/recall_gate.json`):**
+The TOST-parity gate (±0.05, flip-test guarded) **was NOT MET on any of the three recall legs**, so the honest
+recall claim **DOWNGRADES to "competitive"** — *not* a tested parity, and not a win:
+
+| Recall leg | TF mean (solve) | Prizma mean (solve) | Δ (Prizma−TF) | 90% CI | TOST-equiv | not-worse | flip-test |
+|---|---|---|---|---|---|---|---|
+| MQAR-hard | 0.840 (0.80) | 0.880 (0.80) | +0.040 | (−0.195, +0.275) | ✗ | ✗ | ✓ (bigger TF solves) |
+| Induction | 0.533 (0.50) | 0.818 (0.80) | +0.285 | (−0.056, +0.625) | ✗ | ✗ | ✓ |
+| Selective-copy | 0.975 (0.80) | 0.996 (1.00) | +0.022 | (−0.009, +0.052) | ✗ | ✓ | ✓ |
+
+_Read honestly: on point estimates Prizma's mean **and** solve-rate are ≥ TF on all three legs, but **no leg
+clears powered TOST-equivalence** at ±0.05 — selective-copy misses only because the upper CI (0.052) grazes
+just past the margin, while MQAR-hard/induction miss because the **Transformer baseline is high-variance** (on
+induction TF is bimodal: ~half its seeds collapse to ~0.06 while the rest reach ~0.99, so its CI is wide enough
+that equivalence cannot be certified even though Prizma is the more *reliable* arm). This is a
+conservative-against-a-noisy-baseline NON-result for parity, recorded as such; it is
+**not** evidence that Prizma beats attention on recall. (The identical-model negative control is a property of the
+landscape/harness legs, not this recall gate, so none is claimed here.)_
+
+> Scope rider (binding): ≤2M params (+1 confirmation 10–50M); char-LM + diagnostics; NOT a frontier/MMLU/
+> long-context claim; per-FLOP "dramatic" stays conditional unless all axes hold + powered. The char-LM leg has
+> now LANDED (below); the 4-arm GLA/Mamba-2 landscape remains PENDING.
+
+**Results vs the bar — CHAR-LM leg (text8, A100, LANDED 2026-06-09; `results/campaign_2026-06-08/charlm_partial_n7.json`):**
+The B4 bar (test BPC ≤ TF+0.05, val-selected best) is **MET** — Prizma-v2 is competitive within the margin, but
+*reliably* a hair behind (not a tie, not a win):
+
+| Arm | n | mean BPC ± sd | range | vs B4 bar (≤ TF+0.05) |
+| --- | --- | --- | --- | --- |
+| TF-v2 | 10 | 1.7243 ± 0.0091 | 1.706–1.736 | — |
+| **Prizma-v2** | 7 | 1.7449 ± 0.0028 | 1.742–1.751 | **PASS** (Δ = +0.0205 < +0.05) |
+
+_text8 (V=27, T=256, 10M train), d256L4H4, AdamW wd=0.1, val-based early-stop, param-match −0.16%, dropout-free
+(weight_decay-only — note the new opt-in `dropout` lever `16cdfdb` that closes Prizma's regularizer gap for a fair
+symmetric-dropout rerun). The gap is statistically **real** (Welch t≈6.7), so Prizma is NOT as good as the tuned
+Transformer on char-LM — it is **competitive within the ±0.05 tolerance**, ~0.02 BPC behind, and ~5× slower per
+step at this scale. **Honest n caveat:** the A100 disconnected at Prizma final s7, so Prizma is **n=7 (s0–s6)** vs
+TF n=10; the 7 Prizma seeds are extremely tight (sd 0.0028) so the verdict is robust to the 3 lost seeds, but it
+is disconnect-truncated, not a clean n=10. Supersedes the earlier n=2 B4 row (§4)._
+
 ## Open frontiers (explicitly NOT claimed)
 - Large-scale LM parity (we test ≤1.4M params, char-level).
 - Backprop-free parity (local/DFA mode is a bonus axis with a measured tax, never a gate).

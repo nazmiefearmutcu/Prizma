@@ -41,10 +41,18 @@ PARITY DEFINITION (the council bar).
 Run:
   python3.13 seq/recall_gate.py --smoke        # tiny plumbing smoke (CPU/MPS, minutes) -> results/recall_gate.json
   python3.13 -m seq.recall_gate --smoke        # same, as a module
-  python3.13 seq/recall_gate.py                 # FULL gate (needs a GPU + budget; legs at the real scale)
+  python3.13 seq/recall_gate.py --full          # FULL gate (needs a GPU + budget; legs at the real scale)
+  python3.13 seq/recall_gate.py                 # no-arg ALSO runs the FULL gate (explicit; same as --full)
+
+CLI SAFETY. main() parses args with argparse: it recognizes --smoke and --full and NOTHING else. An
+UNKNOWN/typo'd flag makes argparse print a usage string and exit NON-ZERO — it NEVER silently launches
+the multi-hour FULL gate (which would also overwrite the committed results/recall_gate.json). The FULL
+gate runs ONLY on an explicit no-arg invocation or --full.
 """
 from __future__ import annotations
 
+import argparse
+import fcntl
 import json
 import os
 import sys
@@ -217,14 +225,44 @@ def _results_path(explicit=None):
     return os.path.join(res_dir, "recall_gate.json")
 
 
+def _merge_dicts(dict1, dict2):
+    """Recursively merges dict2 into dict1 in-place."""
+    for k, v in dict2.items():
+        if k in dict1 and isinstance(dict1[k], dict) and isinstance(v, dict):
+            _merge_dicts(dict1[k], v)
+        else:
+            dict1[k] = v
+    return dict1
+
+
 def _load(path):
-    return json.load(open(path)) if os.path.exists(path) else {}
+    if not os.path.exists(path):
+        return {}
+    lock_path = path + ".lock"
+    with open(lock_path, "a") as lock_file:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_SH)
+        with open(path, "r") as f:
+            return json.load(f)
 
 
 def _save(path, d):
-    tmp = path + ".tmp"
-    json.dump(d, open(tmp, "w"), indent=2)
-    os.replace(tmp, path)   # atomic: a crash mid-write never corrupts the ledger
+    lock_path = path + ".lock"
+    with open(lock_path, "a") as lock_file:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+        current_data = {}
+        if os.path.exists(path):
+            try:
+                with open(path, "r") as f:
+                    current_data = json.load(f)
+            except Exception:
+                current_data = {}
+        
+        merged_data = _merge_dicts(current_data, d)
+        tmp = path + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(merged_data, f, indent=2)
+        os.replace(tmp, path)
+        _merge_dicts(d, merged_data)
 
 
 # --- mixed-length INDUCTION wrapper (mirrors gpu_diag._MixedInduction; COMPOSES seq.tasks) ------- #
@@ -309,7 +347,7 @@ def _train_arm(res, results_path, leg, arm, model_fac, task_fac, *,
     # ---- stage-1: LR sweep (1 seed), records the FULL grid incl. rejected LRs (LR-fairness audit) ----
     if "sweep" not in cell:
         task = task_fac()
-        sw = sweep_lr(bound_fac, task, base_cfg, device, grid=lr_grid, seed=seeds[0])
+        sw = sweep_lr(bound_fac, task, base_cfg, device, grid=lr_grid, seed=0)
         cell["sweep"] = sw
         res["cells"][armkey] = cell
         _save(results_path, res)
@@ -514,10 +552,30 @@ def run_recall_gate(scale=(128, 2, 4), seeds=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), smo
     return gate
 
 
+def _build_parser():
+    """Argparse parser for the recall gate CLI. Recognizes ONLY --smoke and --full; argparse rejects
+    any other (unknown/typo'd) flag with a usage message + non-zero exit, so an unintended arg can
+    NEVER silently launch the multi-hour FULL gate (which would overwrite results/recall_gate.json).
+    Kept as its own helper so the arg-guard is unit-testable WITHOUT any training."""
+    p = argparse.ArgumentParser(
+        prog="recall_gate",
+        description="RECALL TOST-parity gate. With no flags (or --full) runs the FULL multi-hour gate; "
+                    "--smoke runs the tiny plumbing-only smoke. An unknown flag is rejected (non-zero "
+                    "exit) and does NOT launch the full gate.")
+    mode = p.add_mutually_exclusive_group()
+    mode.add_argument("--smoke", action="store_true",
+                      help="tiny plumbing-only smoke (CPU/MPS, minutes)")
+    mode.add_argument("--full", action="store_true",
+                      help="explicit FULL gate (same as no-arg; needs a GPU + budget)")
+    return p
+
+
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
-    smoke = "--smoke" in argv
-    run_recall_gate(smoke=smoke)
+    # argparse SystemExits non-zero on an unknown arg (printing usage) BEFORE we ever launch a run.
+    args = _build_parser().parse_args(argv)
+    # FULL gate runs only on an explicit no-arg invocation or --full; --smoke runs the smoke.
+    run_recall_gate(smoke=args.smoke)
 
 
 if __name__ == "__main__":

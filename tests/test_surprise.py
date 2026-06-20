@@ -249,6 +249,33 @@ def test_g1_step_equals_forward_surprise_gated():
     assert d < 1e-4, f"G1 surprise_gate+gated O(1) guard failed: max|d|={d:.2e}"
 
 
+def test_model_forward_surprise_random_runs_and_reproducible():
+    """Bug fix (Lever A wiring): a PrizmaSeqLM with surprise_gate=True, surprise_mode='random'
+    must complete a forward() pass and be reproducible.
+
+    Before the fix, PrizmaSeqBlock.forward called chunked_delta(surprise=True,
+    surprise_mode='random') WITHOUT a surprise_gen, tripping the assert in _surprise_gate
+    ('random' requires surprise_gen). The block must now own/thread a reproducible generator:
+      * forward() returns logits of shape [B,T,V], and
+      * two forwards of the SAME model give byte-identical output (R8/R9 reproducibility).
+    """
+    from seq.prizma_seq import PrizmaSeqLM, PrizmaSeqConfig
+    torch.manual_seed(0)
+    cfg = PrizmaSeqConfig(vocab=24, d_model=32, n_layers=1, n_heads=2, max_len=40,
+                          surprise_gate=True, surprise_mode='random')
+    m = PrizmaSeqLM(cfg)
+    m.train(False)
+    x = torch.randint(0, 24, (2, 20))
+    torch.manual_seed(123)
+    y1 = m(x)
+    assert tuple(y1.shape) == (2, 20, 24), f"expected [B,T,V]=[2,20,24], got {tuple(y1.shape)}"
+    assert y1.isfinite().all(), "random-surprise forward produced non-finite logits"
+    torch.manual_seed(123)
+    y2 = m(x)
+    d = (y1 - y2).abs().max().item()
+    assert d == 0.0, f"surprise_mode='random' forward not reproducible: max|d|={d:.2e}"
+
+
 def test_g1_surprise_off_identical_to_baseline():
     """Model with surprise_gate=False gives same output as default model (no regression)."""
     from seq.prizma_seq import PrizmaSeqLM, PrizmaSeqConfig
