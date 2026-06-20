@@ -1,0 +1,108 @@
+{
+  "50M": {
+    "config": {
+      "vocab": 32000,
+      "d_model": 512,
+      "n_layers": 10,
+      "n_heads": 8,
+      "dh": 64,
+      "d_phi": 320,
+      "window": 16,
+      "prizma_params": 47964832,
+      "transformer_params": 48015872,
+      "transformer_d_ff": 1376,
+      "param_diff_pct": 0.10641129734385393
+    },
+    "prizma_state_floats": 1802240,
+    "comparisons": [
+      {
+        "seq_len": 1024,
+        "tf_kv_cache_floats": 10485760,
+        "ratio": 5.818181818181818
+      },
+      {
+        "seq_len": 2048,
+        "tf_kv_cache_floats": 20971520,
+        "ratio": 11.636363636363637
+      },
+      {
+        "seq_len": 4096,
+        "tf_kv_cache_floats": 41943040,
+        "ratio": 23.272727272727273
+      },
+      {
+        "seq_len": 8192,
+        "tf_kv_cache_floats": 83886080,
+        "ratio": 46.54545454545455
+      },
+      {
+        "seq_len": 16384,
+        "tf_kv_cache_floats": 167772160,
+        "ratio": 93.0909090909091
+      },
+      {
+        "seq_len": 32768,
+        "tf_kv_cache_floats": 335544320,
+        "ratio": 186.1818181818182
+      },
+      {
+        "seq_len": 65536,
+        "tf_kv_cache_floats": 671088640,
+        "ratio": 372.3636363636364
+      }
+    ]
+  },
+  "100M": {
+    "config": {
+      "vocab": 32000,
+      "d_model": 768,
+      "n_layers": 11,
+      "n_heads": 12,
+      "dh": 64,
+      "d_phi": 320,
+      "window": 16,
+      "prizma_params": 102602760,
+      "transformer_params": 102653184,
+      "transformer_d_ff": 2056,
+      "param_diff_pct": 0.049144876804483616
+    },
+    "prizma_state_floats": 2973696,
+    "comparisons": [
+      {
+        "seq_len": 1024,
+        "tf_kv_cache_floats": 17301504,
+        "ratio": 5.818181818181818
+      },
+      {
+        "seq_len": 2048,
+        "tf_kv_cache_floats": 34603008,
+        "ratio": 11.636363636363637
+      },
+      {
+        "seq_len": 4096,
+        "tf_kv_cache_floats": 69206016,
+        "ratio": 23.272727272727273
+      },
+      {
+        "seq_len": 8192,
+        "tf_kv_cache_floats": 138412032,
+        "ratio": 46.54545454545455
+      },
+      {
+        "seq_len": 16384,
+        "tf_kv_cache_floats": 276824064,
+        "ratio": 93.0909090909091
+      },
+      {
+        "seq_len": 32768,
+        "tf_kv_cache_floats": 553648128,
+        "ratio": 186.1818181818182
+      },
+      {
+        "seq_len": 65536,
+        "tf_kv_cache_floats": 1107296256,
+        "ratio": 372.3636363636364
+      }
+    ]
+  }
+}
