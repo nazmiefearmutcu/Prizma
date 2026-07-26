@@ -1,4 +1,9 @@
 {
+  "_SMOKE_NOTICE": {
+    "status": "PLUMBING SMOKE - NOT A SCIENTIFIC RESULT",
+    "summary": "This is the tiny --smoke plumbing run (see meta.smoke). Its seed-0 and seed-1 records, and its stage-1 LR sweeps, were silently adopted by the powered campaign in results/campaign_2026-06-08/recall_gate.json through a resume-cache bug keyed on the seed alone.",
+    "details": "results/campaign_2026-06-08/CONTAMINATION.md"
+  },
   "meta": {
     "scale": "d64L2H2",
     "seeds": [

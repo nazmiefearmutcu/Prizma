@@ -1,4 +1,19 @@
 {
+  "_CONTAMINATION_NOTICE": {
+    "status": "QUARANTINED - DO NOT CITE",
+    "summary": "This file is NOT the powered n=10 d128L2H4 run its meta describes. A resume-cache bug keyed on the seed alone let an earlier --smoke run (results/recall_gate.json, scale d64L2H2, feat_map 'none') supply seeds 0 and 1 in ALL 10 cells, plus the stage-1 LR sweep in all 10 cells.",
+    "affected": "every cell; seeds 0-1 are a ~4x-smaller model, and every seed's learning rate was selected on that smaller model over the smoke's 2-point grid rather than the 5-point grid declared in meta.lr_grid",
+    "not_trustworthy": [
+      "the per-cell 'params' field (it is read from contaminated seed 0)",
+      "the reported standard deviations and confidence intervals (spread is inflated by the mixture)",
+      "the 'Transformer baseline is bimodal, ~half its seeds collapse' reading (2 of the 5 low TF induction seeds are the smaller smoke model; 3 of the 8 valid seeds do collapse)",
+      "the per-model LR-fairness protocol this campaign claims to have run"
+    ],
+    "error_direction": "conservative - the contamination widened the CIs and ran the candidate's seeds 0-1 with its key lever OFF, so it produced an UNDER-claim (all three legs recorded as failing parity), not an over-claim",
+    "not_done": "NOT re-run and NOT back-filled. A clean campaign needs ~28 A100-hours. No replacement numbers have been invented; the raw data below is exactly as produced.",
+    "details": "results/campaign_2026-06-08/CONTAMINATION.md",
+    "code_fix": "seq/gpu_harness.py::config_fingerprint + cached_cell_is_reusable; the resume skip in seq/recall_gate.py::_train_arm is now keyed on (seed, config fingerprint)"
+  },
   "meta": {
     "scale": "d128L2H4",
     "seeds": [
