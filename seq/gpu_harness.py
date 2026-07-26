@@ -25,6 +25,7 @@ RNG-clean task instance, exactly like gpu_bench's task_fac).
 from __future__ import annotations
 
 import fcntl
+import hashlib
 import json
 import os
 import time
@@ -121,23 +122,80 @@ def load_results(out_path):
             return json.load(f)
 
 
+# ======================================================= config fingerprinting ==
+# WHY THIS EXISTS (a real data-contamination bug, not a hypothetical).
+#
+# Every runner in this repo resumes by cellkey: "if this key already has a result, skip it". The
+# cellkeys are built from (leg, arm, seed) ONLY -- they carry nothing about the configuration that
+# produced the cached number. So if two runs at DIFFERENT configurations are pointed at the SAME
+# results JSON, the second run silently adopts the first one's cells as if they were its own.
+#
+# That happened. A tiny --smoke run (scale d64L2H2, feat_map "none", seeds 0-1) was written to the
+# same file later used by the powered n=10 A100 campaign at scale d128L2H4 with feat_map
+# "quad2_lowrank". The campaign skipped seeds 0 and 1 in all ten cells and kept the smoke's numbers,
+# so every published cell mixes 8 seeds of a 4x-larger model with 2 seeds of the smoke model -- and,
+# for the candidate arm, 2 seeds with its key lever switched OFF. See
+# results/campaign_2026-06-08/CONTAMINATION.md.
+#
+# The fix is to key the skip on (cellkey, config fingerprint) instead of cellkey alone. A cached cell
+# is reusable only if it records the fingerprint of the configuration now being asked for. A cell with
+# NO recorded fingerprint is treated as unverifiable and recomputed -- silently trusting unlabelled
+# cached results is exactly what caused the contamination.
+
+def config_fingerprint(payload):
+    """Short, stable hash of everything that defines a cell's configuration.
+
+    `payload` should contain every knob that changes what the number MEANS: model scale, model knobs,
+    task identity/shape, and the training recipe. Order-insensitive (keys are sorted); values that are
+    not JSON-native fall back to repr(), which is stable for the dataclasses/tuples used here.
+    """
+    blob = json.dumps(payload, sort_keys=True, default=repr, separators=(",", ":"))
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:16]
+
+
+def cached_cell_is_reusable(rec, cfgsig, *, cellkey="", verbose=True):
+    """True iff `rec` is a completed cell that was produced at fingerprint `cfgsig`.
+
+    Returns False (and says why) for: a missing/incomplete record, a record from a DIFFERENT
+    configuration, or a record with no fingerprint at all (pre-fingerprint ledgers -- unverifiable, so
+    never silently reused).
+    """
+    if not isinstance(rec, dict) or "best" not in rec:
+        return False
+    if cfgsig is None:                       # caller opted out of fingerprinting
+        return True
+    have = rec.get("cfgsig")
+    if have == cfgsig:
+        return True
+    if verbose:
+        why = ("has NO config fingerprint (pre-fingerprint ledger)" if have is None
+               else f"was produced at config {have}")
+        print(f"   [resume] REFUSING to reuse cached cell '{cellkey}': it {why}, "
+              f"but this run is config {cfgsig}. Recomputing.", flush=True)
+    return False
+
+
 # ===================================================================== run_cell ==
-def run_cell(res, cellkey, model_fac, task_fac, cfg: TrainConfig, device, seed, out_path):
+def run_cell(res, cellkey, model_fac, task_fac, cfg: TrainConfig, device, seed, out_path, cfgsig=None):
     """Train ONE (model x task x seed) cell, SEED-PINNED, cached + crash-safe.
 
     Args:
       res      : the in-memory results dict (the resumable ledger).
-      cellkey  : unique string key for this cell; if already present (with a 'best'), SKIP + return it.
+      cellkey  : unique string key for this cell.
       model_fac: (lambda V, T: nn.Module) — the arm factory (from make_arm / tf_factory / ...).
       task_fac : zero-arg callable -> a fresh task instance (carries .vocab and .seq_len).
       cfg      : TrainConfig (the lr/cap/recipe for this cell).
       device   : torch.device.
       seed     : per-seed integer; set BEFORE the model is built (via build_and_train) so INIT is pinned.
       out_path : JSON path for the crash-safe ledger.
+      cfgsig   : config fingerprint from config_fingerprint(). When given, a cached cell is reused ONLY
+                 if it was produced at the SAME fingerprint — so pointing a differently-configured run
+                 at an existing ledger can never silently adopt its cells (the contamination bug). When
+                 None the legacy cellkey-only skip applies; pass one for any new caller.
 
-    Returns the cell record: {best, plateau, params, sec, seed, lr, cap}.
+    Returns the cell record: {best, plateau, params, sec, seed, lr, cap, cfgsig?}.
     """
-    if cellkey in res and "best" in res[cellkey]:
+    if cached_cell_is_reusable(res.get(cellkey), cfgsig, cellkey=cellkey):
         return res[cellkey]
     task = task_fac()
     # Capture the (V,T) the arm needs, then hand build_and_train a ZERO-ARG factory so it can
@@ -155,6 +213,8 @@ def run_cell(res, cellkey, model_fac, task_fac, cfg: TrainConfig, device, seed, 
         "lr": cfg.lr,
         "cap": cfg.steps,
     }
+    if cfgsig is not None:
+        rec["cfgsig"] = cfgsig
     res[cellkey] = rec
     _save(res, out_path)
     return rec
@@ -162,12 +222,16 @@ def run_cell(res, cellkey, model_fac, task_fac, cfg: TrainConfig, device, seed, 
 
 # ============================================================ sweep_then_seeds ==
 def sweep_then_seeds(res, prefix, model_fac, task_fac, base_cfg: TrainConfig, device,
-                     seeds, grid=DEFAULT_GRID, out_path=None):
+                     seeds, grid=DEFAULT_GRID, out_path=None, cfgsig=None):
     """Per-arm LR FAIRNESS: stage-1 sweep_lr @1 seed over `grid` (recording the FULL grid incl.
     rejected LRs = the audit trail), then stage-2 run_cell for each seed at the chosen best_lr.
 
     Everything is cached + crash-safe: the sweep result is stored under f'{prefix}.sweep' and each
     seed cell under f'{prefix}.s{seed}', so a disconnect resumes exactly where it stopped.
+
+    `cfgsig` (from config_fingerprint) guards that cache: with it, cached sweeps and cached seed cells
+    are reused ONLY when they were produced at the same configuration. Without it the legacy
+    key-only skip applies — which is how a --smoke run once poisoned a powered campaign.
 
     Returns: {best_lr, lr_grid (list of {lr,best_acc,steps_to_plateau}), per_seed: [records], accs,
               params}. `params` is the trainable-param count of the arm (from the first seed cell),
@@ -175,14 +239,22 @@ def sweep_then_seeds(res, prefix, model_fac, task_fac, base_cfg: TrainConfig, de
     reconstructed cellkey (e.g. res[f"...s{seeds[0]}"]["params"]).
     """
     sweep_key = f"{prefix}.sweep"
-    if sweep_key in res and "best_lr" in res[sweep_key]:
-        sweep = res[sweep_key]
+    cached_sweep = res.get(sweep_key)
+    sweep_ok = (isinstance(cached_sweep, dict) and "best_lr" in cached_sweep
+                and (cfgsig is None or cached_sweep.get("cfgsig") == cfgsig))
+    if sweep_ok:
+        sweep = cached_sweep
     else:
+        if isinstance(cached_sweep, dict) and "best_lr" in cached_sweep:
+            print(f"   [resume] REFUSING to reuse cached LR sweep '{sweep_key}' "
+                  f"(config {cached_sweep.get('cfgsig')} != {cfgsig}). Re-sweeping.", flush=True)
         task = task_fac()
         V, T = task.vocab, task.seq_len
         zero_arg_fac = lambda: model_fac(V, T)
         # sweep_lr internally uses build_and_train (seed-pinned) for every LR on the grid.
         sweep = sweep_lr(zero_arg_fac, task, base_cfg, device, grid=grid, seed=0)
+        if cfgsig is not None:
+            sweep["cfgsig"] = cfgsig
         res[sweep_key] = sweep
         if out_path is not None:
             _save(res, out_path)
@@ -190,9 +262,14 @@ def sweep_then_seeds(res, prefix, model_fac, task_fac, base_cfg: TrainConfig, de
     best_lr = sweep["best_lr"]
     seed_cfg = replace(base_cfg, lr=best_lr)
     per_seed = [
-        run_cell(res, f"{prefix}.s{s}", model_fac, task_fac, seed_cfg, device, seed=s, out_path=out_path)
+        run_cell(res, f"{prefix}.s{s}", model_fac, task_fac, seed_cfg, device, seed=s,
+                 out_path=out_path, cfgsig=cfgsig)
         for s in seeds
     ]
+    if cfgsig is not None:
+        distinct = sorted({rec["params"] for rec in per_seed})
+        assert len(distinct) == 1, (f"{prefix}: seeds disagree on parameter count {distinct} — "
+                                    f"these cells are not all the same model")
     return {
         "best_lr": best_lr,
         "lr_grid": sweep["grid"],

@@ -358,3 +358,124 @@ def test_lr_sweep_seed_pinning(tmp_path):
         assert cell["best_accs"] == [0.95, 0.95, 0.95]
         assert cell["params"] == 500
 
+
+# --------------------------------------------------------------------------- #
+# (R) REGRESSION: the resume cache must be keyed on (seed, CONFIG), not seed alone.
+#
+# The bug this pins: _train_arm used to skip any seed already present in the results JSON, keyed on
+# the seed only. A --smoke run (small scale, candidate lever OFF) written to the same file as a
+# powered campaign therefore had 2 of its seeds silently adopted by the campaign, in every cell — a
+# 4x-smaller model's numbers aggregated into a table reporting the big model. See
+# results/campaign_2026-06-08/CONTAMINATION.md and seq/gpu_harness.config_fingerprint.
+# --------------------------------------------------------------------------- #
+def _fake_train_arm_deps(params_by_call):
+    """Patches for _train_arm: sweep_lr returns a fixed grid; build_and_train returns a result whose
+    `params` comes from `params_by_call` so different configs yield different model sizes."""
+    from unittest.mock import MagicMock, patch
+
+    sweep = {"best_lr": 1e-3, "best_acc": 0.9,
+             "grid": [{"lr": 1e-3, "best_acc": 0.9, "steps_to_plateau": 10}]}
+
+    def _run(*a, **kw):
+        r = MagicMock()
+        r.best_acc, r.steps_to_plateau, r.params = 0.9, 10, params_by_call()
+        return r
+
+    return (patch("seq.lrsweep.sweep_lr", return_value=dict(sweep)),
+            patch("seq.common.build_and_train", side_effect=_run))
+
+
+def test_config_fingerprint_separates_configs():
+    from seq.gpu_harness import config_fingerprint
+
+    small = {"scale": [64, 2, 2], "prizma_kw": {"feat_map": "none"}}
+    big = {"scale": [128, 2, 4], "prizma_kw": {"feat_map": "quad2_lowrank"}}
+    assert config_fingerprint(small) == config_fingerprint(dict(small)), "must be stable"
+    assert config_fingerprint(small) != config_fingerprint(big), "scale/knob change must change the sig"
+    # key ORDER must not matter, only content
+    assert config_fingerprint({"a": 1, "b": 2}) == config_fingerprint({"b": 2, "a": 1})
+
+
+def test_cached_cell_is_not_reused_without_a_matching_fingerprint():
+    from seq.gpu_harness import cached_cell_is_reusable
+
+    assert cached_cell_is_reusable({"best": 0.5, "cfgsig": "abc"}, "abc")
+    assert not cached_cell_is_reusable({"best": 0.5, "cfgsig": "abc"}, "xyz"), "different config"
+    assert not cached_cell_is_reusable({"best": 0.5}, "abc"), "unfingerprinted cells are unverifiable"
+    assert not cached_cell_is_reusable(None, "abc")
+    assert not cached_cell_is_reusable({"sec": 1.0}, "abc"), "incomplete cell"
+    assert cached_cell_is_reusable({"best": 0.5}, None), "cfgsig=None keeps the legacy skip"
+
+
+def test_smoke_run_cannot_poison_a_later_campaign_at_a_different_config(tmp_path):
+    """THE contamination scenario, reproduced end-to-end: a small 'smoke' _train_arm writes seeds 0-1
+    to a results file; a bigger 'campaign' _train_arm then runs seeds 0-3 against the SAME file.
+
+    Pre-fix, seeds 0-1 were skipped and the campaign silently reported the smoke's smaller model for
+    them. Post-fix they must be RETRAINED at the campaign config, and every reported seed must carry
+    the campaign's parameter count.
+    """
+    from unittest.mock import MagicMock
+    from seq.recall_gate import _train_arm
+
+    path = str(tmp_path / "recall_gate.json")
+    res = {}
+    task = MagicMock()
+    task.vocab, task.seq_len = 10, 5
+    task_fac = MagicMock(return_value=task)
+
+    common = dict(results_path=path, leg="MQAR-HARD", arm="Prizma", model_fac=MagicMock(),
+                  task_fac=task_fac, device="cpu", cap=10, lr_grid=(1e-3,), recipe={},
+                  eval_every=5, batch_size=4)
+    smoke_cfg = {"scale": [64, 2, 2], "prizma_kw": {"feat_map": "none"}}
+    full_cfg = {"scale": [128, 2, 4], "prizma_kw": {"feat_map": "quad2_lowrank"}}
+
+    # --- pass 1: the smoke, seeds 0-1, a 101,696-param model ---
+    p_sweep, p_build = _fake_train_arm_deps(lambda: 101_696)
+    with p_sweep, p_build as build:
+        _train_arm(res=res, seeds=(0, 1), cfg_payload=smoke_cfg, **common)
+        assert build.call_count == 2
+    smoke_sig = res["cells"]["MQAR-HARD.Prizma"]["cfgsig"]
+
+    # --- pass 2: the campaign at a DIFFERENT config, seeds 0-3, a 461,440-param model ---
+    p_sweep, p_build = _fake_train_arm_deps(lambda: 461_440)
+    with p_sweep, p_build as build:
+        cell = _train_arm(res=res, seeds=(0, 1, 2, 3), cfg_payload=full_cfg, **common)
+        # all FOUR seeds must be trained: seeds 0-1 are NOT reusable at the new config.
+        assert build.call_count == 4, (
+            f"seeds 0-1 were reused from the smoke run ({build.call_count} trainings, expected 4) — "
+            "the resume cache is keyed on the seed alone again")
+
+    assert cell["cfgsig"] != smoke_sig
+    seeds_rec = res["cells"]["MQAR-HARD.Prizma"]["seeds"]
+    got = {s: seeds_rec[s]["params"] for s in ("0", "1", "2", "3")}
+    assert set(got.values()) == {461_440}, f"mixed-configuration seeds leaked into the cell: {got}"
+    assert cell["params"] == 461_440
+
+
+def test_resume_at_the_same_config_still_skips_cached_seeds(tmp_path):
+    """The fingerprint must not break legitimate crash-resume: re-running the SAME config reuses
+    every cached seed and trains nothing."""
+    from unittest.mock import MagicMock
+    from seq.recall_gate import _train_arm
+
+    path = str(tmp_path / "recall_gate.json")
+    res = {}
+    task = MagicMock()
+    task.vocab, task.seq_len = 10, 5
+    common = dict(results_path=path, leg="INDUCTION", arm="TF", model_fac=MagicMock(),
+                  task_fac=MagicMock(return_value=task), device="cpu", cap=10, lr_grid=(1e-3,),
+                  recipe={}, eval_every=5, batch_size=4)
+    cfg = {"scale": [128, 2, 4]}
+
+    p_sweep, p_build = _fake_train_arm_deps(lambda: 99_648)
+    with p_sweep, p_build as build:
+        _train_arm(res=res, seeds=(0, 1, 2), cfg_payload=cfg, **common)
+        assert build.call_count == 3
+
+    p_sweep, p_build = _fake_train_arm_deps(lambda: 99_648)
+    with p_sweep as sweep, p_build as build:
+        cell = _train_arm(res=res, seeds=(0, 1, 2), cfg_payload=cfg, **common)
+        assert build.call_count == 0, "same-config resume must reuse every cached seed"
+        sweep.assert_not_called()
+    assert cell["best_accs"] == [0.9, 0.9, 0.9]

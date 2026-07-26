@@ -360,12 +360,18 @@ def _run_task(res, results_path, task_name, task_fac, *, scale, device, seeds, g
     """Train all 4 arms on ONE task (pre-flight -> per-arm LR sweep -> multi-seed -> powered summary),
     then compute the powered Pareto table + Holm-corrected pairwise verdicts. Crash-safe + resumable
     (sweep_then_seeds caches by cellkey; a disconnect resumes exactly where it stopped)."""
-    from .gpu_harness import make_cfg, sweep_then_seeds, _save
+    from .gpu_harness import config_fingerprint, make_cfg, sweep_then_seeds, _save
 
     print(f"\n==== TASK: {task_name} @ d{scale[0]}L{scale[1]}H{scale[2]} ({len(seeds)} seeds) ====",
           flush=True)
     arms = _arms(scale)
     base_cfg = make_cfg(cap, batch_size=batch_size, eval_every=eval_every, log=False)
+    # Guard the resume cache on the configuration, not just the cellkey: --smoke and the real run share
+    # a default results path, and a key-only skip lets the small one poison the big one (see
+    # gpu_harness.config_fingerprint).
+    cfgsig = config_fingerprint({"task": task_name, "scale": list(scale), "cap": cap,
+                                 "batch_size": batch_size, "eval_every": eval_every,
+                                 "grid": list(grid)})
 
     arm_accs, params, arms_present, unrunnable = {}, {}, {}, {}
     for kind, (name, fac) in arms.items():
@@ -378,7 +384,7 @@ def _run_task(res, results_path, task_name, task_fac, *, scale, device, seeds, g
         print(f"  -- arm '{kind}' [{name}] : LR sweep (@seed {seeds[0]}) then {len(seeds)} seeds --",
               flush=True)
         r = sweep_then_seeds(res, f"{task_name}.{kind}", fac, task_fac, base_cfg, device, seeds,
-                             grid=grid, out_path=results_path)
+                             grid=grid, out_path=results_path, cfgsig=cfgsig)
         arm_accs[name] = r["accs"]
         params[name] = r["params"]
         arms_present[kind] = {"name": name, "status": "ok", "best_lr": r["best_lr"],

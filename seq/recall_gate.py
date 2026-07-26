@@ -326,11 +326,29 @@ def _bind_factory(vt_factory, vocab, seq_len):
 
 # --- per-(arm x leg) training: stage-1 LR sweep + stage-2 multi-seed (seed-pinned) --------------- #
 def _train_arm(res, results_path, leg, arm, model_fac, task_fac, *,
-               device, cap, seeds, lr_grid, recipe, eval_every, batch_size):
+               device, cap, seeds, lr_grid, recipe, eval_every, batch_size, cfg_payload=None):
     """Stage-1: sweep_lr (records rejected LRs). Stage-2: build_and_train at the chosen LR for each
-    seed. Crash-safe + resumable by cellkey. Returns the per-arm record incl. per-seed best_accs."""
+    seed. Crash-safe + resumable by (cellkey, CONFIG FINGERPRINT). Returns the per-arm record incl.
+    per-seed best_accs.
+
+    RESUME SAFETY (this used to be a real bug -- see gpu_harness.config_fingerprint and
+    results/campaign_2026-06-08/CONTAMINATION.md). The skip below used to read
+
+        if sk in cell["seeds"] and "best" in cell["seeds"][sk]: continue
+
+    i.e. it was keyed on the SEED ALONE. Two runs at different scales / different model knobs writing
+    to the same results JSON would therefore silently share cells: the second run adopted the first
+    run's seeds as if they were its own. That is exactly how the published n=10 recall gate ended up
+    with seeds 0-1 from a --smoke run at a 4x-smaller scale with the candidate's key lever OFF.
+
+    The skip is now keyed on (seed, config fingerprint): a cached cell is reused only if it records
+    the fingerprint of the configuration being asked for right now. Unfingerprinted cells (written by
+    the pre-fix code) are NOT reused -- they cannot be verified, and silently trusting them is the
+    failure mode being fixed.
+    """
     from dataclasses import replace as _dc_replace
     from seq.common import TrainConfig, build_and_train
+    from seq.gpu_harness import cached_cell_is_reusable, config_fingerprint
     from seq.lrsweep import sweep_lr
 
     armkey = f"{leg}.{arm}"
@@ -344,10 +362,25 @@ def _train_arm(res, results_path, leg, arm, model_fac, task_fac, *,
     _probe = task_fac()
     bound_fac = _bind_factory(model_fac, _probe.vocab, _probe.seq_len)
 
+    # Fingerprint EVERYTHING that changes what a cell's number means: the arm identity, the model
+    # scale/knobs the caller resolved, the task shape, and the full training recipe.
+    cfgsig = config_fingerprint({
+        "leg": leg, "arm": arm, "arm_cfg": cfg_payload,
+        "vocab": _probe.vocab, "seq_len": _probe.seq_len,
+        "cap": cap, "batch_size": batch_size, "eval_every": eval_every,
+        "recipe": dict(recipe), "lr_grid": list(lr_grid),
+    })
+    cell["cfgsig"] = cfgsig
+
     # ---- stage-1: LR sweep (1 seed), records the FULL grid incl. rejected LRs (LR-fairness audit) ----
-    if "sweep" not in cell:
+    sweep = cell.get("sweep")
+    if not (isinstance(sweep, dict) and "best_lr" in sweep and sweep.get("cfgsig") == cfgsig):
+        if isinstance(sweep, dict) and "best_lr" in sweep:
+            print(f"   [resume] REFUSING to reuse cached LR sweep for '{armkey}' "
+                  f"(config {sweep.get('cfgsig')} != {cfgsig}). Re-sweeping.", flush=True)
         task = task_fac()
         sw = sweep_lr(bound_fac, task, base_cfg, device, grid=lr_grid, seed=0)
+        sw["cfgsig"] = cfgsig
         cell["sweep"] = sw
         res["cells"][armkey] = cell
         _save(results_path, res)
@@ -360,13 +393,14 @@ def _train_arm(res, results_path, leg, arm, model_fac, task_fac, *,
     cfg = _dc_replace(base_cfg, lr=best_lr)
     for s in seeds:
         sk = str(s)
-        if sk in cell["seeds"] and "best" in cell["seeds"][sk]:
+        if cached_cell_is_reusable(cell["seeds"].get(sk), cfgsig, cellkey=f"{armkey} s{s}"):
             continue
         task = task_fac()
         t0 = time.time()
         r = build_and_train(bound_fac, task, cfg, device, seed=s)
         cell["seeds"][sk] = {"best": r.best_acc, "plateau": r.steps_to_plateau,
-                             "params": r.params, "sec": round(time.time() - t0, 1), "lr": best_lr}
+                             "params": r.params, "sec": round(time.time() - t0, 1), "lr": best_lr,
+                             "cfgsig": cfgsig}
         res["cells"][armkey] = cell
         _save(results_path, res)
         print(f"   [{armkey} s{s}] best={r.best_acc:.3f} plateau@{r.steps_to_plateau} "
@@ -374,6 +408,13 @@ def _train_arm(res, results_path, leg, arm, model_fac, task_fac, *,
 
     best_accs = [cell["seeds"][str(s)]["best"] for s in seeds]
     params = cell["seeds"][str(seeds[0])]["params"]
+    # Every reported seed must now come from the same configuration -- assert it rather than trust it.
+    stale = sorted(s for s in seeds if cell["seeds"][str(s)].get("cfgsig") != cfgsig)
+    assert not stale, (f"{armkey}: seeds {stale} carry a different config fingerprint than this run "
+                       f"({cfgsig}); refusing to aggregate mixed-configuration seeds")
+    distinct_params = sorted({cell["seeds"][str(s)]["params"] for s in seeds})
+    assert len(distinct_params) == 1, (f"{armkey}: reported seeds disagree on parameter count "
+                                       f"{distinct_params} -- the cells are not the same model")
     cell["best_accs"] = best_accs
     cell["best_lr"] = best_lr
     cell["params"] = params
@@ -391,9 +432,13 @@ def _run_leg(res, results_path, leg, task_fac, *, scale, prizma_kw, device, cap,
     arms = _arms_for(scale, prizma_kw, hybrid_n_attn=hybrid_n_attn)
     arm_accs = {}
     for aname, fac in arms.items():
+        # The scale + model knobs are what a --smoke run silently changed under the campaign; they are
+        # the core of the fingerprint that now guards the resume cache.
         cell = _train_arm(res, results_path, leg, aname, fac, task_fac, device=device, cap=cap,
                           seeds=seeds, lr_grid=lr_grid, recipe=recipe, eval_every=eval_every,
-                          batch_size=batch_size)
+                          batch_size=batch_size,
+                          cfg_payload={"scale": list(scale), "prizma_kw": dict(prizma_kw or {}),
+                                       "hybrid_n_attn": hybrid_n_attn})
         arm_accs[aname] = cell["best_accs"]
 
     verdict = recall_gate_verdict(arm_accs, tf_key="TF", cand_key="Prizma",
@@ -417,7 +462,8 @@ def _flip_test(res, results_path, scale, task_fac, *, device, cap, seeds, lr_gri
     print(f"\n---- FLIP-TEST: bigger TF d{big[0]}L{big[1]}H{big[2]} on MQAR-hard ----", flush=True)
     cell = _train_arm(res, results_path, "MQAR-HARD-FLIP", "TF-big", _tf_factory(*big), task_fac,
                       device=device, cap=cap, seeds=seeds, lr_grid=lr_grid, recipe=recipe,
-                      eval_every=eval_every, batch_size=batch_size)
+                      eval_every=eval_every, batch_size=batch_size,
+                      cfg_payload={"scale": list(big)})
     bests = cell["best_accs"]
     flip_solved = bool(any(b >= solve_thresh for b in bests))
     res.setdefault("flip_test", {})["MQAR-HARD"] = {
