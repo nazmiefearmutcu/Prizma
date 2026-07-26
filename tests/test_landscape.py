@@ -327,9 +327,11 @@ def test_charlm_smoke_end_to_end_writes_bpc_verdicts_and_resumes():
     """A CPU-fast --smoke --charlm run must complete, write results/gpu_landscape_charlm.json containing
     all 4 arms + per-pair BPC verdicts (lower_is_better) + the negative control, and be RESUMABLE.
 
-    Kept tiny (bundled tiny-shakespeare slice, tiny d/T/cap, 2 seeds, 1-LR grid) so it runs CPU-fast.
-    The tiny-shakespeare corpus is bundled in the repo (seq/data/shakespeare.txt) so the smoke is
-    network-free."""
+    Kept tiny (small char corpus slice, tiny d/T/cap, 2 seeds, 1-LR grid) so it runs CPU-fast.
+    tiny-shakespeare is NOT committed to this repo (.gitignore excludes seq/data/shakespeare.txt; it is
+    fetched on demand by gpu_charlm*.py), so on a fresh clone / in CI the smoke takes the deterministic
+    synthetic fallback corpus instead. Either way the smoke is network-free, and this test asserts the
+    PLUMBING only -- which corpus was actually used is recorded in the results JSON."""
     from seq import landscape as ls
     with tempfile.TemporaryDirectory() as td:
         out = os.path.join(td, "gpu_landscape_charlm.json")

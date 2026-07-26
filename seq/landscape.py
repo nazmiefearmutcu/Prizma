@@ -273,6 +273,31 @@ def _results_path(explicit=None, *, fname="gpu_landscape.json"):
     return os.path.join(res_dir, fname)
 
 
+def _synthetic_charlm_text(n_chars, seed=0):
+    """A deterministic synthetic char corpus for the PLUMBING-ONLY char-LM smoke.
+
+    Used only when tiny-shakespeare (which this repo does not commit -- see .gitignore) is absent, so
+    the smoke stays runnable on a fresh clone and in network-free CI. It is a fixed-seed 2nd-order
+    Markov-ish stream over a small alphabet: learnable enough that BPC drops below the random-baseline
+    (which is what the smoke's plumbing assertions need) and reproducible across runs (which is what
+    the resume assertion needs). It is NOT a language corpus and no reported result uses it.
+    """
+    import random
+
+    rng = random.Random(seed)
+    alphabet = "abcdefghijklmnopqrstuvwxyz .,\n"
+    words = ["".join(rng.choice(alphabet[:26]) for _ in range(rng.randint(2, 8))) for _ in range(64)]
+    out = []
+    total = 0
+    while total < n_chars:
+        w = words[rng.randrange(len(words))]
+        sep = rng.choice([" ", " ", " ", ", ", ".\n"])
+        out.append(w)
+        out.append(sep)
+        total += len(w) + len(sep)
+    return "".join(out)[:n_chars]
+
+
 def _make_mixed_induction(vocab, lens):
     """Mixed-length INDUCTION wrapper — the SAME composition seq/recall_gate.py uses (COMPOSES
     seq.tasks.Induction; trains over a set of lengths, evals frozen at the longest/hardest prefix)."""
@@ -633,8 +658,10 @@ def run_landscape_charlm(scale=(256, 4, 4), seeds=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
     Args:
       scale        : (d_model, n_layers, n_heads) for ALL arms (the matched arena; smoke overrides).
       seeds        : per-arm seeds (default 10 = the real powered run; smoke overrides to 2).
-      smoke        : True -> TINY CPU-fast config on a small tiny-shakespeare slice (a loud DISCLAIMER
-                     is printed); 4 arms + the 2-arm negative control, 2 seeds, 1-LR grid, short cap.
+      smoke        : True -> TINY CPU-fast config on a small tiny-shakespeare slice, or on a
+                     deterministic synthetic corpus if tiny-shakespeare is not on disk (a loud
+                     DISCLAIMER is printed either way, and the corpus actually used is recorded in
+                     the JSON); 4 arms + the 2-arm negative control, 2 seeds, 1-LR grid, short cap.
       results_path : explicit results JSON path (default $PRIZMA_RESULTS/gpu_landscape_charlm.json).
       lr_grid      : LR sweep grid (default seq.lrsweep.DEFAULT_GRID; smoke uses a single-LR grid).
       margin       : the BPC superiority win bar AND the TOST equivalence band (BPC units) — the verdict
@@ -654,8 +681,9 @@ def run_landscape_charlm(scale=(256, 4, 4), seeds=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
         scale = (48, 1, 2)
         seeds = (0, 1)
         T = 64                                    # tiny context
-        # tiny tiny-shakespeare slice: the bundled corpus is ~1.1M chars; take a small contiguous
+        # tiny tiny-shakespeare slice (~1.1M chars when present locally): take a small contiguous
         # block so CharData's contiguous 90/10 split + frozen eval are both well-formed but CPU-fast.
+        # If the corpus is not on disk the loader below substitutes a synthetic one -- see there.
         corpus = "shakespeare"
         hp = dict(steps=120, batch_size=16, warmup=20, grad_clip=1.0, weight_decay=0.1,
                   betas=(0.9, 0.95), eval_every=60, eval_batches=6)
@@ -683,15 +711,30 @@ def run_landscape_charlm(scale=(256, 4, 4), seeds=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
 
     # ---- corpus (reuse gpu_charlm2.load_corpus / CharData; the metric is BPC = CE/ln2) ----------- #
     if corpus == "shakespeare":
-        # Use a small contiguous slice of the bundled tiny-shakespeare so the smoke is network-free +
-        # CPU-fast. CharData does a CONTIGUOUS 90/10 train/test split (no n-gram leak); no val split,
-        # so train_charlm falls back to min-over-test (documented in gpu_charlm2).
-        with open(gc2._SHAKES, "r", encoding="utf-8") as f:
-            text = f.read()
-        if slice_chars:
-            text = text[:slice_chars]
-        data = gc2.CharData(text, T, "shakespeare")
-        src = "bundled-slice"
+        # Use a small contiguous slice of tiny-shakespeare so the smoke is network-free + CPU-fast.
+        # CharData does a CONTIGUOUS 90/10 train/test split (no n-gram leak); no val split, so
+        # train_charlm falls back to min-over-test (documented in gpu_charlm2).
+        #
+        # tiny-shakespeare is NOT committed to this repo (see .gitignore: it is fetched on demand from
+        # the karpathy URL by gpu_charlm*.py). When it is absent -- a fresh clone, or CI -- the smoke
+        # falls back to a DETERMINISTIC SYNTHETIC char corpus rather than failing. That is sound here
+        # and only here: this branch is PLUMBING-ONLY (see the disclaimer above), so the identity of
+        # the corpus is irrelevant to what it checks. Which corpus was actually used is recorded in
+        # the results JSON as `src` + `corpus`, so a synthetic-fallback smoke can never be mistaken
+        # for a shakespeare one. No scientific (non-smoke) path ever takes this fallback.
+        if os.path.exists(gc2._SHAKES):
+            with open(gc2._SHAKES, "r", encoding="utf-8") as f:
+                text = f.read()
+            if slice_chars:
+                text = text[:slice_chars]
+            data = gc2.CharData(text, T, "shakespeare")
+            src = "local-slice"
+        else:
+            text = _synthetic_charlm_text(slice_chars or 40_000)
+            corpus = "synthetic-smoke"
+            data = gc2.CharData(text, T, corpus)
+            src = "synthetic-fallback (tiny-shakespeare absent; smoke is plumbing-only)"
+            print(f"  [corpus] {gc2._SHAKES} absent -> {src}", flush=True)
     else:
         data, src = gc2.load_corpus(corpus, T)
     print(f"device={device} results={results_path} scale=d{scale[0]}L{scale[1]}H{scale[2]} "
