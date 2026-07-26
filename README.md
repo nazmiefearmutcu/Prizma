@@ -212,12 +212,14 @@ equivalence, and the anti-conservative statistics gate) runs on every push via
 ```bash
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt pytest
-pytest -q          # ~211 tests on a CPU-only box (~3 min); 225 collected where MPS is available,
-                   # because several kernel-equivalence tests are parametrised over devices.
+pytest -q          # CPU-only (what CI runs): 211 collected -> 201 passed, 10 skipped, ~3 min.
+                   # 225 collected where MPS is available (216 passed, 9 skipped): several
+                   # kernel-equivalence tests are parametrised over devices.
 ```
 
 _The "94 tests" figure this README used to quote was long out of date — CI was already collecting
-over 200._
+over 200. The badge above was also green over a red run: CI had been failing since 2026-06-20 on a
+missing `shakespeare.txt` fixture. That is fixed, and the counts above are from the passing run._
 
 ## License
 
