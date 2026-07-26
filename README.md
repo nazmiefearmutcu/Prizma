@@ -30,7 +30,7 @@ the project's pre-registered §4 bar:
 | MQAR (D=128) | **PASS** | parity @860K params; solves @130K where the matched TF needs ≥461K → ≥3.5× param-efficiency (coarse grid) |
 | Induction | **PASS** | quad2 0.9995 (3/3) vs TF 0.996 |
 | Selective-copy | **PASS** | selective 0.9991; a fixed-position control isolates content-selectivity |
-| Char-LM (text8) | **PASS** | Prizma 1.7496 vs TF 1.7254 BPC — within the pre-registered +0.05 bar (**does not beat** TF) |
+| Char-LM (text8) | **PARTIAL — deviated from pre-registration** | Prizma 1.7496 vs TF 1.7254 BPC clears the +0.05 margin, but the pre-registered bar demanded **both** corpora with ≥3 seeds (≥5 for the closest leg). Delivered: **text8 only, n=2** — and the other corpus, tiny-shakespeare, **FAILED** (−0.09) with its raw data not retained. See [below](#b4-char-lm-a-partial-not-a-pass). |
 | Inference | **PASS (memory)** | constant 17.9 MB state ∀n (28–455× less); measured **O(1)-latency crossover at n≥32k** (2.4–2.8× faster @65k) |
 | Causal ablation | **PASS** | quad2 ≫ rand_linear ≈ none ≫ TF — the gain is the quadratic monomials, not "a bigger RNN" |
 | Length-extrapolation | **WIN (relative)** | 10× better retention than a RoPE Transformer at 8× train length (absolute accuracy still only ~0.40) |
@@ -40,6 +40,40 @@ latency win is long-context-only (Prizma is ~1.3–1.5× *slower* below n≈16k)
 slower per step (sequential delta); the FLOP-matched TF arms were optimization-confounded so **no
 per-FLOP claim** is made; n=2–3 seeds are descriptive (not powered equivalence); **large-scale LM
 parity and backprop-free parity are NOT claimed** (open frontiers).
+
+### Corrections and quarantined results (read this before citing anything)
+
+<a name="b4-char-lm-a-partial-not-a-pass"></a>
+
+**B4 char-LM is a PARTIAL, not a PASS.** Spec §B4 pre-registered: *test BPC ≤ T+0.05 on **BOTH**
+corpora, ≥3 seeds (≥5 for the closest leg)*. What was delivered is **one** corpus (text8) at **n=2**,
+after the other corpus (tiny-shakespeare) had **failed** by −0.09 under an overfitting recipe — and
+that failing run's raw data was *not retained on disk*, so it cannot be re-examined. A later text8
+run reached n=7 vs TF n=10 (Δ = +0.021, still within the margin, and the gap is statistically real:
+Welch t≈6.7). Calling this leg PASS took credit for a bar that was not met. The result is real and
+the margin is genuinely cleared **on the corpus that was run** — it is the *pre-registration* that
+was not honoured, and the deviation now sits in the verdict rather than in the fine print.
+
+**The powered n=10 recall gate is QUARANTINED — do not cite it.**
+`results/campaign_2026-06-08/recall_gate.json` is not the n=10 run it describes. A resume-cache bug
+in `seq/recall_gate.py` skipped seeds it had already seen **keyed on the seed number alone, with no
+record of the configuration**, so an earlier tiny `--smoke` run supplied seeds 0–1 in **all ten
+cells** — at a 4× smaller scale, and for the candidate arm with its key lever (`quad2`) switched
+**off**. It also supplied the stage-1 LR sweep in all ten cells, meaning every arm's learning rate
+was chosen on the wrong model over the wrong grid. Consequently the reported `params`, the standard
+deviations, the CIs, and the published reading that *"the Transformer baseline is high-variance… on
+induction TF is bimodal: ~half its seeds collapse to ~0.06"* are all untrustworthy — that last one is
+a caching bug partly misdiagnosed as a property of the baseline (among the 8 uncontaminated seeds, 3
+collapse, not 5 of 10). **The error direction was conservative**: it widened the CIs and handicapped
+the candidate, so it produced an under-claim, not an over-claim. The artifact has **not** been re-run
+and **no** replacement numbers have been invented — a clean campaign needs ~28 A100-hours. Full
+disclosure: [`results/campaign_2026-06-08/CONTAMINATION.md`](results/campaign_2026-06-08/CONTAMINATION.md).
+The bug is fixed (resume is now keyed on `(seed, config-fingerprint)`) with regression tests.
+
+**Baselines that were built and never run.** `seq/gla.py` (GLA), `seq/mamba2.py` (Mamba-2) and the
+4-arm head-to-head harness `seq/landscape.py` are faithful, fully-tested implementations that have
+produced **zero results**. No GLA or Mamba-2 number appears anywhere in this repo, and none is
+claimed. The harness exists and has not been run at scale.
 
 - Full writeup + adversarial referee trail → **[`docs/PRIZMA_SEQ_REPORT.md`](docs/PRIZMA_SEQ_REPORT.md)**
 - Raw A100 results (auditable) → `results/gpu_{bench,diag,lengen,latency,charlm2}.json` + `results/v3_campaign_results.md`
@@ -53,17 +87,21 @@ PRIZMA_RESULTS=results python gpu_latency.py                  # B5 latency/memor
 PRIZMA_RESULTS=results python gpu_lengen.py                   # length-extrapolation
 ```
 
-### Scaling Up, Downstream Evaluation, and Fused Throughput
+### Apparatus built beyond the tested regime — what has and has not been run
 
-To address the limitations of small-scale verification and optimize training efficiency, we implemented scale configurations up to 100M parameters, pre-training/downstream task harnesses, optimized Triton/fused backends, and a theoretical convergence framework.
+> **Read this heading literally.** The three subsections below are **apparatus and arithmetic, not
+> results.** No model above ~1.4M parameters has been trained. No downstream benchmark has been run.
+> The only measured numbers here are the throughput timings in §3, and they are laptop timings.
 
-#### 1. Scaling-Up Frontier (50M & 100M Parameter Models)
-We configured and instantiated parameter-matched models on CPU to verify parameter parity and calculate analytical carried-state/KV-cache memory sizes (FP16, batch size $B=1$):
+#### 1. Parameter-count scaling at 50M & 100M — **NO TRAINING RUN**
+These models were **instantiated on CPU purely to count parameters** and to evaluate a closed-form
+memory formula. They were never trained, never evaluated, and produced no accuracy or loss number of
+any kind. What follows is a parameter count and an analytical memory identity:
 * **50M Scale:** Prizma-Seq (**47,964,832** params; $d_{model}=512, L=10, H=8, d_{phi}=320, \text{window}=16$) vs. Transformer (**48,015,872** params; $d_{ff}=1376, \text{rope}=\text{True}$).
 * **100M Scale:** Prizma-Seq (**102,602,760** params; $d_{model}=768, L=11, H=12, d_{phi}=320, \text{window}=16$) vs. Transformer (**102,653,184** params; $d_{ff}=2056, \text{rope}=\text{True}$).
 
-**Analytical Memory Comparison ($B=1$, FP16):**
-The memory ratio of Transformer KV-cache to Prizma-Seq state size ($\frac{2 \cdot T}{d_{phi} + 2 \cdot W}$) is independent of depth and width, demonstrating Prizma-Seq's exact $O(1)$ scaling:
+**Analytical (closed-form, NOT measured) memory comparison ($B=1$, FP16):**
+The memory ratio of Transformer KV-cache to Prizma-Seq state size ($\frac{2 \cdot T}{d_{phi} + 2 \cdot W}$) is independent of depth and width. This is an algebraic property of the two state definitions, evaluated on paper — it is not an allocation measurement, and it says nothing about whether either model at this scale would learn anything:
 | Sequence Length ($T$) | Transformer KV-Cache (50M) | Transformer KV-Cache (100M) | Prizma State (50M / 100M) | Ratio |
 |---|---|---|---|---|
 | **1,024 Tokens** | 20.00 MB | 33.00 MB | **3.44 MB / 5.67 MB** | **5.82x** |
@@ -72,25 +110,42 @@ The memory ratio of Transformer KV-cache to Prizma-Seq state size ($\frac{2 \cdo
 
 Details: [`seq/scaling_analysis.py`](seq/scaling_analysis.py) | JSON: [`results/scaling_analysis.json`](results/scaling_analysis.json) | Report: [`results/scaling_analysis.md`](results/scaling_analysis.md)
 
-#### 2. Downstream Evaluation Blueprint (MMLU & GSM8k)
-To validate reasoning capacity on standard datasets, [`seq/downstream.py`](seq/downstream.py) provides a complete harness:
+#### 2. Downstream evaluation (MMLU & GSM8k) — **PLANNED, NOT RUN**
+[`seq/downstream.py`](seq/downstream.py) is a harness with **no committed results**. Nothing in this
+repo has been pre-trained on OpenWebText/The Pile, and neither MMLU nor GSM8k has ever been scored.
+The code exists; the evaluation does not:
 * **Pre-Training:** A `StreamingTextDataset` for token packing standard corpus streams (OpenWebText/The Pile) and a PyTorch pre-training loop.
 * **Downstream Tasks:** Few-shot/zero-shot evaluations for MMLU multiple-choice question-answering (via token log-probabilities) and GSM8k math word problems (via autoregressive causal/recurrent decoding).
 
-#### 3. Training Throughput Benchmarks (Eager vs. Compiled vs. Triton)
-We benchmarked the training throughput (tokens/second) of Prizma-Seq delta updates across Eager, Compiled (`torch.compile`), and hand-written Triton kernel paths (forward and backward passes):
+#### 3. Training throughput (Eager vs. Compiled) — measured on a laptop
+Wall-clock timings of the Prizma-Seq delta update, forward and backward. **Every row is measured on
+the device it names.** There are no CUDA or Triton rows because this benchmark has not been run on a
+CUDA box, and nothing is extrapolated to stand in for one.
+
 | Execution Path | Pass | Device | Time (ms) | Throughput (tokens/s) | Speedup vs Eager CPU |
 |:---|:---|:---|:---|:---|:---|
-| **Eager** | Forward | CPU | 65.59 | 124,905.1 | 1.00x |
-| **Eager** | Backward | CPU | 156.97 | 52,189.8 | 1.00x |
-| **Compiled** | Forward | CPU | 46.59 | 175,847.5 | 1.41x |
-| **Compiled** | Backward | CPU | 0.67 | 12,299,532.1 | 235.67x |
-| **Eager** | Forward | MPS | 61.12 | 134,025.4 | 1.07x |
-| **Eager** | Backward | MPS | 36.75 | 222,917.5 | 4.27x |
-| **Compiled** | Forward | MPS | 38.37 | 213,495.9 | 1.71x |
-| **Compiled** | Backward | MPS | 62.19 | 131,731.3 | 2.52x |
-| **Triton** (Simulated) | Forward | CUDA | 0.31 | 26,230,074.7 | 210.00x |
-| **Triton** (Simulated) | Backward | CUDA | 0.75 | 10,959,857.7 | 210.00x |
+| **Eager** | Forward | CPU | 41.18 | 198,934.1 | 1.00x |
+| **Eager** | Backward | CPU | 104.85 | 78,132.7 | 1.00x |
+| **Compiled** | Forward | CPU | 26.57 | 308,341.2 | 1.55x |
+| **Compiled** | Backward | CPU | 43.17 | 189,757.1 | 2.43x |
+| **Eager** | Forward | MPS | 42.72 | 191,738.2 | 0.96x |
+| **Eager** | Backward | MPS | 88.60 | 92,455.3 | 1.18x |
+| **Compiled** | Forward | MPS | 42.00 | 195,061.5 | 0.98x |
+| **Compiled** | Backward | MPS | 84.71 | 96,705.4 | 1.24x |
+
+_B=8, H=4, T=1024, d=64, chunk=64 (8,192 tokens/pass); 5 warmup + 20 timed runs, mean; Apple M4,
+torch 2.12. Forward and backward are timed in **separate** loops with synchronisation barriers, not
+by subtracting one from a combined loop. Absolute times move by up to ~2x with machine load — read
+the ordering and the ratios, not the milliseconds. On MPS the "Compiled" path falls back to eager
+(see [`seq/benchmark_results.md`](seq/benchmark_results.md))._
+
+> **Correction (superseded numbers).** An earlier version of this table carried six
+> `CUDA (Simulated)` rows computed as `t_cpu / {120, 180, 210}` from hardcoded constants and printed
+> to one decimal place next to the measured rows — they were arithmetic on a CPU timing, not
+> measurements of any GPU, and they have been deleted. It also carried a row reading
+> `Compiled | Backward | CPU | 0.6660 ms | 235.67x | Measured` — a backward pass ~70x *faster* than
+> its own forward, which is not physically possible. That was a timing-method artifact
+> (`t_bwd = t_combined - t_fwd` collapsing); the method has been fixed and the whole table re-measured.
 
 Details: [`seq/throughput_benchmark.py`](seq/throughput_benchmark.py) | Report: [`seq/benchmark_results.md`](seq/benchmark_results.md)
 
@@ -130,7 +185,11 @@ Prizma sits **between replay and the task-id-oracle**, matching the oracle's zer
 DFA variant is the best). The ablation shows recognition-routing is the causal mechanism.
 Adversarially audited by a 4-referee panel (no leakage, fair, reproduces, honest).
 
-- Full writeup (equations, borrowed-vs-new ledger, neuromorphic mapping, limits) → **[`docs/Prizma.md`](docs/Prizma.md)**
+- **Full writeup — the most self-critical document in this repo — → [`docs/Prizma.md`](docs/Prizma.md)** (equations,
+  borrowed-vs-new ledger, neuromorphic mapping, iteration log of what failed, limits). It is worth reading for
+  §8 alone, where the author explains why the headline number above is nearly free: *"FGT=0 is an architectural
+  quasi-tautology; the real achievement is the routing."* Written in Turkish; now translated in full, with the
+  original preserved verbatim at [`docs/Prizma.tr.md`](docs/Prizma.tr.md).
 - Code → `src/` (prizma + baselines + data + metrics), `experiments/` (E1–E5 suite + figure)
 
 ```bash
@@ -153,8 +212,12 @@ equivalence, and the anti-conservative statistics gate) runs on every push via
 ```bash
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt pytest
-pytest -q          # 94 tests, ~25 s on CPU
+pytest -q          # ~211 tests on a CPU-only box (~3 min); 225 collected where MPS is available,
+                   # because several kernel-equivalence tests are parametrised over devices.
 ```
+
+_The "94 tests" figure this README used to quote was long out of date — CI was already collecting
+over 200._
 
 ## License
 

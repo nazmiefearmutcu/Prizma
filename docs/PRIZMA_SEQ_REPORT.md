@@ -1,9 +1,16 @@
 # Prizma-Seq — Is It a Credible Transformer Alternative? (Living Report)
 
-> Status: **§4 BAR MET (v3 campaign) — pending final adversarial referee gate.** All bar legs filled with real A100 numbers; no faked metrics.
-> Every number here is produced by a reproducible script in `seq/` (seeds + CIs). No hand-tuning
-> of reported numbers; no faked metrics. The committee revises this until a referee panel agrees
-> (or honestly refuses) the claim below.
+> Status: **§4 BAR MET EXCEPT B4 (char-LM), which is PARTIAL — pending final adversarial referee gate.**
+> All bar legs filled with real A100 numbers; no faked metrics. Every number here is produced by a
+> reproducible script in `seq/` (seeds + CIs). No hand-tuning of reported numbers. The committee
+> revises this until a referee panel agrees (or honestly refuses) the claim below.
+>
+> **Two corrections you should read before the results.** (1) **B4 was previously scored PASS; it is
+> a PARTIAL** — it deviated from its own pre-registration (one corpus instead of two, n=2 instead of
+> ≥5, after the other corpus failed). (2) **The powered n=10 recall gate is QUARANTINED** for data
+> contamination — see the ⚠ notice in "Results vs the bar — RECALL leg" and
+> [`results/campaign_2026-06-08/CONTAMINATION.md`](../results/campaign_2026-06-08/CONTAMINATION.md).
+> Neither has been re-run and no replacement numbers have been invented.
 
 ## The claim under test (never to be inflated)
 > *Prizma-Seq is a credible efficient-attention-replacement candidate at small scale, in the tested
@@ -14,8 +21,9 @@
 > NOT claimed and are stated as open frontiers.*
 
 ## §4 Bar — FINAL VERDICT (v3 campaign; all legs param-matched, real A100 data)
-**Prizma-Seq clears the project's pre-registered §4 falsifiable bar in the tested regime** (small scale,
-the named tasks). All four field-standard diagnostic legs PASS param-matched vs a tuned Transformer; the
+**Prizma-Seq clears the project's pre-registered §4 falsifiable bar in the tested regime, with one
+exception: B4 (char-LM) is a PARTIAL, not a PASS — it did not honour its own pre-registration** (small
+scale, the named tasks). The four field-standard diagnostic legs PASS param-matched vs a tuned Transformer; the
 structural advantage is a **constant-memory** edge at every length PLUS an O(1)-latency crossover that
 **overtakes attention only at long context (n≥32k; Prizma is ~1.5× slower below that)**; the named mechanism
 is causally responsible; and on length-extrapolation Prizma **degrades far more gracefully** than a RoPE
@@ -27,7 +35,7 @@ proven alternative: char-LM is a loss-within-margin, the latency win is long-con
 | B1/B1b MQAR | **PASS** | parity @860K + solves @130K where matched TF needs ≥461K (≥3.5× param-eff, coarse grid) |
 | B2 Induction | **PASS** | quad2 0.9995 (3/3) vs TF 0.996 _(non-discriminating: Prizma-none also solves)_ |
 | B3 Selective-copy | **PASS** | selective 0.9991; fixed-control spread 1e-4 _(also non-discriminating)_ |
-| B4 Char-LM (text8) | **PASS (within margin; does NOT beat TF)** | Prizma 1.7496 vs TF 1.7254 → +0.024 *worse*, under the +0.05 bar |
+| B4 Char-LM (text8) | **PARTIAL — deviated from pre-registration** | Margin cleared on text8 (Prizma 1.7496 vs TF 1.7254 → +0.024 *worse*, under the +0.05 bar) — but §B4 pre-registered **BOTH** corpora at ≥3 seeds (≥5 for the closest leg); delivered text8-only at n=2, after tiny-shakespeare **FAILED** (−0.09, raw not retained) |
 | B5 Inference | **PASS (memory)** | constant 17.9MB ∀n → 28–455× less mem (analytic+measured); O(1)/step. Latency crossover **only at n≥32k** (2.4× @65k); Prizma ~1.5× slower below |
 | B6 Causal | **PASS** | quad2 ≫ rand_linear ≈ none ≫ TF (the monomials, not "a bigger RNN") |
 | Length-extrap (frontier) | **WIN (relative)** | Prizma 10× better retention than RoPE-TF @8× — but Prizma's own absolute acc is only ~0.40 @8× |
@@ -121,8 +129,10 @@ clean attention-replacement test.
    Gated-DeltaNet + short conv + a small window head** — all borrowed, known-good components. The
    architecture is a *synthesis*, not a new primitive. Prizma-Seq's distinct, separately-tested
    contributions are: (a) the predictive-coding free-energy *derivation* of the delta write; (b)
-   whether the surprise/precision signal used causally helps (B6); (c) task-free continual
-   **sequence** modeling (secondary axis).
+   whether the surprise/precision signal used causally helps — **this remains an open question, NOT
+   something B6 answered** (B6 tested `quad2`; the surprise-gating ablation is `results/gpu_ablation.json`,
+   n=2 smoke, all verdicts INCONCLUSIVE, and its point estimates run *against* the mechanism — see
+   "Borrowed vs new ledger" below); (c) task-free continual **sequence** modeling (secondary axis).
 4. **What "Transformer alternative" means here (and why it is still a real claim):** the DeltaNet/
    Mamba family ARE the field's accepted efficient attention-replacements. The user's goal —
    *something that can stand in for the Transformer* — is satisfied by a member of that family that
@@ -246,7 +256,7 @@ it is seed-fragile at this scale: P1 was 2/3 with a 0.785 failure.)
 | B1b | MQAR capacity / param-eff | within margin to pre-reg D*=32 | **solves D=128 @130K (3/3, 0.997)** via rectangular d_φ=256 | 0/3 @130K (needs ≥461K) | **PASS** (exceeds pre-reg D\*; ≥3.5× param-eff on a coarse grid) |
 | B2 | Induction | ≥0.98; 64–256 gap ≥0.95 | **3/3, median 0.9995** (256: 0.9995) ✓ ignites ~18k | 3/3>0.9 median 0.996 (s2=0.903 weak) | **PASS** (param-matched d128L2H4 0.64%; single lr=1e-3; `gpu_diag.json`). _Non-discriminating: Prizma-none also solves (median 1.0); the lever's edge is B1b/B6, not here._ |
 | B3 | Selective copy | selective ≥0.97, ≥T−0.02; control gate | **selective 3/3, median 0.9991**; fixed-control 0.9999 | selective 3/3, median 0.9994; fixed-control 1.0 | **PASS** (param-matched d128L2H4 0.64%; quad2≥T−0.02, fixed-control spread 1e‑4; `gpu_diag.json`). _Non-discriminating: Prizma-none also 0.9994 — selcopy/induction are solved by Prizma regardless of feat_map; the lever's edge shows in B1b/B6, not here._ |
-| B4 | Char-LM | test BPC ≤ T+0.05 | **text8 best_bpc 1.7496** (2 seeds [1.751, 1.749], val-selected, NO overfit) | **1.7254** (val-selected, no overfit) | **PASS** (margin TF−Prizma = **−0.024 < +0.05**; `gpu_charlm2.json`: text8-10M, AdamW wd=0.1, eval@250, val-based early-stop, param-match −0.13%, n=2). _Honest: Prizma is competitive **within** the margin, NOT beating TF; ~5× slower to train (1889 vs 361 s/arm). An earlier shakespeare run OVERFIT (Prizma best 2.30 vs TF 2.21 = −0.09 fail; raw not retained on disk — superseded) and is replaced by this credible text8 result. text8 split is contiguous (train 0–10M / val 10–10.5M / test 10.5–11M) with **no guard band** → <0.05% boundary leak, symmetric across both arms._ |
+| B4 | Char-LM | test BPC ≤ T+0.05 **on BOTH corpora**, ≥3 seeds (≥5 for the closest leg) | **text8 best_bpc 1.7496** (2 seeds [1.751, 1.749], val-selected, NO overfit) | **1.7254** (val-selected, no overfit) | **PARTIAL — deviated from pre-registration: one corpus, n=2; the other corpus failed.** The +0.05 margin IS cleared on the corpus that was run (TF−Prizma = **−0.024 < +0.05**; `gpu_charlm2.json`: text8-10M, AdamW wd=0.1, eval@250, val-based early-stop, param-match −0.13%). What is NOT met is the bar itself: (a) **tiny-shakespeare, the other required corpus, FAILED** (Prizma best 2.30 vs TF 2.21 = −0.09) under an overfitting recipe, and **its raw data was not retained on disk**, so the failure cannot be re-examined or cleanly declared superseded — only asserted to be; (b) **n=2 < the pre-registered ≥3 (≥5 for the closest leg)**, and B4 *is* the closest leg. A later text8 run reached n=7 vs TF n=10 (Δ=+0.021, gap statistically real, Welch t≈6.7) — still one corpus. Calling this PASS claimed a bar that was not met; the deviation now lives in the verdict, not the fine print. _Also honest: Prizma is competitive **within** the margin, NOT beating TF; ~5× slower to train (1889 vs 361 s/arm). text8 split is contiguous (train 0–10M / val 10–10.5M / test 10.5–11M) with **no guard band** → <0.05% boundary leak, symmetric across both arms._ |
 | B5 | Inference advantage | flat latency + constant mem | **peak mem 17.9MB ∀n (measured, constant); per-step FLAT ~7.0ms ∀n (O(1))** | peak 49→**562MB**; per-step 4.5→**16.9ms** (n4k→64k) | **PASS — primary edge is MEMORY** (constant state → 28–455× less; analytic + measured). _Secondary:_ measured latency crossover @ **n=32768** (`gpu_latency.json`, A100, n→65536, both sizes): @65536 Prizma **2.4× faster small** (7.1 vs 16.9ms) / **2.8× big** (13.9 vs 38.9ms, measured). **Below n≤16k Prizma is ~1.3–1.5× SLOWER** (overhead-bound) → the latency win is long-context-only (disclosed). Latency = single A100 run, median of 5 reps (2 warmup), no seed-CI. |
 | B6 | Causal ablation (the quad2 lever) | quad2 ≫ rand_linear ≈ none control | **quad2 3/3 (0.997) ≫ rand_linear 0/3 (0.59) ≈ none 0/3 (0.52)** @d64/130K MQAR-D128 | TF 0/3 (0.016) | **PASS** (gain = quadratic monomials, not any d_φ=256 expansion; `gpu_bench.json` extra_summary) |
 
@@ -293,8 +303,11 @@ it is seed-fragile at this scale: P1 was 2/3 with a 0.785 failure.)
   rather than the spec's sparse Q=4/8/16 — dense supervision is the Zoology-standard MQAR and helps
   *both* models equally; sequence lengths are 128/224/384. (b) The B1b `d_h=64` arm is a **larger
   model** (d=128, ~2.8× params) — labeled an *over-parameter probe*, not a matched comparison; the
-  matched capacity curve is `d_h=32`. (c) **B4 char-LM is single-corpus (tiny-shakespeare), ≥2
-  seeds**; text8 and ≥5 seeds are future work — B4 is the closest-gap, non-minimal item.
+  matched capacity curve is `d_h=32`. (c) **B4 char-LM is single-corpus and under-seeded, and this is
+  a DEVIATION FROM THE PRE-REGISTRATION, not a scoping choice.** §B4 pre-registered *both* corpora at
+  ≥3 seeds (≥5 for the closest leg, which B4 is). Delivered: text8 only, n=2 (later n=7 vs TF n=10) —
+  after tiny-shakespeare **failed** by −0.09 and its raw data was **not retained**. The B4 verdict is
+  therefore **PARTIAL**, not PASS; see the B4 row in "Results vs the bar".
 
 ### Preliminary signal (calibration, 1 seed, NOT final)
 - MQAR rung1, matched params (~100K), identical budget (2500 steps): Prizma-Seq **0.871** vs
@@ -314,16 +327,42 @@ it is seed-fragile at this scale: P1 was 2/3 with a 0.785 failure.)
 | Short causal depthwise conv (load-bearing for recall) | Mamba / Based / DeltaNet | borrowed |
 | Local exact-window head | Based / Griffin | borrowed |
 | RoPE positions, RMSNorm, SwiGLU, tied head | Llama-family standard | borrowed |
+| `quad2` quadratic feature map (the lever B6 tested) | **Based / Hedgehog kernel family — borrowed**; the *rectangular-delta-state framing* around it is the new part | borrowed (kernel) / new (framing) |
 | **PC free-energy derivation of the delta write** | — | new framing (testable) |
-| **Precision/surprise signal used causally for gating** | Prizma | new (tested in B6) |
+| **Precision/surprise signal used causally for gating** | Prizma | **new — but UNTESTED at power, and the one result there is points AGAINST it** (see below) |
 | **Task-free continual SEQUENCE modeling** | Prizma | new axis (secondary) |
 
-## v2 SOTA-landscape + levers (2026-06-08 — METHODS built; RECALL + char-LM legs LANDED, 4-arm landscape pending)
+> **Correction — the surprise-gating row used to read "new (tested in B6)". It was not tested in B6.**
+> B6, the leg that PASSED, ablated **`quad2`** — the feature map this same ledger classifies as
+> *borrowed* from the Based/Hedgehog kernel family. The surprise/precision gate has its own ablation,
+> [`results/gpu_ablation.json`](../results/gpu_ablation.json), and that ablation is **`"smoke": true`,
+> n=2, with every verdict INCONCLUSIVE** — so it establishes nothing either way. What it *does* show,
+> at its point estimates, runs against the mechanism:
+>
+> | arm | mean acc (n=2) |
+> |---|---|
+> | `surprise_constant` (a **constant** gate — the signal carries no information) | **0.566** |
+> | `surprise_random` (a **random** gate) | 0.527 |
+> | `surprise_norm` (**the actual surprise signal**) | 0.517 |
+> | baseline (no gate) | 0.406 |
+>
+> A constant gate and a random gate both scored above the real signal. At n=2 with these CIs that
+> ordering is noise and nothing should be concluded from it — but it is emphatically **not** support
+> for the claim, and the claim was booked as tested. The honest status of this novelty line is:
+> **asserted, not demonstrated; the only evidence collected so far points the wrong way; a powered
+> ablation is owed.** The ablation stays published exactly as it is — it is the honest part.
+
+## v2 SOTA-landscape + levers (2026-06-08 — METHODS built; the 4-arm landscape was NEVER RUN)
 This session built out the evidence apparatus so the §4 legs can flip to *powered, decisive* verdicts
 against the **SOTA landscape**, not just one Transformer. All of the below is reviewed code (each via
-implement→spec-review→quality-review; protected forwards byte-identical; 143→162 tests). **The RECALL leg
-has now LANDED** (powered n=10, A100; see "Results vs the bar" below); the char-LM **BPC** leg (S1) and the
-4-arm GLA/Mamba-2 landscape `--full` runs are still on the GPU and remain explicitly PENDING.
+implement→spec-review→quality-review; protected forwards byte-identical; 143→162 tests).
+
+> **Apparatus, not results.** `seq/gla.py` (GLA), `seq/mamba2.py` (Mamba-2) and the 4-arm head-to-head
+> harness `seq/landscape.py` (52 KB) are faithful, fully-tested implementations that have produced
+> **zero results**. The `--full` landscape run has **not been executed** — not "pending on the GPU",
+> not in flight: it has never been run. **No GLA or Mamba-2 number appears anywhere in this repo and
+> none is claimed.** The RECALL leg did run, but its artifact is **quarantined for contamination**
+> (see the ⚠ notice below); the char-LM BPC leg landed and is reported below as a **PARTIAL**.
 
 **SOTA baselines (faithful, non-strawman, param-matched at matched d/L/H):**
 | Arm | Module | Family | Param-vs-TF | Rigor |
@@ -348,23 +387,56 @@ control. `seq/landscape_report.py` renders the persisted verdict JSONs into this
   solve** (the within-chunk recurrence separates into `d_v` independent `(I+A^(c))eps^(c)=rhs^(c)` systems).
   `eta=None` byte-identical (max|d|=0.0); `eta==_delta_reference` <1e-5 fwd+grad (pure+gated, cpu+mps).
 
-**Results vs the bar — RECALL leg (powered, n=10 seeds, A100, LANDED 2026-06-08; `results/campaign_2026-06-08/recall_gate.json`):**
+**Results vs the bar — RECALL leg** (`results/campaign_2026-06-08/recall_gate.json`):
+
+> ## ⚠ QUARANTINED — DO NOT CITE THE NUMBERS IN THIS SUBSECTION
+>
+> **This is not the powered n=10 run it is described as.** A resume-cache bug in
+> `seq/recall_gate.py::_train_arm` skipped seeds already present in the results JSON **keyed on the
+> seed number alone, carrying no record of the configuration that produced them**. An earlier tiny
+> `--smoke` run (`results/recall_gate.json`, scale `d64L2H2`, `feat_map: "none"`) had written to the
+> same file, so the campaign silently adopted **its** seeds 0 and 1 — in **all ten cells**, byte for
+> byte (verified 20/20). Those two seeds are a ~4× smaller model, and for the candidate arm they ran
+> with its key lever (`quad2`) switched **OFF**. The bug also handed the campaign the smoke's
+> **stage-1 LR sweep** in all ten cells, so *every* seed's learning rate was picked on the wrong model
+> over a 2-point grid instead of the 5-point grid this file's own `meta.lr_grid` declares.
+>
+> **Therefore untrustworthy:** the per-cell `params`; the standard deviations and confidence
+> intervals in the table below (the spread is a mixture artifact, and it is what failed TOST on all
+> three legs); and the "bimodal Transformer baseline" reading below it.
+>
+> **The bimodality claim specifically.** 5 of 10 reported TF induction seeds score below 0.5 — but 2
+> of those 5 are the smoke's 4×-smaller model, whose low score is a capacity result, not seed noise.
+> Among the 8 uncontaminated seeds, **3 collapse (seeds 2, 4, 6 at 0.066 / 0.065 / 0.064)**. So a
+> bimodal failure mode is visible in the valid seeds and is probably real — but "~half its seeds" is
+> inflated by the bug, and a caching artifact was partly misdiagnosed as a property of the baseline.
+>
+> **Direction of the error: conservative.** It widened the CIs (making equivalence *harder* to
+> certify) and handicapped the candidate. It produced an under-claim, not an over-claim.
+>
+> **Not re-run, not back-filled.** A clean campaign needs ~28 A100-hours. No replacement numbers have
+> been invented and the raw JSON is untouched. Full disclosure:
+> [`results/campaign_2026-06-08/CONTAMINATION.md`](../results/campaign_2026-06-08/CONTAMINATION.md).
+> The bug is fixed — resume is now keyed on `(seed, config-fingerprint)`, mixed-configuration
+> aggregation raises instead of publishing, and `tests/test_recall_gate.py` pins it.
+
 The TOST-parity gate (±0.05, flip-test guarded) **was NOT MET on any of the three recall legs**, so the honest
-recall claim **DOWNGRADES to "competitive"** — *not* a tested parity, and not a win:
+recall claim **DOWNGRADES to "competitive"** — *not* a tested parity, and not a win. (That downgrade stands:
+it is the conservative direction, and the contamination could only have made equivalence harder, never easier.)
+The numbers themselves are quarantined:
 
 | Recall leg | TF mean (solve) | Prizma mean (solve) | Δ (Prizma−TF) | 90% CI | TOST-equiv | not-worse | flip-test |
 |---|---|---|---|---|---|---|---|
-| MQAR-hard | 0.840 (0.80) | 0.880 (0.80) | +0.040 | (−0.195, +0.275) | ✗ | ✗ | ✓ (bigger TF solves) |
-| Induction | 0.533 (0.50) | 0.818 (0.80) | +0.285 | (−0.056, +0.625) | ✗ | ✗ | ✓ |
-| Selective-copy | 0.975 (0.80) | 0.996 (1.00) | +0.022 | (−0.009, +0.052) | ✗ | ✓ | ✓ |
+| MQAR-hard ⚠ | 0.840 (0.80) | 0.880 (0.80) | +0.040 | (−0.195, +0.275) | ✗ | ✗ | ✓ (bigger TF solves) |
+| Induction ⚠ | 0.533 (0.50) | 0.818 (0.80) | +0.285 | (−0.056, +0.625) | ✗ | ✗ | ✓ |
+| Selective-copy ⚠ | 0.975 (0.80) | 0.996 (1.00) | +0.022 | (−0.009, +0.052) | ✗ | ✓ | ✓ |
 
-_Read honestly: on point estimates Prizma's mean **and** solve-rate are ≥ TF on all three legs, but **no leg
-clears powered TOST-equivalence** at ±0.05 — selective-copy misses only because the upper CI (0.052) grazes
-just past the margin, while MQAR-hard/induction miss because the **Transformer baseline is high-variance** (on
-induction TF is bimodal: ~half its seeds collapse to ~0.06 while the rest reach ~0.99, so its CI is wide enough
-that equivalence cannot be certified even though Prizma is the more *reliable* arm). This is a
-conservative-against-a-noisy-baseline NON-result for parity, recorded as such; it is
-**not** evidence that Prizma beats attention on recall. (The identical-model negative control is a property of the
+_Every row above is computed from a contaminated 10-seed array (see the notice). On point estimates Prizma's
+mean **and** solve-rate are ≥ TF on all three legs, and **no leg clears powered TOST-equivalence** at ±0.05 —
+but the reason offered at the time (that the **Transformer baseline is high-variance**, bimodal on induction)
+cannot be separated from the pipeline artifact, so it is withdrawn as an explanation. What survives is the
+verdict direction only: this is a NON-result for parity, recorded as such, and it is **not** evidence that
+Prizma beats attention on recall. (The identical-model negative control is a property of the
 landscape/harness legs, not this recall gate, so none is claimed here.)_
 
 > Scope rider (binding): ≤2M params (+1 confirmation 10–50M); char-LM + diagnostics; NOT a frontier/MMLU/
@@ -372,8 +444,9 @@ landscape/harness legs, not this recall gate, so none is claimed here.)_
 > now LANDED (below); the 4-arm GLA/Mamba-2 landscape remains PENDING.
 
 **Results vs the bar — CHAR-LM leg (text8, A100, LANDED 2026-06-09; `results/campaign_2026-06-08/charlm_partial_n7.json`):**
-The B4 bar (test BPC ≤ TF+0.05, val-selected best) is **MET** — Prizma-v2 is competitive within the margin, but
-*reliably* a hair behind (not a tie, not a win):
+The B4 **margin** (test BPC ≤ TF+0.05, val-selected best) is **MET on text8** — Prizma-v2 is competitive within
+the margin, but *reliably* a hair behind (not a tie, not a win). The B4 **bar** as pre-registered is still only
+**PARTIAL**: it required *both* corpora, and this is text8 again (see the B4 row in "Results vs the bar"):
 
 | Arm | n | mean BPC ± sd | range | vs B4 bar (≤ TF+0.05) |
 | --- | --- | --- | --- | --- |
