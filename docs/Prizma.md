@@ -1,264 +1,270 @@
 # Prizma — backprop-free, fully-local continual learning
 
-**Backprop'suz, tam-lokal, predictive-coding tabanlı, nöromorfik-hedefli bir öğrenme mimarisi.**
+> **English is the primary version of this document.** The original Turkish is preserved verbatim
+> at [`docs/Prizma.tr.md`](Prizma.tr.md). Where the two disagree, the Turkish is the author's
+> original wording. Nothing was softened in translation — in particular the self-criticism in
+> [§8](#8-honest-assessment--where-it-works-where-it-breaks) is rendered as bluntly as it was written.
 
-> Çekirdek fikir (3 cümle). Prizma, tek bir serbest-enerji fonksiyoneli üzerinde üç zaman
-> ölçeğinde gradyan inişi yapan bir *kortikal çalışma-alanı ağıdır*: aktivitelere göre iniş =
-> çıkarım, kapılara göre iniş = yönlendirme, ağırlıklara göre iniş = öğrenme. Tüm öğrenme
-> kuralları lokaldir (backprop yok, weight transport yok; çıkarımdaki W^T, Feedback Alignment
-> ile gevşetilir). Özgün katkı, *aynı precision-ağırlıklı-sürpriz sinyalinin* iki zaman
-> ölçeğinde hem dikkat/yönlendirmeyi hem de plastisiteyi (konsolidasyonu) sürmesidir — bu da
-> **görev-sınırı ve görev-etiketi gerektirmeyen sürekli öğrenme** verir: EWC'nin çevrimdışı
-> Fisher'ını, çevrimiçi ve lokal bir sürpriz-güdümlü önem sinyaliyle değiştirir.
+**A backprop-free, fully-local, predictive-coding-based, neuromorphic-targeted learning architecture.**
 
-Bu belge fikri baştan sona sunar, denklemleştirir, **gerçek kodla test eder**, başarısız
-denemeleri ve düzeltmeleri kaydeder ve nerede çalışıp nerede çalışmadığını dürüstçe sınırlar.
+> Core idea (3 sentences). Prizma is a *cortical workspace network* that performs gradient descent
+> on a single free-energy functional across three timescales: descent on activities =
+> inference, descent on gates = routing, descent on weights = learning. All learning
+> rules are local (no backprop, no weight transport; the W^T in inference is relaxed with
+> Feedback Alignment). The original contribution is that *the same precision-weighted-surprise
+> signal* drives both attention/routing and plasticity (consolidation) across two
+> timescales — and this yields **continual learning that requires no task boundary and no task
+> label**: it replaces EWC's offline Fisher with an online and local surprise-driven importance
+> signal.
 
----
-
-## 0. Nasıl buraya geldik (akıl yürütme zinciri)
-
-Mevcut transformer mimarisinde prior + attention + bellek + hesaplama tek bir ağırlık yığınına
-bulanır ve sıfırdan, veri-aç biçimde öğrenilir. Beyin hamlesi bu dört işlevi dört organa böler.
-Prizma bu bölünmeyi alır ama **A yolunu (backprop + RL-gating) reddeder**; **B yolunu** seçer:
-tam-lokal plastisite, predictive-coding çapası, nöromorfik/analog hedef. Asıl nesne forward
-pass değil **plastisitedir**; öğrenme ile çıkarım tek bir serbest-enerji fonksiyoneli üzerinde
-farklı değişkenlere göre gradyan inişidir.
-
-Bu mimari ve teorik çerçeve, 6 alan uzmanından oluşan bir tasarım heyeti tarafından
-geliştirildi (predictive-coding teorisi, novel mekanizma, nöromorfik donanım, prior-art
-farklılaşması, failure-mode analizi, deney protokolü). Heyetin tam raporları
-`committee/reports.json` içindedir.
+This document presents the idea end to end, turns it into equations, **tests it with real code**,
+records the failed attempts and the fixes, and honestly bounds where it works and where it does not.
 
 ---
 
-## 1. Kurulu mimari — Kortikal Çalışma-Alanı Ağı
+## 0. How we got here (the chain of reasoning)
 
-- **HEAD** — güçlü, yapılandırılmış üretici öncül `p(nedenler)`. Latent'ler referans-çerçeveleri
-  olarak yaşar (grid-hücre benzeri ilişkisel kodlar). Yavaş/dondurulmuş; few-sample verimliliği
-  buradan gelir. *(Prototipte: dondurulmuş RBF/karelionel lift — basit ama rolü temsil eder.)*
-- **MODÜLLER** (kortikal alanlar) — paralel lokal uzmanlar. Her biri kendi girdi dilimi için
-  tahmin hatası `ε_m` hesaplar ve **ham aktivasyon değil HATA** akıtır.
-- **ÇALIŞMA ALANI** (talamus+PFC) — sabit boyutlu küçük latent dizi `a ∈ R^k`, `k ≪ n`.
-  Darboğaz hesaplama tasarrufunun kendisidir: maliyet `O(n·k)`, `n`'de lineer.
-- **GEÇİT** (bazal gangliyon) — modüller çalışma alanına yazmak için precision-ağırlıklı hata
-  ("bid") ile yarışır; kazanan(lar) yazar (PBWM).
-- **YAYIN** (talamo-kortikal döngü) — güncellenen alan tüm modüllere yukarıdan-aşağı tahmin
-  olarak geri yayınlanır; bu yayın aynı zamanda efference-copy gibi davranır.
+In the current transformer architecture, prior + attention + memory + computation are smeared into
+a single weight stack and learned from scratch, in a data-hungry way. The brain's move splits these four
+functions into four organs. Prizma takes this split but **rejects path A (backprop + RL-gating)**;
+it chooses **path B**: fully-local plasticity, a predictive-coding anchor, a neuromorphic/analog target.
+The real object is not the forward pass but **plasticity**; learning and inference are gradient
+descent on a single free-energy functional with respect to different variables.
+
+This architecture and theoretical framework were developed by a design committee of 6 domain
+experts (predictive-coding theory, novel mechanism, neuromorphic hardware, prior-art
+differentiation, failure-mode analysis, experiment protocol). The committee's full reports are in
+`committee/reports.json`.
 
 ---
 
-## 2. Tek serbest-enerji fonksiyoneli ve üç güncelleme kuralı
+## 1. The assembled architecture — Cortical Workspace Network
 
-### 2.1 Master fonksiyonel `F` (omurga)
+- **HEAD** — a strong, structured generative prior `p(causes)`. The latents live as
+  reference frames (grid-cell-like relational codes). Slow/frozen; few-sample efficiency
+  comes from here. *(In the prototype: a frozen RBF/quadratic-kernel lift — simple, but it represents the role.)*
+- **MODULES** (cortical areas) — parallel local experts. Each computes the prediction
+  error `ε_m` for its own input slice and propagates **ERROR, not raw activation**.
+- **WORKSPACE** (thalamus+PFC) — a small fixed-size latent array `a ∈ R^k`, `k ≪ n`.
+  The bottleneck is the computational saving itself: cost `O(n·k)`, linear in `n`.
+- **GATE** (basal ganglia) — modules compete with precision-weighted error
+  (the "bid") for the right to write to the workspace; the winner(s) write (PBWM).
+- **BROADCAST** (thalamo-cortical loop) — the updated workspace is broadcast back to all modules as
+  a top-down prediction; this broadcast also acts like an efference copy.
+
+---
+
+## 2. A single free-energy functional and three update rules
+
+### 2.1 The master functional `F` (the backbone)
 
 ```
 F = Σ_m ½ ε_mᵀ Π_m ε_m   +   ½ ε_wᵀ Π_w ε_w   +   ½ ε_aᵀ Π_a ε_a   +   Σ_m g_m·b_m   −   λ_H·H(g)   +   R(θ)
 ```
 
-Hata popülasyonları (hepsi açık, ileriye bakan, lokal okunabilir):
+Error populations (all explicit, forward-looking, locally readable):
 ```
-modül hatası:        ε_m  = x_m − W_m f(z_m)          (aşağıdan girdi − modülün kendi tahmini)
-modül↔workspace:     ε_zm = z_m − U_m a                (workspace yayını her modül latent'ini öngörür)
-head/prior hatası:   ε_a  = a   − μ_a(c)               (workspace latent − yapılandırılmış öncül)
-yönlendirme bid'i:   b_m  = ½ ε_mᵀ Π_m ε_m             (precision-ağırlıklı hata = bazal-gangliyon teklifi)
+module error:        ε_m  = x_m − W_m f(z_m)          (bottom-up input − the module's own prediction)
+module↔workspace:    ε_zm = z_m − U_m a                (the workspace broadcast predicts each module latent)
+head/prior error:    ε_a  = a   − μ_a(c)               (workspace latent − structured prior)
+routing bid:         b_m  = ½ ε_mᵀ Π_m ε_m             (precision-weighted error = basal-ganglia bid)
 ```
-`Π_*` precision (ters-kovaryans) matrisleri; `g_m∈[0,1]` kapı değişkenleri; `H(g)` kapı entropisi
-(yük-dengesi, ölü-uzman baskısı, P6); `R(θ)` ağırlık/komplexite öncülü. **F = doğruluk +
-komplexite.** Tüm terimler precision-ağırlıklı kare hata + öncül.
+`Π_*` are precision (inverse-covariance) matrices; `g_m∈[0,1]` are gate variables; `H(g)` is gate entropy
+(load balancing, dead-expert pressure, P6); `R(θ)` is the weight/complexity prior. **F = accuracy +
+complexity.** All terms are precision-weighted squared error + prior.
 
-### 2.2 Çıkarım — aktivitelere göre iniş (hızlı settling)
+### 2.2 Inference — descent on activities (fast settling)
 
 ```
 τ_z dz_m/dt = −∂F/∂z_m = diag(f'(z_m))·W_mᵀ(Π_m ε_m)  −  Π_zm(z_m − U_m a)   [+ √(2T)·ξ(t)]
 τ_a da/dt   = −∂F/∂a    = Σ_m g_m·U_mᵀ(Π_zm(z_m − U_m a))  −  Π_a(a − μ_a(c))
 ```
-İlk terim `W_mᵀ` içerir — **işte weight transport tam buraya, ÇIKARIM dinamiğine geri gelir**
-(açık problem P2). Öğrenme kuralında yoktur; çıkarımda vardır. `√(2T)·ξ` Langevin gürültüsü
-MAP settling'i posterior örneklemeye çevirir (P5).
+The first term contains `W_mᵀ` — **this is exactly where weight transport comes back, into the INFERENCE dynamics**
+(open problem P2). It is absent from the learning rule; it is present in inference. The `√(2T)·ξ` Langevin noise
+turns MAP settling into posterior sampling (P5).
 
-### 2.3 Yönlendirme — kapılara göre iniş + sign-tension'ın çözümü
+### 2.3 Routing — descent on gates + the resolution of the sign tension
 
 ```
 τ_g dg_m/dt = −∂F/∂g_m  ⇒  g_m = softmax_m(−b_m/temp + λ_H(−log g_m − 1))
 ```
-**Kritik çözüm (heyet konsensüsü).** "Tek skaler kapı hem dikkati hem plastisiteyi sürer"
-iddiası, yanlış işaretle çelişkilidir: saf PC'de `dw ∝ Π·ε·r` olduğundan *güvenilir/ustalaşmış*
-bir kanal **daha hızlı** öğrenir — konsolidasyonun tam tersi. Çözüm: tek skaler çarpan değil,
-**tek SÜRÜCÜ (sürpriz/hata-enerjisi `E_m`), iki zıt-işaretli okunuş**:
+**The critical fix (committee consensus).** The claim that "a single scalar gate drives both attention and plasticity"
+is contradictory in sign: since in pure PC `dw ∝ Π·ε·r`, a *reliable/mastered*
+channel learns **faster** — the exact opposite of consolidation. The fix: not a single scalar multiplier, but
+**a single DRIVER (the surprise/error energy `E_m`), read out in two opposite signs**:
 ```
-dikkat/çıkarım kazancı:   Π_m = π(E_m),  dπ/dE < 0   (ustalaşınca precision YÜKSELİR — kullan)
-plastisite/öğrenme hızı:  β_m = β(E_m),  dβ/dE > 0   (ustalaşınca β → taban — DONDUR)
+attention/inference gain:  Π_m = π(E_m),  dπ/dE < 0   (on mastery precision RISES — exploit)
+plasticity/learning rate:  β_m = β(E_m),  dβ/dE > 0   (on mastery β → floor — FREEZE)
 ```
-Naive PC kimliği `dw∝Π·ε·r` konsolidasyon için açıkça **REDDEDİLİR**: plastisite `E_m`'i
-(sürprizi) okur, `Π_m`'i değil.
+The naive PC identity `dw∝Π·ε·r` is explicitly **REJECTED** for consolidation: plasticity reads `E_m`
+(surprise), not `Π_m`.
 
-### 2.4 Öğrenme — ağırlıklara göre iniş (yavaş, LOKAL, W^T yok)
+### 2.4 Learning — descent on weights (slow, LOCAL, no W^T)
 
 ```
 dW_m/dt = η · β_m · NM · [ (Π_m ε_m) ⊗ f(z_m) ] ⊙ Tr_m
 ```
-Dört lokal faktör: `NM` (küresel nöromodülatör skaleri = eylem-sonucu hatasının yayını),
-`β_m` (metaplastik kapı), `(Π_m ε_m)` (post-sinaptik hata nöronu), `f(z_m)` (pre-sinaptik
-aktivite), `Tr_m` (eligibility trace, `dTr/dt = −Tr/τ_e + f(z_m)ε_m`). Bu **idealize PC ağırlık
-kuralı**dır ve `dW=(Πε)⊗r`'nin analitik gradyana eşitliği heyet teorisyenince `5e-10` hata ile
-sonlu-fark'a karşı doğrulanmıştır (öğrenme kuralında W^T yoktur). *Not (dürüstlük): prototipin
-encoder'ı bu idealize kuralın DFA yaklaşımıdır — sabit-rastgele feedback kullanır, yani
-prototip **her zaman** W^T-free'dir; FD-doğrulaması idealize kural içindir, prototipin DFA
-encoder'ı için değil.*
+Four local factors: `NM` (the global neuromodulator scalar = the broadcast of the action-outcome error),
+`β_m` (the metaplastic gate), `(Π_m ε_m)` (the post-synaptic error neuron), `f(z_m)` (pre-synaptic
+activity), `Tr_m` (eligibility trace, `dTr/dt = −Tr/τ_e + f(z_m)ε_m`). This is the **idealized PC weight
+rule**, and the equality of `dW=(Πε)⊗r` to the analytic gradient was verified by the committee theorist
+against finite differences to within `5e-10` error (there is no W^T in the learning rule). *Note (honesty): the prototype's
+encoder is a DFA approximation of this idealized rule — it uses fixed-random feedback, i.e. the
+prototype is **always** W^T-free; the FD verification is for the idealized rule, not for the prototype's DFA
+encoder.*
 
-### 2.5 P2 gevşetmesi — ayrı feedback `Q_m` (Feedback Alignment)
+### 2.5 The P2 relaxation — a separate feedback `Q_m` (Feedback Alignment)
 
-Çıkarımdaki `W_mᵀ`, ayrı bir feedback matrisi `Q_m` ile değiştirilir:
+The `W_mᵀ` in inference is replaced by a separate feedback matrix `Q_m`:
 ```
 τ_z dz_m/dt = diag(f'(z_m))·Q_m(Π_m ε_m) − Π_zm(z_m − U_m a)
-lokal eğitim:  dQ_m/dt = η_Q·[(z_m − Q_m(Π_m ε_m)) ⊗ (Π_m ε_m)]     (veya sabit-rastgele Q, DFA)
+local training:  dQ_m/dt = η_Q·[(z_m − Q_m(Π_m ε_m)) ⊗ (Π_m ε_m)]     (or fixed-random Q, DFA)
 ```
-**Dürüstlük:** P2 *çözülmedi*, sadece gevşetildi. Deneyde sabit-rastgele feedback (DFA) ile
-sonuçların değişmediğini gösteriyoruz (E4) — bu rejimde W^T'ye ihtiyaç yok.
+**Honesty:** P2 was *not solved*, only relaxed. In the experiment we show that the results do not change
+with fixed-random feedback (DFA) (E4) — in this regime W^T is not needed.
 
 ---
 
-## 3. Özgün mekanizma — PGM (Precision-Gated Metaplasticity) ve görev-sınırsız sürekli öğrenme
+## 3. The original mechanism — PGM (Precision-Gated Metaplasticity) and task-boundary-free continual learning
 
-İki **eşleşik durum, tek fonksiyonel kapı**:
-- **Hızlı bid** `b_m = π_m·‖ε_m‖²` — dikkati + plastisite penceresini açar (yönlendirme).
-- **Yavaş konsolidasyon** `ω_m` — sürekli düşük hatayla artar, etkin öğrenme hızını
-  `α = α₀/(1+ω_m)` ile çarpımsal küçültür (Bayesçi-sinaps / metaplastisite).
+Two **coupled states, one functional gate**:
+- **Fast bid** `b_m = π_m·‖ε_m‖²` — opens attention + the plasticity window (routing).
+- **Slow consolidation** `ω_m` — grows with sustained low error, multiplicatively shrinking the effective
+  learning rate via `α = α₀/(1+ω_m)` (Bayesian-synapse / metaplasticity).
 
 ```
-plastisite penceresi:  window(b_m) = σ(β(b_m − θ_m))           (yalnızca sürprizde öğren)
-etkin öğrenme hızı:    α_m = α₀ · window(b_m) · 1/(1+ω_m)
-yük-dengesi:           θ_m ← θ_m + η_b(usage_m − target)        (ölü-uzman / rich-get-richer fix)
-reawakening:           ω_m ← ω_m − κ·relu(çelişki)             (occupied-expert fix)
+plasticity window:     window(b_m) = σ(β(b_m − θ_m))           (learn only on surprise)
+effective learn rate:  α_m = α₀ · window(b_m) · 1/(1+ω_m)
+load balancing:        θ_m ← θ_m + η_b(usage_m − target)        (dead-expert / rich-get-richer fix)
+reawakening:           ω_m ← ω_m − κ·relu(conflict)             (occupied-expert fix)
 ```
 
-**Görev-sınırsız sürekli öğrenme neden ortaya çıkar (mekanik):** Bir modül kendi girdi
-domain'ini ustalaştığında düşük hata üretir → düşük bid → yarışmayı kaybeder → `ω→yüksek` →
-donar (konsolide). Yeni domain yüksek hata → taze modül kazanır → öğrenir. **Görev etiketi,
-Fisher matrisi, replay YOK.** Yönlendirme ve konsolidasyon olaylarının zamanlaması, modelin
-kendi sürpriz dinamiğinden (precision testi) okunur — dışsal görev-sınırı sinyali kullanılmaz.
+**Why task-boundary-free continual learning emerges (the mechanics):** When a module masters its own input
+domain it produces low error → low bid → it loses the competition → `ω→high` →
+it freezes (consolidates). A new domain gives high error → a fresh module wins → it learns. **NO task label,
+no Fisher matrix, no replay.** The timing of routing and consolidation events is read from the model's
+own surprise dynamics (the precision test) — no external task-boundary signal is used.
 
 ---
 
-## 4. Ödünç vs Yeni — dürüst defter
+## 4. Borrowed vs New — an honest ledger
 
-| Bileşen | Kaynak | Durum |
+| Component | Source | Status |
 |---|---|---|
-| Açık hata-nöronu + serbest-enerji | Rao-Ballard, Bogacz 2017, Friston | **ödünç** |
-| Lokal ağırlık kuralı `dw∝(Πε)⊗r` (no W^T in learning) | standart PC | **ödünç** |
-| Çıkarımdaki W^T'yi rastgele/öğrenilen feedback ile gevşetme | Feedback Alignment (Lillicrap, Nøkland 2016) | **ödünç** |
-| Üç/dört-faktörlü Hebbian + eligibility | Frémaux & Gerstner 2016 | **ödünç** |
-| Bazal-gangliyon write-gating, küçük workspace | PBWM (O'Reilly & Frank), Goyal & Bengio | **ödünç** |
-| Langevin/stokastik settling = posterior örnekleme | Buesing 2011, Aitchison & Lengyel | **ödünç** |
-| LR ∝ ağırlık-posterior-varyansı (metaplastisite) | Aitchison vd.; Fusi/Benna-Fusi | **ödünç** |
-| ART-tarzı vigilance-recruitment (yeni domain → taze uzman) | Carpenter & Grossberg (ART) | **ödünç** |
-| **Sign-tension'ın çözümü**: tek sürpriz-enerji `E_m`, iki zıt-işaretli okunuş (π↑, β↓) | — | **YENİ sentez** |
-| **Precision-testli, görev-sınırsız faz-dedektörü**: konsolidasyon zamanlamasını aktif uzmanın kendi `(μ,σ)` precision'ından okuma | — | **YENİ mekanizma** |
-| **EWC'nin çevrimdışı Fisher önemini → çevrimiçi/lokal/denetimsiz recognition-sürpriz önemiyle değiştirme** | — | **YENİ konumlandırma** |
+| Explicit error neuron + free energy | Rao-Ballard, Bogacz 2017, Friston | **borrowed** |
+| Local weight rule `dw∝(Πε)⊗r` (no W^T in learning) | standard PC | **borrowed** |
+| Relaxing the W^T in inference with random/learned feedback | Feedback Alignment (Lillicrap, Nøkland 2016) | **borrowed** |
+| Three/four-factor Hebbian + eligibility | Frémaux & Gerstner 2016 | **borrowed** |
+| Basal-ganglia write-gating, small workspace | PBWM (O'Reilly & Frank), Goyal & Bengio | **borrowed** |
+| Langevin/stochastic settling = posterior sampling | Buesing 2011, Aitchison & Lengyel | **borrowed** |
+| LR ∝ weight-posterior-variance (metaplasticity) | Aitchison et al.; Fusi/Benna-Fusi | **borrowed** |
+| ART-style vigilance-recruitment (new domain → fresh expert) | Carpenter & Grossberg (ART) | **borrowed** |
+| **Resolution of the sign tension**: one surprise energy `E_m`, two opposite-signed readouts (π↑, β↓) | — | **NEW synthesis** |
+| **Precision-tested, task-boundary-free phase detector**: reading consolidation timing from the active expert's own `(μ,σ)` precision | — | **NEW mechanism** |
+| **Replacing EWC's offline Fisher importance → with online/local/unsupervised recognition-surprise importance** | — | **NEW positioning** |
 
-Özgünlük dürüstçe: parçalar ödünç, **sentez + iki mekanizma yeni**. Buzzword birleştirmesi
-değil — her parça çalışan kodda test edildi.
+Originality, honestly: the parts are borrowed, **the synthesis + two mechanisms are new**. Not a buzzword
+mashup — every piece was tested in working code.
 
 ---
 
-## 5. Nöromorfik/analog uyum (heyet donanım raporu özeti)
+## 5. Neuromorphic/analog fit (summary of the committee's hardware report)
 
-| İşlem | Fizik | Neden lokal/düşük-güç |
+| Operation | Physics | Why local/low-power |
 |---|---|---|
-| Tahmin (MVM) | RRAM/memristor crossbar (Ohm+Kirchhoff) | O(1) fiziksel zaman, off-chip ağırlık taşıması yok |
-| Hata nöronu | analog diferansiyel çift (akım çıkarma) | paylaşılan düğümde yerel |
-| Kapı `g_m` | **tek tile bias (referans iletkenlik/voltaj)** | *aynı* bias hem okuma-kazancını (dikkat) hem yazma-penceresini (plastisite) ölçekler — precision=plastisite'nin fiziksel gömülmesi |
-| Yarışma | akım-modlu winner-take-all | yerel |
-| Ağırlık güncelleme | üç/dört-faktörlü iletkenlik değişimi | crossbar'a doğal outer-product |
-| Langevin gürültüsü | **intrinsik cihaz gürültüsü (RTN/termal)** | donanım "kusuru" = bedava posterior örnekleyici; `T_eff ∝ okuma-voltajı` |
+| Prediction (MVM) | RRAM/memristor crossbar (Ohm+Kirchhoff) | O(1) physical time, no off-chip weight movement |
+| Error neuron | analog differential pair (current subtraction) | local at the shared node |
+| Gate `g_m` | **a single tile bias (reference conductance/voltage)** | the *same* bias scales both the read gain (attention) and the write window (plasticity) — the physical embedding of precision=plasticity |
+| Competition | current-mode winner-take-all | local |
+| Weight update | three/four-factor conductance change | outer-product native to the crossbar |
+| Langevin noise | **intrinsic device noise (RTN/thermal)** | the hardware "defect" = a free posterior sampler; `T_eff ∝ read-voltage` |
 
-Dürüst sınırlar: gerçek RTN beyaz-Gauss değil (Lorentzian/1/f) → "gürültü=örnekleyici" idealize;
-RRAM endurance (~1e6–1e9 yazma); cihaz değişkenliği MVM'yi bozar; eligibility trace per-cell
-kapasitör pahalı; workspace+WTA+NM için dijital/Loihi-sınıfı destek gerekir (hibrit tasarım).
+Honest limits: real RTN is not white-Gaussian (Lorentzian/1/f) → "noise=sampler" is an idealization;
+RRAM endurance (~1e6–1e9 writes); device variability corrupts the MVM; a per-cell capacitor for the
+eligibility trace is expensive; the workspace+WTA+NM need digital/Loihi-class support (hybrid design).
 
 ---
 
-## 6. Deney — falsifiability gate
+## 6. Experiment — falsifiability gate
 
-### 6.1 Önce bir benchmark-geçerlilik bulgusu (dürüstlük)
+### 6.1 First, a benchmark-validity finding (honesty)
 
-Heyetin önerdiği **rotating-checkerboard** (tüm görevler aynı girdi kutusu, farklı etiket)
-benchmark'ını ölçtüğümüzde **geçersiz** olduğunu bulduk: aynı `x` için görevler arası ortalama
-etiket örtüşmesi ≈0.56 (uyuşmazlık ≈0.44; K=3) — yani **tek-başlı bir model aynı girdiye
-görev-kimliği olmadan farklı cevap veremeyeceği için düşük-unutma MATEMATİKSEL OLARAK İMKÂNSIZ**
-(oracle tek-çıkış tavanı = 0.78; hakemce bağımsız doğrulandı: 0.7808). Bu rejimde hiçbir method kazanamaz; bunu E5 kontrolünde teyit ediyoruz.
+When we measured the **rotating-checkerboard** benchmark the committee proposed (all tasks in the same
+input box, different labels), we found it **invalid**: for the same `x`, the mean cross-task
+label overlap is ≈0.56 (disagreement ≈0.44; K=3) — that is, **because a single-head model cannot give a
+different answer to the same input without task identity, low forgetting is MATHEMATICALLY IMPOSSIBLE**
+(oracle single-output ceiling = 0.78; independently verified by a referee: 0.7808). No method can win in this regime; we confirm this in the E5 control.
 
-Prizma'in mekanizması (recognition-by-reconstruction) **girdi-ayırt-edilebilir
-(domain-incremental)** rejimde anlamlıdır. Bu yüzden geçerli benchmark:
+Prizma's mechanism (recognition-by-reconstruction) is meaningful in the **input-distinguishable
+(domain-incremental)** regime. Hence the valid benchmark:
 
-### 6.2 Benchmark — Structured-Permuted (domain-incremental, ayırt-edilebilir)
+### 6.2 Benchmark — Structured-Permuted (domain-incremental, distinguishable)
 
-Korelasyonlu taban: `v = latent·Aᵀ`, `latent~N(0,I_k)`, `cov(v)=AAᵀ≠I`. Etiket latent'in
-paylaşılan teacher'ı. Görev `t`: özellik permütasyonu `π_t` → `cov(x_t)=P_t(AAᵀ)P_tᵀ` her
-domain'de farklı → autoencoder domain'i girdiden tanıyabilir (kanıt: per-domain PCA recon
-kendi=0.00 vs diğer=0.64). Naive sıralı eğitim yine unutur (permuted-MNIST mantığı).
+Correlated base: `v = latent·Aᵀ`, `latent~N(0,I_k)`, `cov(v)=AAᵀ≠I`. The label is a
+shared teacher of the latent. Task `t`: feature permutation `π_t` → `cov(x_t)=P_t(AAᵀ)P_tᵀ` differs in every
+domain → an autoencoder can recognize the domain from the input (evidence: per-domain PCA recon
+own=0.00 vs other=0.64). Naive sequential training still forgets (the permuted-MNIST logic).
 
-### 6.3 Substrat ve baseline'lar (aynı zeminde, adil)
+### 6.3 Substrate and baselines (same footing, fair)
 
-Öğreniciler, karşılaştırılabilir parametre:
-- **backprop MLP** — tek başlı, sıralı (naive baseline).
-- **EWC** — backprop + Fisher; **görev-sınırı kullanır** (ayrıcalıklı rakip; λ kendi FGT'sini
-  minimize edecek şekilde tune edildi; λ≥100'de numerik taşma olur, tuner λ=50'de kalır).
-- **replay** — backprop + reservoir buffer (görev verisini saklar; standart rehearsal).
-- **oracle_multihead** — K bağımsız sınıflandırıcı, test'te **gerçek görev-kimliği VERİLİR.**
-  Bu, Prizma'in görev-kimliği *verilmeden* (reconstruction sürprizinden çıkararak) eşitlemeye
-  çalıştığı **dürüst üst-sınırdır.**
-- **Prizma (DFA, no W^T)** — ART-routing + PGM konsolidasyon; encoder sabit-rastgele feedback
-  (Feedback Alignment) → **hiçbir yerde W^T yok**; **görev-etiketi/sınırı YOK.** *(Headline.)*
-- **Prizma (exact W^T)** — aynı, ama encoder gerçek `Wᵀ` okur → constraint-2'yi ihlal eder;
-  yalnızca no-transport gevşetmesinin maliyetini ölçmek için. *(Dürüst bulgu: DFA bundan daha
-  iyi performans verir — weight transport gereksiz, hatta zararlı.)*
-- **PRIZMA_noRoute** — routing/faz-dedektörü kapalı, tek monolitik uzman (nedensel ablation).
+Learners, with comparable parameter counts:
+- **backprop MLP** — single-head, sequential (naive baseline).
+- **EWC** — backprop + Fisher; **uses task boundaries** (a privileged competitor; λ was tuned to
+  minimize its own FGT; at λ≥100 numerical overflow occurs, so the tuner stays at λ=50).
+- **replay** — backprop + reservoir buffer (stores task data; standard rehearsal).
+- **oracle_multihead** — K independent classifiers, with the **true task identity GIVEN** at test time.
+  This is the **honest upper bound** that Prizma tries to match *without* being given the task identity
+  (inferring it from reconstruction surprise).
+- **Prizma (DFA, no W^T)** — ART-routing + PGM consolidation; the encoder uses fixed-random feedback
+  (Feedback Alignment) → **no W^T anywhere**; **NO task label/boundary.** *(Headline.)*
+- **Prizma (exact W^T)** — the same, but the encoder reads the true `Wᵀ` → violates constraint-2;
+  only to measure the cost of the no-transport relaxation. *(Honest finding: DFA performs better than
+  this — weight transport is unnecessary, in fact harmful.)*
+- **PRIZMA_noRoute** — routing/phase detector off, one monolithic expert (causal ablation).
 
-Prizma lokal: decoder/head tam-lokal PC/delta kuralı (`(P−Y)⊗z`, `ε⊗z`); encoder Feedback-Alignment.
+Prizma is local: the decoder/head use a fully-local PC/delta rule (`(P−Y)⊗z`, `ε⊗z`); the encoder uses Feedback-Alignment.
 
-### 6.4 Metrikler ve başarı kriteri (falsifiable)
+### 6.4 Metrics and success criterion (falsifiable)
 
-`acc[i,j]` = görev `i` bitince görev `j` test doğruluğu. `ACC=mean_j acc[K-1,j]`;
-`FGT=mean_{j<K-1}(max_i acc[i,j] − acc[K-1,j])`. **BAŞARI** (≥10 seed, non-overlapping %95 GA):
+`acc[i,j]` = the test accuracy on task `j` once task `i` is finished. `ACC=mean_j acc[K-1,j]`;
+`FGT=mean_{j<K-1}(max_i acc[i,j] − acc[K-1,j])`. **SUCCESS** (≥10 seeds, non-overlapping 95% CI):
 `FGT_Prizma ≤ FGT_EWC`, `FGT_Prizma ≤ 0.6·FGT_naive`, `ACC_Prizma ≥ 0.92·ACC_naive`,
-`FGT_Prizma < FGT_vanilla`, ablation gate'in nedensel olması, Prizma kodunda hiçbir görev-sınırı.
+`FGT_Prizma < FGT_vanilla`, the ablation gate must be causal, and no task boundary anywhere in the Prizma code.
 
-### 6.5 SONUÇLAR
+### 6.5 RESULTS
 
-**E1 — Ana karşılaştırma (structured-permuted, K=5, 10 seed, %95 GA):**
+**E1 — Main comparison (structured-permuted, K=5, 10 seeds, 95% CI):**
 
-| Learner | ACC | FGT (unutma↓) | Görev-sınırı? | Bellek? | W^T? |
+| Learner | ACC | FGT (forgetting↓) | Task boundary? | Memory? | W^T? |
 |---|---|---|---|---|---|
 | backprop MLP | 0.445 ± 0.025 | 0.553 ± 0.026 | — | — | — |
-| EWC (λ=50, tuned) | 0.456 ± 0.019 | 0.411 ± 0.020 | **kullanır** | — | — |
-| replay (buffer 1000) | 0.737 ± 0.011 | 0.156 ± 0.009 | **kullanır** | **kullanır** | — |
-| **oracle_multihead** *(üst-sınır)* | **0.879 ± 0.011** | 0.000 | **görev-kimliği VERİLİR** | — | — |
-| **Prizma (DFA, no W^T)** | **0.834 ± 0.015** | **0.000 ± 0.000** | **YOK** | **YOK** | **YOK** |
-| Prizma (exact W^T) | 0.708 ± 0.021 | 0.000 | YOK | YOK | kullanır |
+| EWC (λ=50, tuned) | 0.456 ± 0.019 | 0.411 ± 0.020 | **uses** | — | — |
+| replay (buffer 1000) | 0.737 ± 0.011 | 0.156 ± 0.009 | **uses** | **uses** | — |
+| **oracle_multihead** *(upper bound)* | **0.879 ± 0.011** | 0.000 | **task identity GIVEN** | — | — |
+| **Prizma (DFA, no W^T)** | **0.834 ± 0.015** | **0.000 ± 0.000** | **NO** | **NO** | **NO** |
+| Prizma (exact W^T) | 0.708 ± 0.021 | 0.000 | NO | NO | uses |
 | PRIZMA_noRoute *(ablation)* | 0.446 ± 0.024 | 0.489 ± 0.023 | — | — | — |
 
-Param: backprop/EWC = 20,744; Prizma (eğitilebilir, etkin ~13,840 — yalnız 5 uzman eğitilir;
-sabit FA matrisleri sayılmaz) ≤ MLP. **Prizma kapasiteyle kazanmaz** (hakem doğruladı: backprop
-1.08M parametreyle bile FGT≈0.55–0.57; Prizma 4,720 parametreyle bile FGT=0).
+Params: backprop/EWC = 20,744; Prizma (trainable, effective ~13,840 — only 5 experts are trained;
+fixed FA matrices are not counted) ≤ MLP. **Prizma does not win through capacity** (verified by a referee: backprop
+has FGT≈0.55–0.57 even with 1.08M parameters; Prizma has FGT=0 even with 4,720 parameters).
 
-Okunuş: Prizma (DFA, 0.834) **replay (0.737) ile oracle (0.879) ARASINDADIR** — oracle'ın
-sıfır-unutmasını eşitler, doğruluğuna yaklaşır; ama görev-kimliği *verilmeden*, replay'siz,
-görev-sınırsız, **W^T'siz**. Görev-sınırı+bellek kullanan replay bile FGT=0.156'da kalır. Tüm
-S1–S6 kriterleri non-overlapping GA ile sağlanır.
+Reading: Prizma (DFA, 0.834) **sits BETWEEN replay (0.737) and the oracle (0.879)** — it matches the oracle's
+zero forgetting and approaches its accuracy; but *without* being given the task identity, without replay,
+without task boundaries, **without W^T**. Even replay, which uses task boundaries + memory, stays at FGT=0.156. All
+S1–S6 criteria are met with non-overlapping CIs.
 
-**No-weight-transport dürüst bulgusu:** `feedback="exact"` (encoder gerçek Wᵀ okur) versiyonu
-0.708 verir — **DFA (no W^T) versiyonundan (0.834) DAHA KÖTÜ.** Yani weight transport gereksiz,
-hatta zararlı; Prizma'in biyolojik/nöromorfik sadakat iddiası güçlenir.
+**The honest no-weight-transport finding:** the `feedback="exact"` version (the encoder reads the true Wᵀ) gives
+0.708 — **WORSE than the DFA (no W^T) version (0.834).** So weight transport is unnecessary,
+in fact harmful; Prizma's claim to biological/neuromorphic fidelity is strengthened.
 
-**Nedensellik (ablation):** Recognition-routing'i kapatmak (`noRoute`) → FGT 0.000 → **0.489**
-(backprop seviyesine döner). **Kazanım modüler sürpriz-routing'den gelir.** Dürüst nüans (hakem):
-sıralı-temiz akışta açık dondurma gereksizdir (routing eski uzmanları zaten yeniden-eğitmez);
-mekanizmanın özü routing + precision faz-dedektörüdür. Ayrıca FGT=0, ön-koşullar sağlanınca
-mimari olarak garantilidir — *asıl başarı, onu mümkün kılan denetimsiz/lokal kusursuz routing'dir.*
+**Causality (ablation):** Turning off recognition-routing (`noRoute`) → FGT 0.000 → **0.489**
+(back to backprop level). **The gain comes from modular surprise-routing.** Honest nuance (referee):
+in a clean sequential stream explicit freezing is unnecessary (routing already does not re-train the old experts);
+the core of the mechanism is routing + the precision phase detector. Moreover, once the preconditions hold, FGT=0 is
+architecturally guaranteed — *the real achievement is the unsupervised/local flawless routing that makes it possible.*
 
-**E2 — Ayrışabilirlik sweep'i (gürültü domain'leri bulanıklaştırır; 5 seed):**
+**E2 — Separability sweep (noise blurs the domains; 5 seeds):**
 
 | noise | Prizma ACC | Prizma FGT | backprop ACC | backprop FGT |
 |---|---|---|---|---|
@@ -268,107 +274,107 @@ mimari olarak garantilidir — *asıl başarı, onu mümkün kılan denetimsiz/l
 | 0.9 | 0.430 | 0.073 | 0.239 | 0.421 |
 | 1.2 | 0.344 | 0.077 | 0.222 | 0.350 |
 
-Precision-adaptif recognition sayesinde routing her gürültü seviyesinde **temiz tek-uzman-per-
-domain** kalır (5 uzman commit); FGT düşük kalır. ACC düşüşü routing çöküşünden değil, gürültünün
-sınıflandırma görevini zorlaştırmasındandır (zarif degradation). Prizma her seviyede backprop'u
-geçer.
+Thanks to precision-adaptive recognition, routing stays **cleanly one-expert-per-
+domain** at every noise level (5 experts committed); FGT stays low. The drop in ACC is not from a routing
+collapse but from noise making the classification task harder (graceful degradation). Prizma beats backprop
+at every level.
 
-**E3 — Kapasite (uzman sayısı vs K=5 domain; 5 seed):** experts=3→ACC 0.556, 4→0.692, ≥5→0.827;
-hepsinde FGT=0.000. Uzman < domain ise yeni domain'ler öğrenilemez (ACC düşer) ama **eskiler
-unutulmaz** — zarif kapasite davranışı.
+**E3 — Capacity (number of experts vs K=5 domains; 5 seeds):** experts=3→ACC 0.556, 4→0.692, ≥5→0.827;
+FGT=0.000 in all of them. If experts < domains, new domains cannot be learned (ACC drops) but **the old ones
+are not forgotten** — graceful capacity behavior.
 
-**E4 — Lokalite/P2 (W^T var mı yok mu):** `feedback=random` (saf DFA, W^T yok) → ACC **0.827** /
-FGT 0.000; `feedback=exact` (encoder gerçek Wᵀ okur) → ACC **0.691** / FGT 0.000. İkisi de sıfır
-unutur ama **DFA daha iyi doğruluk verir** → bu rejimde weight transport gereksiz, hatta zararlı.
-P2 gevşetmesi yalnızca "yeterli" değil, tercih edilen.
+**E4 — Locality/P2 (is there a W^T or not):** `feedback=random` (pure DFA, no W^T) → ACC **0.827** /
+FGT 0.000; `feedback=exact` (the encoder reads the true Wᵀ) → ACC **0.691** / FGT 0.000. Both forget zero,
+but **DFA gives better accuracy** → in this regime weight transport is unnecessary, in fact harmful.
+The P2 relaxation is not merely "sufficient", it is preferable.
 
-**E5 — İmkânsız-rejim kontrolü (rotating-checkerboard, ambiguous):** Tek-çıkış oracle tavanı 0.780.
-Prizma ACC 0.570, backprop 0.694 — **Prizma tavanı AŞMAZ** (hatta backprop'un altında). Yani Prizma
-ayırt-edilemez rejimde yardım etmez ve etmediğini dürüstçe gösterir → sınırı anladığımızın kanıtı.
+**E5 — Impossible-regime control (rotating-checkerboard, ambiguous):** The single-output oracle ceiling is 0.780.
+Prizma ACC 0.570, backprop 0.694 — **Prizma does NOT exceed the ceiling** (it is in fact below backprop). So Prizma
+does not help in the indistinguishable regime, and honestly shows that it does not → evidence that we understand the limit.
 
-Tüm sayılar `results/results.json` ve `results/console.txt` içinde; tek komutla yeniden üretilir.
-
----
-
-## 7. İterasyon günlüğü (geliştir → test → başarısızsa tekrar dene)
-
-Kullanıcının istediği "fikri geliştir, test et, olmazsa tekrar dene" döngüsünün gerçek kaydı:
-
-1. **v0 — paylaşılan-toplamsal readout (learners.py).** İki mod da çöktü: `taskfree` zar zor
-   backprop'u geçti (spurious consolidation + rich-get-richer), `boundary` over-froze (task0
-   sonrası tüm gruplar dondu). **Bulgu:** kapasite rezerve edilmiyor.
-2. **Benchmark-geçerlilik krizi.** Rotating-checkerboard'ın tek-başlı CL için imkânsız olduğunu
-   ölçtük (etiket örtüşmesi ≈0.53). → domain-incremental rejime geçtik.
-3. **Permuted-iid-Gaussian de ayırt-edilemez** çıktı (iid permütasyon dağılımı değiştirmez).
-   → korelasyonlu **structured-permuted** benchmark.
-4. **v1 — soft-responsibility MoE.** Uniform çöktü (tüm uzmanlar ~1/M kullanılıp underfit dondu;
-   düşük FGT *yanlış sebepten* = collapsed expert).
-5. **v2 — ART hard-routing.** Forced-commit cascade (underfit erken commit → tüm uzmanlar tek
-   domain'e harcandı). Forced-commit kaldırıldı; sonra per-sample vigilance thrashing.
-   → batch-seviyesi novelty.
-6. **v3 — batch-novelty + faz-dedektörü → ATILIM:** FGT=0.000, ACC=0.80, temiz tek-uzman-per-
-   domain. Ama **E2 kırılganlık:** noise=0.3'te keskin çöküş (sabit vigilance hatası).
-7. **v4 — precision-adaptif aktif-uzman faz-dedektörü.** Her uzman kendi recon precision'ını
-   `(μ,σ)` izler; novelty = `recon > μ+zσ`; aktif uzman domain'i tüm görev boyunca öğrenir,
-   domain değişip artık tanımayınca commit+freeze. **Sonuç: gürültüye sağlam graceful
-   degradation; routing her seviyede temiz kalır.**
-8. **Adversaryal hakem turu (4 paralel denetçi: leakage/cheating, fairness, bağımsız
-   reprodüksiyon, overclaim).** Hepsi `claim_supported=true` döndü (1 SOUND + 3 MINOR_ISSUES;
-   hiç REFUTED/SERIOUS yok). Düzeltilen gerçek bulgular: **(a)** `feedback` parametresi
-   okunmuyordu → düzeltildi; meğer prototip *her zaman* W^T-free'ymiş — ve düzeltince
-   no-W^T (DFA) versiyonunun W^T versiyonundan **daha iyi** olduğu ortaya çıktı (0.834 > 0.708).
-   **(b)** oracle-multihead ve replay baseline'ları eklendi (dürüst üst-sınır + güçlü rakip).
-   **(c)** Framing dürüstleştirildi: "FGT=0 ön-koşullar sağlanınca mimari garanti; asıl başarı
-   denetimsiz/lokal kusursuz routing"; "domain'ler bitişik blok gelmeli (interleaved'da ~0.58'e
-   çöker)"; param muhasebesi, EWC numerik kırılganlığı, FD-atıf düzeltmeleri.
+All numbers are in `results/results.json` and `results/console.txt`; reproducible with a single command.
 
 ---
 
-## 8. Dürüst değerlendirme — nerede çalışır, nerede kırılır
+## 7. Iteration log (develop → test → if it fails, try again)
 
-**Çalışır (kanıtlı):** Girdi-ayırt-edilebilir domain-incremental akışta, görev-etiketi/sınırı
-olmadan, tam-lokal (DFA dahil) öğrenmeyle **sıfıra yakın unutma** + naive backprop ve (görev-
-sınırı kullanan) EWC'yi geçen doğruluk. Ablation konsolidasyonun nedensel olduğunu gösterir.
+The actual record of the "develop the idea, test it, if it doesn't work try again" loop the user asked for:
 
-**Çözülmeyen / sınırlar (dürüstçe — adversaryal hakem heyetince doğrulandı):**
-- **FGT=0 bir mimari yarı-totolojidir, asıl başarı routing'dir.** İki ön-koşul (girdi-ayırt-
-  edilebilir domain'ler + kapasite ≥ domain) sağlanınca, recognition kusursuz olunca ve uzmanlar
-  donunca, doğruluk-matrisinin köşegeni son satıra *zorunlu olarak* eşittir → FGT=0 garantilidir.
-  Dolayısıyla **asıl ampirik başarı sıfır-unutmanın kendisi değil, onu mümkün kılan şeydir:
-  denetimsiz, çevrimiçi, lokal biçimde kusursuz (%100) görev-kimliği çıkarımı** (reconstruction
-  sürprizinden) — yani görev-kimliği *verilen* bir oracle multi-head'i, görev-kimliği
-  *verilmeden* eşitlemek. Belge bunu bu şekilde konumlandırır; "EWC'yi sıfır-unutmayla geçmek"
-  cümlesi ancak bu çerçevede dürüsttür.
-- **Domain'ler bitişik blok olarak gelmeli.** Faz-dedektörü temiz domain geçişini ancak her
-  domain *temporal-bitişik* geldiğinde tetikler. Tamamen *interleaved* (karışık) akışta Prizma tek
-  uzmana çöker ve unutma geri gelir (ACC ~0.58). Bu bir gizli görev-sınırı sızıntısı *değildir*
-  (hiçbir sınır etiketi tüketilmez) ve domain-incremental CL için standart bir varsayımdır, ama
-  açıkça belirtilmelidir: sömürülen şey *temporal görev yapısıdır*, etiket değil.
-- **P1 (ölçekleme):** Sığ substratta kanıt; backprop-paritesi *kanıtlanmadı*. Bu bir falsifiability
-  gate, ölçekleme iddiası değil.
-- **Ambiguous rejim:** Aynı girdi-farklı etiket (checkerboard) durumunda Prizma *yardım etmez*
-  ve etmemeli (E5 kontrolü: oracle tavanını aşmaz). Recognition girdiden ayırt-edilebilirlik
-  ister.
-- **Kapasite:** uzman < domain ise yeni domain'ler öğrenilemez (unutma yok ama ACC düşer).
-- **P2 (weight transport):** Çözülmedi, gevşetildi. Üstelik prototip *her zaman* W^T-free'dir
-  (varsayılan DFA); `feedback="exact"` yalnızca gevşetmenin maliyetini ÖLÇMEK için sağlanır.
-- **P5 (sampling/kalibrasyon):** Sabit-T Langevin iyi-belirli veride kalibrasyonu *bozar*;
-  fayda yalnız belirsiz/OOD girdide + annealed-T ile beklenir (henüz dar test).
-- **Baseline'ın numerik kırılganlığı:** Elle-kodlanmış EWC λ≥100'de NaN'a taşar; tuner kullanılabilir
-  aralıkta (λ=50) kalır. Karşılaştırma bu aralıkta adildir.
-- **Gürültü:** Çok yüksek gürültüde domain'ler gerçekten ayrışmaz → mekanizma kaçınılmaz olarak
-  naive'e iner (temel sınır, bug değil).
+1. **v0 — shared-additive readout (learners.py).** Both modes collapsed: `taskfree` barely
+   beat backprop (spurious consolidation + rich-get-richer), `boundary` over-froze (after task0
+   all groups froze). **Finding:** capacity is not being reserved.
+2. **Benchmark-validity crisis.** We measured that rotating-checkerboard is impossible for single-head CL
+   (label overlap ≈0.53). → we switched to the domain-incremental regime.
+3. **Permuted-iid-Gaussian also turned out to be indistinguishable** (a permutation of iid does not change the distribution).
+   → the correlated **structured-permuted** benchmark.
+4. **v1 — soft-responsibility MoE.** It collapsed to uniform (all experts were used at ~1/M and froze underfit;
+   low FGT *for the wrong reason* = collapsed expert).
+5. **v2 — ART hard-routing.** Forced-commit cascade (underfit early commit → all experts were spent on a single
+   domain). Forced-commit was removed; then per-sample vigilance thrashing.
+   → batch-level novelty.
+6. **v3 — batch-novelty + phase detector → BREAKTHROUGH:** FGT=0.000, ACC=0.80, clean one-expert-per-
+   domain. But **E2 fragility:** a sharp collapse at noise=0.3 (the fixed-vigilance mistake).
+7. **v4 — precision-adaptive active-expert phase detector.** Each expert tracks its own recon precision
+   `(μ,σ)`; novelty = `recon > μ+zσ`; the active expert learns the domain throughout the whole task, and
+   commits+freezes when the domain changes and it no longer recognizes it. **Result: graceful
+   degradation robust to noise; routing stays clean at every level.**
+8. **Adversarial referee round (4 parallel auditors: leakage/cheating, fairness, independent
+   reproduction, overclaim).** All returned `claim_supported=true` (1 SOUND + 3 MINOR_ISSUES;
+   no REFUTED/SERIOUS at all). The real findings that were fixed: **(a)** the `feedback` parameter was
+   not being read → fixed; it turned out the prototype was *always* W^T-free — and once fixed,
+   the no-W^T (DFA) version turned out to be **better** than the W^T version (0.834 > 0.708).
+   **(b)** the oracle-multihead and replay baselines were added (an honest upper bound + a strong competitor).
+   **(c)** The framing was made honest: "FGT=0 is an architectural guarantee once the preconditions hold; the real achievement is
+   the unsupervised/local flawless routing"; "the domains must arrive in contiguous blocks (it collapses to ~0.58 when interleaved)";
+   parameter accounting, EWC numerical fragility, FD-attribution fixes.
 
 ---
 
-## 9. Sonuç
+## 8. Honest assessment — where it works, where it breaks
 
-Prizma, *girdi-ayırt-edilebilir sürekli öğrenme* rejiminde, benzer yöntemlerin (naive backprop,
-ve hatta görev-sınırı kullanan EWC) yapamadığını yapar: **görev-sınırı ve etiketi olmadan,
-tam-lokal, backprop'suz biçimde sıfıra yakın unutma.** Bu, "tek precision-sürpriz sinyalinin iki
-zaman ölçeğinde dikkat+konsolidasyonu sürmesi" sentezinin ve "precision-testli görev-sınırsız
-faz-dedektörü" mekanizmasının somut, test edilmiş bir gösterimidir. Sınırları açıkça
-işaretlenmiştir; ölçekleme açık problem olarak durur.
+**Works (proven):** In an input-distinguishable domain-incremental stream, without a task label/boundary,
+with fully-local learning (DFA included), **near-zero forgetting** + accuracy that beats naive backprop and
+(task-boundary-using) EWC. The ablation shows that consolidation is causal.
+
+**Unsolved / limits (honestly — verified by the adversarial referee committee):**
+- **FGT=0 is an architectural quasi-tautology; the real achievement is the routing.** Once the two preconditions
+  (input-distinguishable domains + capacity ≥ domains) hold, once recognition is flawless and the experts
+  freeze, the diagonal of the accuracy matrix is *necessarily* equal to the last row → FGT=0 is guaranteed.
+  Therefore **the real empirical achievement is not zero forgetting itself but what makes it possible:
+  unsupervised, online, local, flawless (100%) task-identity inference** (from reconstruction
+  surprise) — that is, matching an oracle multi-head that is *given* the task identity, *without* being
+  given the task identity. The document positions it this way; the sentence "beating EWC with zero forgetting"
+  is only honest within this frame.
+- **The domains must arrive in contiguous blocks.** The phase detector triggers a clean domain transition only when
+  each domain arrives *temporally contiguous*. In a fully *interleaved* (shuffled) stream Prizma collapses to a single
+  expert and forgetting comes back (ACC ~0.58). This is *not* a hidden task-boundary leak
+  (no boundary label is consumed) and it is a standard assumption for domain-incremental CL, but
+  it must be stated openly: what is exploited is the *temporal task structure*, not the label.
+- **P1 (scaling):** Evidence on a shallow substrate; backprop parity is *not proven*. This is a falsifiability
+  gate, not a scaling claim.
+- **Ambiguous regime:** In the same-input-different-label (checkerboard) case Prizma *does not help*
+  and should not (E5 control: it does not exceed the oracle ceiling). Recognition requires
+  distinguishability from the input.
+- **Capacity:** if experts < domains, new domains cannot be learned (no forgetting, but ACC drops).
+- **P2 (weight transport):** Not solved, relaxed. Moreover the prototype is *always* W^T-free
+  (DFA by default); `feedback="exact"` is provided only to MEASURE the cost of the relaxation.
+- **P5 (sampling/calibration):** Fixed-T Langevin *breaks* calibration on well-determined data;
+  a benefit is expected only on ambiguous/OOD input + with annealed-T (tested only narrowly so far).
+- **Numerical fragility of the baseline:** The hand-coded EWC overflows to NaN at λ≥100; the tuner stays in the usable
+  range (λ=50). The comparison is fair within this range.
+- **Noise:** At very high noise the domains genuinely do not separate → the mechanism inevitably
+  degrades to naive (a fundamental limit, not a bug).
+
+---
+
+## 9. Conclusion
+
+In the *input-distinguishable continual learning* regime, Prizma does what comparable methods (naive backprop,
+and even task-boundary-using EWC) cannot: **near-zero forgetting without a task boundary or label,
+fully-locally, without backprop.** This is a concrete, tested demonstration of the "a single precision-surprise
+signal drives attention+consolidation across two timescales" synthesis and of the "precision-tested
+task-boundary-free phase detector" mechanism. Its limits are marked openly; scaling remains an open
+problem.
 ```
-Reprodüksiyon:  ./.venv/bin/python experiments/run_continual.py   →  results/results.json
+Reproduction:  ./.venv/bin/python experiments/run_continual.py   →  results/results.json
 ```
