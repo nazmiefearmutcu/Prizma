@@ -2,8 +2,17 @@
 Throughput benchmarking script for Prizma-Seq delta updates.
 Compares eager, compiled, and Triton execution paths (both forward and backward passes).
 Computes latency, tokens/second, and relative speedup.
-Supports dynamic fallback: if CUDA/Triton is missing, CPU measurements are run
-and simulated/extrapolated values for CUDA Triton are printed so the script always executes.
+MEASURED-ONLY. Every row this script emits is wall-clock timed on the device it names. If CUDA or
+Triton is unavailable, those rows are simply ABSENT -- nothing is extrapolated, simulated, or scaled
+from CPU timings. (An earlier version synthesised "CUDA (Simulated)" rows by dividing the CPU time by
+hardcoded constants and printed them, to one decimal place, in the same table as the measured rows.
+Those rows were not measurements of anything and have been removed.)
+
+BACKWARD TIMING. Forward and backward are timed in SEPARATE loops, each with its own synchronisation
+barrier, and the backward loop times only the `.backward()` call (its graph is rebuilt outside the
+timer). The previous method timed a combined forward+backward loop and reported
+`t_bwd = t_combined - t_fwd`; that subtraction is unreliable and produced, among other things, a
+"backward 70x faster than the corresponding forward" row, which is not physically possible.
 """
 
 from __future__ import annotations
@@ -81,8 +90,13 @@ def benchmark_path(name, fn, device, B, H, T, d, chunk, warmup=5, runs=20):
 
         sync_device(device)
 
-        # 4. Time Combined Forward + Backward
-        t0 = time.perf_counter()
+        # 4. Time the BACKWARD pass IN ISOLATION.
+        #    The graph is rebuilt outside the timer and the device is synchronised on both sides of
+        #    the .backward() call, so what is measured is the backward pass and nothing else. Do NOT
+        #    go back to timing a combined loop and subtracting t_fwd: that subtraction is dominated
+        #    by run-to-run variance and by lazy evaluation, and it can (and did) yield a "backward
+        #    faster than forward" result that is not physically possible.
+        t_bwd_total = 0.0
         for _ in range(runs):
             o, s = fn(q, k, v, beta, alpha, chunk=chunk)
             # Clear grads to avoid memory inflation (though negligible for small tests)
@@ -91,12 +105,12 @@ def benchmark_path(name, fn, device, B, H, T, d, chunk, warmup=5, runs=20):
             v.grad = None
             beta.grad = None
             alpha.grad = None
+            sync_device(device)                       # barrier: forward fully materialised
+            t0 = time.perf_counter()
             torch.autograd.backward([o, s], [grad_o, grad_s])
-        sync_device(device)
-        t_combined = (time.perf_counter() - t0) / runs
-
-        # Subtract forward time to isolate backward pass time
-        t_bwd = max(1e-9, t_combined - t_fwd)
+            sync_device(device)                       # barrier: backward fully materialised
+            t_bwd_total += time.perf_counter() - t0
+        t_bwd = t_bwd_total / runs
 
         return t_fwd, t_bwd, True
     except Exception as e:
@@ -225,59 +239,17 @@ def main():
             else:
                 print("Triton CUDA path not available on this GPU configuration.")
 
-    # --- 4. Extrapolate/Simulate missing CUDA Triton / CUDA execution paths ---
-    # In case CUDA is absent, or Triton is absent, extrapolate to ensure complete comparison.
-    # Baseline for extrapolation is CPU Eager.
-    # Realistic scaling factors (measured on A100 vs typical local CPU cores):
-    # - Eager CUDA: ~120x CPU Eager
-    # - Compiled CUDA: ~180x CPU Eager
-    # - Triton CUDA: ~210x CPU Eager
-    
-    extrapolate_eager = not (device.type == "cuda")
-    extrapolate_compiled = not (device.type == "cuda")
-    extrapolate_triton = not (device.type == "cuda" and _HAS_TRITON)
-    
-    if extrapolate_eager:
-        t_fwd_sim_eager = t_fwd_cpu / 120.0
-        t_bwd_sim_eager = t_bwd_cpu / 120.0
-        results.append({
-            "path": "Eager", "pass": "Forward", "device": "CUDA (Simulated)", 
-            "time_ms": t_fwd_sim_eager * 1000.0, "tokens_sec": total_tokens / t_fwd_sim_eager,
-            "type": "Simulated", "raw_time": t_fwd_sim_eager
-        })
-        results.append({
-            "path": "Eager", "pass": "Backward", "device": "CUDA (Simulated)", 
-            "time_ms": t_bwd_sim_eager * 1000.0, "tokens_sec": total_tokens / t_bwd_sim_eager,
-            "type": "Simulated", "raw_time": t_bwd_sim_eager
-        })
-        
-    if extrapolate_compiled:
-        t_fwd_sim_comp = t_fwd_cpu / 180.0
-        t_bwd_sim_comp = t_bwd_cpu / 180.0
-        results.append({
-            "path": "Compiled", "pass": "Forward", "device": "CUDA (Simulated)", 
-            "time_ms": t_fwd_sim_comp * 1000.0, "tokens_sec": total_tokens / t_fwd_sim_comp,
-            "type": "Simulated", "raw_time": t_fwd_sim_comp
-        })
-        results.append({
-            "path": "Compiled", "pass": "Backward", "device": "CUDA (Simulated)", 
-            "time_ms": t_bwd_sim_comp * 1000.0, "tokens_sec": total_tokens / t_bwd_sim_comp,
-            "type": "Simulated", "raw_time": t_bwd_sim_comp
-        })
-
-    if extrapolate_triton:
-        t_fwd_sim_triton = t_fwd_cpu / 210.0
-        t_bwd_sim_triton = t_bwd_cpu / 210.0
-        results.append({
-            "path": "Triton", "pass": "Forward", "device": "CUDA (Simulated)", 
-            "time_ms": t_fwd_sim_triton * 1000.0, "tokens_sec": total_tokens / t_fwd_sim_triton,
-            "type": "Simulated", "raw_time": t_fwd_sim_triton
-        })
-        results.append({
-            "path": "Triton", "pass": "Backward", "device": "CUDA (Simulated)", 
-            "time_ms": t_bwd_sim_triton * 1000.0, "tokens_sec": total_tokens / t_bwd_sim_triton,
-            "type": "Simulated", "raw_time": t_bwd_sim_triton
-        })
+    # --- 4. Absent execution paths stay ABSENT ---
+    # There is deliberately no extrapolation step here. A previous version of this script, when CUDA
+    # or Triton was unavailable, synthesised "CUDA (Simulated)" rows as t_cpu / {120, 180, 210} using
+    # hardcoded constants and emitted them into the same table as the measured rows, formatted to the
+    # same precision. Those numbers were arithmetic on a CPU timing, not a measurement of any GPU, and
+    # a reader could not tell the difference at a glance. If a CUDA/Triton number is wanted, run this
+    # script on a CUDA box; until then the row does not exist.
+    if device.type != "cuda":
+        print("\nNOTE: no CUDA device -> no CUDA rows. Nothing is extrapolated or simulated.")
+    elif not _HAS_TRITON:
+        print("\nNOTE: CUDA present but Triton missing -> no Triton rows. Nothing is extrapolated.")
 
     # --- 5. Generate and Output the Table ---
     # Calculate speedup relative to CPU Eager of the same pass type (Forward or Backward)
@@ -290,7 +262,7 @@ def main():
     
     # Sort results for readability: Device, Path, Pass
     def sort_key(r):
-        dev_order = {"CPU": 0, "MPS": 1, "CUDA": 2, "CUDA (Simulated)": 3}
+        dev_order = {"CPU": 0, "MPS": 1, "CUDA": 2}
         path_order = {"Eager": 0, "Compiled": 1, "Triton": 2}
         pass_order = {"Forward": 0, "Backward": 1}
         return (dev_order.get(r["device"], 9), path_order.get(r["path"], 9), pass_order.get(r["pass"], 9))
@@ -317,10 +289,35 @@ def main():
     # Write report file to same directory
     report_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "benchmark_results.md")
     try:
+        import platform
+        import subprocess
+        cpu = platform.processor() or platform.machine()
+        if sys.platform == "darwin":                      # platform.processor() is just "arm" on macOS
+            try:
+                cpu = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"],
+                                     capture_output=True, text=True, timeout=5).stdout.strip() or cpu
+            except Exception:
+                pass
+        host = f"{platform.platform()} / {cpu} ({os.cpu_count()} cores)"
         with open(report_path, "w") as f:
             f.write("# Prizma-Seq Delta Updates Benchmark Results\n\n")
+            f.write("> **Every row below is measured wall-clock time on the device it names.** Rows for\n")
+            f.write("> hardware this machine does not have are absent, not extrapolated. Forward and\n")
+            f.write("> backward are timed in separate loops with synchronisation barriers on both sides\n")
+            f.write("> of the timed region; the backward time is NOT obtained by subtracting a forward\n")
+            f.write("> time from a combined forward+backward time.\n\n")
+            f.write(f"**Host**: {host}, torch {torch.__version__}\n\n")
             f.write(f"**Shape Config**: Batch size = {B}, Heads = {H}, Seq len = {T}, Dim = {d}, Chunk = {chunk}\n\n")
             f.write(f"**Tokens/pass**: {total_tokens:,}\n\n")
+            f.write(f"**Protocol**: {args.warmup} warmup + {args.runs} timed runs per cell, mean.\n\n")
+            f.write("**Caveat on absolute times**: this is a wall-clock benchmark on a shared, unpinned\n")
+            f.write("machine with no CI gate on it. Run-to-run variation of ~2x has been observed on the\n")
+            f.write("CPU rows depending on what else was running. Treat the ORDERING and the rough ratios\n")
+            f.write("as the signal; do not read the absolute milliseconds as a hardware characterisation.\n\n")
+            f.write("**Caveat on the `Compiled` rows**: off CUDA, `seq/delta_fused.py` may fail to\n")
+            f.write("compile and fall back to the eager kernel (it emits a RuntimeWarning when it does).\n")
+            f.write("A `Compiled` row whose time matches its `Eager` row is that fallback, not a\n")
+            f.write("compiled speedup of ~1.0x. Check the run log.\n\n")
             f.write(table_str)
             f.write("\n")
         print(f"Results written to {report_path}")
