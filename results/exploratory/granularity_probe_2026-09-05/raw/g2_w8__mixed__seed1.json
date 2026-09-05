@@ -1,0 +1,42 @@
+{
+ "config": "g2_w8",
+ "stream": "mixed",
+ "seed": 1,
+ "knobs": {
+  "session_window": 8
+ },
+ "runtime_seconds": 1.3,
+ "result": {
+  "acc": 0.4838333333333333,
+  "recruited": 3,
+  "route_log": [
+   345088,
+   14904,
+   8,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "dropped_batches": 0,
+  "purity": [
+   0.8242,
+   0.82,
+   0.795,
+   0.74,
+   0.7892
+  ],
+  "fractions": [
+   0.9586,
+   0.0414,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "max_fraction": 0.9586
+ }
+}

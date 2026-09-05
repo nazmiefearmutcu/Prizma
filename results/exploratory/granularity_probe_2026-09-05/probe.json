@@ -1,0 +1,561 @@
+{
+ "label": "LANE-EXPLORATORY",
+ "date": "2026-09-05",
+ "target_prereg": "docs/preregistry/2026-09-05-granularity-bar6.md (PR-2026-09-03-07, IN-WRITE, seeds 20-24 = disjoint)",
+ "bar_exploratory": 0.7,
+ "settings": {
+  "K": 5,
+  "d": 24,
+  "n_classes": 8,
+  "h": 48,
+  "epochs": 15,
+  "batch": 128,
+  "n_experts": 8,
+  "z_novel": 5.0,
+  "seeds": [
+   0,
+   1
+  ],
+  "stream_note": "mixed/roundrobin constructors reused verbatim from experiments/interleave_fix_probe.py; E1 guard = shipped block benchmark"
+ },
+ "selection_rule_frozen": "Specialization filter (hard, PR-06 lesson): eligible iff max per-expert train-fraction over mixed runs <= 0.85. PASS-set = eligible AND mixed >= 0.70 AND roundrobin >= 0.70 at n=2; choose fewest active knobs, tie-break higher E1 ACC (on demand for tied candidates), then precedence [shipped < g2_w32 < g2_w8 < g1_sample]. If empty: best-weakest min interleaved ACC with the same tie-breaks; PR-07 drafted only if the reported best is >= 0.68 on BOTH streams AND passes the ledger filter.",
+ "selection_trace": {
+  "bar": 0.7,
+  "draft_floor": 0.68,
+  "specialization_max": 0.85,
+  "rule": "PASS-set EMPTY -> best-weakest interleaved stream, then fewest knobs, then higher E1 ACC, then precedence",
+  "pass_set": [],
+  "chosen": "shipped",
+  "pr07_draft_branch": "NO PR DRAFT (best below the 0.68 floor on some stream, or the specialization filter fails) -- report honest numbers + ledger + mechanistic read"
+ },
+ "configs": {
+  "shipped": {
+   "knobs": {},
+   "n_active_knobs": 0,
+   "precedence": "shipped",
+   "mixed": {
+    "acc_mean": 0.5695,
+    "acc_per_seed": [
+     0.5588,
+     0.5802
+    ],
+    "max_fraction_per_seed": [
+     0.9993,
+     0.9995
+    ],
+    "fractions_per_seed": [
+     [
+      0.9993,
+      0.0007,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.9995,
+      0.0005,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "route_log_per_seed": [
+     [
+      359744,
+      256,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      359808,
+      192,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "recruited_per_seed": [
+     2,
+     2
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5863,
+    "acc_per_seed": [
+     0.581,
+     0.5917
+    ],
+    "max_fraction_per_seed": [
+     0.9993,
+     0.9989
+    ],
+    "fractions_per_seed": [
+     [
+      0.9993,
+      0.0007,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.9989,
+      0.0011,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "route_log_per_seed": [
+     [
+      359744,
+      256,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      359616,
+      384,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "recruited_per_seed": [
+     2,
+     2
+    ]
+   },
+   "min_interleaved_acc": 0.5695,
+   "maxfrac_mixed": 0.9995,
+   "specialization_ok": false,
+   "passes_bar": false,
+   "e1": {
+    "acc_mean": 0.8131,
+    "fgt_mean": 0.0,
+    "acc_per_seed": [
+     0.8032,
+     0.823
+    ],
+    "fgt_per_seed": [
+     0.0,
+     0.0
+    ]
+   }
+  },
+  "g2_w32": {
+   "knobs": {
+    "session_window": 32
+   },
+   "n_active_knobs": 1,
+   "precedence": "g2_w32",
+   "mixed": {
+    "acc_mean": 0.5541,
+    "acc_per_seed": [
+     0.5587,
+     0.5495
+    ],
+    "max_fraction_per_seed": [
+     0.9966,
+     0.9964
+    ],
+    "fractions_per_seed": [
+     [
+      0.9966,
+      0.0034,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.9964,
+      0.0036,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "route_log_per_seed": [
+     [
+      358784,
+      1216,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      358720,
+      1280,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "recruited_per_seed": [
+     2,
+     2
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5468,
+    "acc_per_seed": [
+     0.535,
+     0.5585
+    ],
+    "max_fraction_per_seed": [
+     0.9101,
+     0.9934
+    ],
+    "fractions_per_seed": [
+     [
+      0.9101,
+      0.0869,
+      0.0029,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.9934,
+      0.0066,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "route_log_per_seed": [
+     [
+      327648,
+      31296,
+      1056,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      357632,
+      2368,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "recruited_per_seed": [
+     3,
+     2
+    ]
+   },
+   "min_interleaved_acc": 0.5468,
+   "maxfrac_mixed": 0.9966,
+   "specialization_ok": false,
+   "passes_bar": false
+  },
+  "g2_w8": {
+   "knobs": {
+    "session_window": 8
+   },
+   "n_active_knobs": 1,
+   "precedence": "g2_w8",
+   "mixed": {
+    "acc_mean": 0.4738,
+    "acc_per_seed": [
+     0.4638,
+     0.4838
+    ],
+    "max_fraction_per_seed": [
+     0.9891,
+     0.9586
+    ],
+    "fractions_per_seed": [
+     [
+      0.9891,
+      0.0108,
+      0.0001,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.9586,
+      0.0414,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "route_log_per_seed": [
+     [
+      356088,
+      3872,
+      40,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      345088,
+      14904,
+      8,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "recruited_per_seed": [
+     3,
+     3
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5857,
+    "acc_per_seed": [
+     0.5822,
+     0.5893
+    ],
+    "max_fraction_per_seed": [
+     0.5798,
+     0.9294
+    ],
+    "fractions_per_seed": [
+     [
+      0.5798,
+      0.3866,
+      0.032,
+      0.0016,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.9294,
+      0.0666,
+      0.0038,
+      0.0001,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "route_log_per_seed": [
+     [
+      208736,
+      139168,
+      11504,
+      592,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      334600,
+      23984,
+      1368,
+      48,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "recruited_per_seed": [
+     4,
+     4
+    ]
+   },
+   "min_interleaved_acc": 0.4738,
+   "maxfrac_mixed": 0.9891,
+   "specialization_ok": false,
+   "passes_bar": false
+  },
+  "g1_sample": {
+   "knobs": {
+    "train_granularity": "sample"
+   },
+   "n_active_knobs": 1,
+   "precedence": "g1_sample",
+   "mixed": {
+    "acc_mean": 0.56,
+    "acc_per_seed": [
+     0.5275,
+     0.5925
+    ],
+    "max_fraction_per_seed": [
+     0.6706,
+     0.7059
+    ],
+    "fractions_per_seed": [
+     [
+      0.6706,
+      0.2893,
+      0.04,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.7059,
+      0.1321,
+      0.162,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "route_log_per_seed": [
+     [
+      216661,
+      93471,
+      12937,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      206313,
+      38599,
+      47344,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "recruited_per_seed": [
+     3,
+     3
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5655,
+    "acc_per_seed": [
+     0.548,
+     0.583
+    ],
+    "max_fraction_per_seed": [
+     0.7056,
+     0.8096
+    ],
+    "fractions_per_seed": [
+     [
+      0.7056,
+      0.138,
+      0.1564,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.8096,
+      0.1904,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "route_log_per_seed": [
+     [
+      206263,
+      40348,
+      45719,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      232460,
+      54683,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "recruited_per_seed": [
+     3,
+     2
+    ]
+   },
+   "min_interleaved_acc": 0.56,
+   "maxfrac_mixed": 0.7059,
+   "specialization_ok": true,
+   "passes_bar": false
+  }
+ },
+ "chosen": "shipped",
+ "runtime_seconds": 19.5
+}

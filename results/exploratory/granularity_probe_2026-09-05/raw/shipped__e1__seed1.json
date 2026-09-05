@@ -1,0 +1,12 @@
+{
+ "config": "shipped",
+ "stream": "e1",
+ "seed": 1,
+ "knobs": {},
+ "runtime_seconds": 1.24,
+ "result": {
+  "acc": 0.8230000000000001,
+  "fgt": 0.0,
+  "recruited": 5
+ }
+}

@@ -1,0 +1,42 @@
+{
+ "config": "g2_w8",
+ "stream": "roundrobin",
+ "seed": 0,
+ "knobs": {
+  "session_window": 8
+ },
+ "runtime_seconds": 1.73,
+ "result": {
+  "acc": 0.5821666666666667,
+  "recruited": 4,
+  "route_log": [
+   208736,
+   139168,
+   11504,
+   592,
+   0,
+   0,
+   0,
+   0
+  ],
+  "dropped_batches": 0,
+  "purity": [
+   0.9658,
+   0.9992,
+   0.585,
+   0.9975,
+   0.9583
+  ],
+  "fractions": [
+   0.5798,
+   0.3866,
+   0.032,
+   0.0016,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "max_fraction": 0.5798
+ }
+}

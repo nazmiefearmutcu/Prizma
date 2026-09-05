@@ -1,0 +1,40 @@
+{
+ "config": "shipped",
+ "stream": "mixed",
+ "seed": 1,
+ "knobs": {},
+ "runtime_seconds": 0.44,
+ "result": {
+  "acc": 0.5801666666666666,
+  "recruited": 2,
+  "route_log": [
+   359808,
+   192,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "dropped_batches": 0,
+  "purity": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ],
+  "fractions": [
+   0.9995,
+   0.0005,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "max_fraction": 0.9995
+ }
+}

@@ -1,0 +1,42 @@
+{
+ "config": "g1_sample",
+ "stream": "mixed",
+ "seed": 0,
+ "knobs": {
+  "train_granularity": "sample"
+ },
+ "runtime_seconds": 1.66,
+ "result": {
+  "acc": 0.5275000000000001,
+  "recruited": 3,
+  "route_log": [
+   216661,
+   93471,
+   12937,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "dropped_batches": 0,
+  "purity": [
+   0.485,
+   0.4375,
+   0.4517,
+   0.5042,
+   0.3892
+  ],
+  "fractions": [
+   0.6706,
+   0.2893,
+   0.04,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "max_fraction": 0.6706
+ }
+}

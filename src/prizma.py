@@ -215,7 +215,8 @@ class Prizma:
                  weight_bits=None, act_bits=None,
                  noise_in_std=0.0, noise_act_std=0.0, noise_weight_std=0.0,
                  freeze_min_seen=0, dynamic_vigilance=0.0, hot_young=0.0,
-                 route_stat="batch_mean"):
+                 route_stat="batch_mean",
+                 train_granularity="batch", session_window=0):
         self.d, self.h, self.K, self.M = d, h, K, n_experts
         self.lr, self.lr_cls, self.lambda_cls = lr, lr_cls, lambda_cls
         self.feedback = feedback
@@ -262,6 +263,41 @@ class Prizma:
         # stream is assumed recognized until evidence accumulates; no lookahead).
         self._nov_fast = 0.0
         self._nov_slow = 0.0
+
+        # ---- Training-granularity levers (G1/G2; fusion spec Addendum 2026-09-05) ---- #
+        # PR-06's blocker: train_batch applies the whole batch's local delta to the single
+        # active expert, so a mixed batch can never be split across experts -- a threshold/
+        # statistic repair cannot recover block-stream specialization. These two knobs
+        # change WHO trains on WHAT (the decision unit), never the local learning rule
+        # (PC/FA/delta stays exactly the shipped one):
+        #   G1  train_granularity="sample" -- each sample of the batch is routed
+        #       individually against the per-expert calibrated per-sample thresholds
+        #       (mu + z*sigma, i.e. the sample_top statistic applied per sample); each
+        #       sample trains the expert that recognizes IT; samples recognized by nobody
+        #       accrue to a per-batch novel pool and recruitment fires for the batch iff
+        #       the novel-pool fraction >= SAMPLE_NOVEL_FRACTION (the existing recruit
+        #       machinery: commit+freeze+advance, new active trained on the novel pool).
+        #   G2  session_window=W>0 -- the batch is split into consecutive W-sample windows
+        #       (last window short when batch % W != 0); each window gets the shipped
+        #       BATCH-level decision at window granularity (window-MEAN surprise vs the
+        #       same calibrated thresholds; novel window -> recruit, freeze_min_seen veto
+        #       still applies). The batch-mean blindness shrinks with W.
+        # Both are DEFAULT-OFF, mutually exclusive, and ZERO extra work at defaults
+        # (guarded branches; the shipped path is the shipped body verbatim). When either
+        # is active the decision unit is smaller than the batch, so the route_stat knob
+        # (a choice of BATCH-level statistic) is inert/irrelevant: G1 uses the per-sample
+        # thresholds internally and G2 applies the batch_mean statistic per window --
+        # route_stat is simply not consulted on those paths.
+        if train_granularity not in ("batch", "sample"):
+            raise ValueError(f"train_granularity must be 'batch' or 'sample', "
+                             f"got {train_granularity!r}")
+        self.train_granularity = train_granularity    # "batch" = shipped granularity
+        self.session_window = int(session_window)     # 0 = shipped (no windowing)
+        if self.session_window < 0:
+            raise ValueError(f"session_window must be >= 0, got {session_window!r}")
+        if self.train_granularity == "sample" and self.session_window > 0:
+            raise ValueError("train_granularity='sample' and session_window>0 are "
+                             "mutually exclusive training-granularity levers")
 
         self.experts = [
             Expert(d, h, K, seed + 100 * (m + 1),
@@ -397,6 +433,15 @@ class Prizma:
             e.mu += 0.05 * d_val
             e.var = 0.95 * e.var + 0.05 * d_val * d_val
 
+    def _threshold(self, e):
+        """Expert e's effective recognition threshold: theta_scale*(mu + z*sigma) under
+        dynamic_vigilance, else the shipped expression verbatim (identical float ops --
+        bit-identity). Shared by _recognizes and the G1 per-sample routing so every
+        granularity reads the SAME calibrated per-expert scale."""
+        if self.dynamic_vigilance > 0:
+            return self._theta_scale() * (e.mu + self.z_novel * math.sqrt(e.var))
+        return e.mu + self.z_novel * math.sqrt(e.var)
+
     def _recognizes(self, e, X):
         """Precision test: does expert e recognize this batch (recon within z*sigma of floor)?
 
@@ -410,14 +455,14 @@ class Prizma:
         the novel fraction is stationary-robust: a 60/40 mixed batch is 60% novel for a
         pure-domain expert even when its mean hides the change. dynamic_vigilance > 0
         scales the threshold by _theta_scale(); at 0 the shipped expression is used
-        verbatim (bit-identity)."""
+        verbatim (bit-identity). route_stat is only consulted on BATCH-level decisions:
+        under train_granularity='sample' or session_window>0 the decision unit itself
+        shrinks and this method is either bypassed (G1) or called per window with the
+        batch_mean statistic (G2)."""
         if e.mu > 1e8:
             return False
         S = e.recon_error(X)
-        if self.dynamic_vigilance > 0:
-            thr = self._theta_scale() * (e.mu + self.z_novel * math.sqrt(e.var))
-        else:
-            thr = e.mu + self.z_novel * math.sqrt(e.var)
+        thr = self._threshold(e)
         if self.route_stat == "sample_top":
             return float((S > thr).mean()) < SAMPLE_NOVEL_FRACTION
         return float(S.mean()) <= thr
@@ -430,12 +475,46 @@ class Prizma:
             self._train_expert(self.experts[0], X, Y)
             self.route_log[0] += n
             return
+        if self.train_granularity == "sample":
+            self._train_batch_by_sample(X, Y)          # G1: per-sample routed training
+            return
+        if self.session_window > 0:                    # G2: window-level decisions
+            W = self.session_window
+            for s in range(0, n, W):                   # batch % W != 0 -> last short window
+                self._train_unit(X[s:s + W], Y[s:s + W], window=True)
+            return
+        self._train_unit(X, Y)                         # shipped: the whole batch is the unit
+
+    def _recognizes_mean(self, e, X):
+        """Window-level recognition (G2, session_window>0 ONLY): the WINDOW-MEAN surprise
+        against the same per-expert calibrated threshold (mu + z*sigma, dynamic_vigilance
+        scales it identically). route_stat is deliberately NOT consulted here: the
+        decision unit is the window, so the batch-level statistic choice does not apply
+        (fusion spec Addendum 2026-09-05: under granularity != batch the route_stat knob
+        is irrelevant). The statistic changes unit -- batch-mean blindness shrinks with W
+        -- but no new calibration is introduced."""
+        if e.mu > 1e8:
+            return False
+        return float(e.recon_error(X).mean()) <= self._threshold(e)
+
+    def _train_unit(self, X, Y, window=False):
+        """The shipped decision unit (batch-level routing + the recruit machinery).
+
+        train_granularity="batch"/session_window=0 calls this with the whole batch (the
+        body below is the shipped train_batch logic VERBATIM -- bit-identity);
+        session_window=W>0 calls it once per consecutive W-sample window with window=True,
+        so every decision here (committed scan, active-expert phase check,
+        commit/freeze/advance) is taken at window granularity via the window-mean
+        statistic (_recognizes_mean) while the learning rule is untouched."""
+        n = len(X)
         committed = [m for m in range(self.M) if self.experts[m].committed]
 
         # 1) an OLD domain reappearing -> recognized by a committed (frozen) expert: nothing to
         #    learn (its weights are protected); inference will route there. No update.
         for m in committed:
-            if self._recognizes(self.experts[m], X):
+            ok = (self._recognizes_mean(self.experts[m], X) if window
+                  else self._recognizes(self.experts[m], X))
+            if ok:
                 self.route_log[m] += n
                 self._note_novelty(False)
                 return
@@ -450,7 +529,8 @@ class Prizma:
             return
         act = self.experts[self.active]
         young = act.n_seen < self.warmup
-        if young or self._recognizes(act, X):
+        ok = (self._recognizes_mean(act, X) if window else self._recognizes(act, X))
+        if young or ok:
             self._train_expert(act, X, Y)
             self.route_log[self.active] += n
             self._note_novelty(False)
@@ -469,6 +549,73 @@ class Prizma:
                 self._train_expert(self.experts[self.active], X, Y)
                 self.route_log[self.active] += n
             self._note_novelty(True)
+
+    def _train_batch_by_sample(self, X, Y):
+        """G1 (train_granularity="sample"): per-sample routed training.
+
+        Each SAMPLE is routed individually against the per-expert calibrated thresholds
+        (self._threshold, i.e. the sample_top statistic applied per sample -- route_stat
+        itself is not consulted on this path). Priority mirrors the shipped unit:
+          1. a COMMITTED expert claims every sample it recognizes -> routed there, never
+             re-trained (protected old domain; scan in expert-index order, first wins);
+          2. of the rest, the ACTIVE expert trains on the samples IT recognizes (one
+             _train_expert call on that sub-batch -- the shipped local rule, applied to
+             the sub-batch);
+          3. samples recognized by NO expert accrue to the per-batch novel pool. If the
+             novel-pool fraction >= SAMPLE_NOVEL_FRACTION, recruitment fires for the
+             batch via the EXISTING machinery (commit + freeze_min_seen-vetoed freeze +
+             advance) and the new active is trained on the novel pool. A never-trained
+             active (n_seen == 0) is not committed -- it simply takes the novel pool as
+             its first training (its floor then calibrates on it). Sub-threshold novel
+             minorities are left untrained for this batch: forcing them onto the active
+             expert is exactly the catch-all mechanism PR-06 diagnosed; they can recruit
+             later when their fraction grows.
+        Design notes: the active's training uses the PRE-update floors for both decisions
+        (no within-batch lookahead); the shipped young-expert forced-training rule is
+        deliberately NOT carried over (forcing a young expert to absorb whole mixed
+        batches poisons its floor with mixture data -- the monolithic mechanism PR-06
+        identified); route_log counts TRAINED/claimed samples per expert, so it stays an
+        honest training ledger."""
+        n = len(X)
+        calib = [m for m in range(self.M) if not (self.experts[m].mu > 1e8)]
+        free = np.ones(n, dtype=bool)          # not yet claimed by a committed expert
+        if calib:
+            S = self._recon_matrix(X)          # (n, M) per-sample surprise, computed once
+            for m in calib:
+                if self.experts[m].committed:
+                    take = free & (S[:, m] <= self._threshold(self.experts[m]))
+                    free &= ~take
+                    if take.any():
+                        self.route_log[m] += int(take.sum())
+        if self.active >= self.M:
+            return                             # pool exhausted: shipped hard-cap (drop)
+        a = self.active
+        act = self.experts[a]
+        if calib and not (act.mu > 1e8):
+            take = free & (S[:, a] <= self._threshold(act))
+        else:
+            take = np.zeros(n, dtype=bool)     # no calibrated floor yet: recognizes nothing
+        free &= ~take
+        if take.any():
+            self._train_expert(act, X[take], Y[take])
+            self.route_log[a] += int(take.sum())
+        # the remaining samples are the per-batch novel pool
+        recruit = bool(free.any()) and float(free.mean()) >= SAMPLE_NOVEL_FRACTION
+        if recruit:
+            if act.n_seen > 0:                 # existing recruit machinery: commit+advance
+                act.committed = True
+                if self.consolidate and act.n_seen >= self.freeze_min_seen:
+                    act.frozen = True
+                    act.omega = self.omega_consol + 1.0
+                self.active += 1
+                if self.active < self.M:
+                    act = self.experts[self.active]
+            if act.n_seen == 0 and self.active < self.M:
+                self._train_expert(act, X[free], Y[free])
+                self.route_log[self.active] += int(free.sum())
+            self._note_novelty(True)
+        else:
+            self._note_novelty(False)
 
     def fit_task(self, X, y, epochs=10, batch=128, rng=None):
         rng = rng or np.random.default_rng(0)
