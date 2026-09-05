@@ -1,0 +1,364 @@
+{
+  "meta": {
+    "protocol": "multi_epoch",
+    "epochs_per_domain": 3,
+    "lr": 0.1,
+    "hidden": [
+      16
+    ],
+    "n_tasks": 2,
+    "d": 8,
+    "n_classes": 3,
+    "n_samples_per_task": 600,
+    "prizma_h": 16,
+    "n_seeds": 2,
+    "seed_range": [
+      0,
+      1
+    ],
+    "stream": "structured_permuted_tasks (src/data.py) -- identical to E1",
+    "metrics": "AccuracyMatrix.acc/forgetting (src/metrics.py, Lopez-Paz & Ranzato 2017)",
+    "ci": "mean +- 1.96*SEM (run_continual.ci95, E1 style)",
+    "lane": "CLAIM-CANDIDATE (multi-epoch, E1-matched protocol); SEE docs",
+    "tuning_rule": "lambda tuned on seed 0 ONLY, minimizing FGT (identical to E1's EWC rule)",
+    "tuned": {
+      "MAS": {
+        "lam": 1000.0,
+        "grid": [
+          10.0,
+          100.0,
+          1000.0,
+          10000.0
+        ],
+        "seed0_FGT": 0.024999999999999967,
+        "seed0_ACC": 0.39166666666666666,
+        "trace": [
+          {
+            "lam": 10.0,
+            "seed0_ACC": 0.6291666666666667,
+            "seed0_FGT": 0.09999999999999998,
+            "valid": true
+          },
+          {
+            "lam": 100.0,
+            "seed0_ACC": 0.49583333333333335,
+            "seed0_FGT": 0.3166666666666667,
+            "valid": true
+          },
+          {
+            "lam": 1000.0,
+            "seed0_ACC": 0.39166666666666666,
+            "seed0_FGT": 0.024999999999999967,
+            "valid": true
+          },
+          {
+            "lam": 10000.0,
+            "seed0_ACC": 0.19166666666666668,
+            "seed0_FGT": 0.0,
+            "valid": false
+          }
+        ],
+        "fallback": false,
+        "rule": "min seed-0 FGT among valid runs (E1's EWC rule); NaN runs excluded"
+      },
+      "SI": {
+        "lam": 10.0,
+        "grid": [
+          0.1,
+          1.0,
+          10.0,
+          100.0
+        ],
+        "seed0_FGT": -0.01666666666666672,
+        "seed0_ACC": 0.625,
+        "trace": [
+          {
+            "lam": 0.1,
+            "seed0_ACC": 0.6541666666666667,
+            "seed0_FGT": 0.05833333333333335,
+            "valid": true
+          },
+          {
+            "lam": 1.0,
+            "seed0_ACC": 0.6833333333333333,
+            "seed0_FGT": 0.016666666666666607,
+            "valid": true
+          },
+          {
+            "lam": 10.0,
+            "seed0_ACC": 0.625,
+            "seed0_FGT": -0.01666666666666672,
+            "valid": true
+          },
+          {
+            "lam": 100.0,
+            "seed0_ACC": 0.3458333333333333,
+            "seed0_FGT": 0.26666666666666666,
+            "valid": true
+          }
+        ],
+        "fallback": false,
+        "rule": "min seed-0 FGT among valid runs (E1's EWC rule); NaN runs excluded"
+      },
+      "OnlineEWC(online)": {
+        "lam": 50.0,
+        "grid": [
+          50.0,
+          500.0,
+          5000.0,
+          50000.0
+        ],
+        "seed0_FGT": 0.07499999999999996,
+        "seed0_ACC": 0.65,
+        "trace": [
+          {
+            "lam": 50.0,
+            "seed0_ACC": 0.65,
+            "seed0_FGT": 0.07499999999999996,
+            "valid": true
+          },
+          {
+            "lam": 500.0,
+            "seed0_ACC": 0.5833333333333333,
+            "seed0_FGT": 0.13333333333333341,
+            "valid": true
+          },
+          {
+            "lam": 5000.0,
+            "seed0_ACC": 0.41666666666666663,
+            "seed0_FGT": 0.10833333333333334,
+            "valid": true
+          },
+          {
+            "lam": 50000.0,
+            "seed0_ACC": 0.19166666666666668,
+            "seed0_FGT": 0.11666666666666667,
+            "valid": false
+          }
+        ],
+        "fallback": false,
+        "rule": "min seed-0 FGT among valid runs (E1's EWC rule); NaN runs excluded"
+      },
+      "OnlineEWC(boundary)": {
+        "lam": 50.0,
+        "grid": [
+          5.0,
+          50.0,
+          500.0,
+          5000.0
+        ],
+        "seed0_FGT": -0.01666666666666672,
+        "seed0_ACC": 0.6875,
+        "trace": [
+          {
+            "lam": 5.0,
+            "seed0_ACC": 0.6583333333333334,
+            "seed0_FGT": 0.04999999999999993,
+            "valid": true
+          },
+          {
+            "lam": 50.0,
+            "seed0_ACC": 0.6875,
+            "seed0_FGT": -0.01666666666666672,
+            "valid": true
+          },
+          {
+            "lam": 500.0,
+            "seed0_ACC": 0.19166666666666668,
+            "seed0_FGT": 0.5,
+            "valid": true
+          },
+          {
+            "lam": 5000.0,
+            "seed0_ACC": 0.19166666666666668,
+            "seed0_FGT": 0.5,
+            "valid": true
+          }
+        ],
+        "fallback": false,
+        "rule": "min seed-0 FGT among valid runs (E1's EWC rule); NaN runs excluded"
+      }
+    },
+    "fixed_hypers": {
+      "MAS": {
+        "omega_decay": 0.995,
+        "anchor_decay": 0.999
+      },
+      "SI": {
+        "xi": 0.001
+      },
+      "OnlineEWC(online)": {
+        "gamma": 0.995,
+        "anchor_decay": 0.999,
+        "boundary": false
+      },
+      "OnlineEWC(boundary)": {
+        "gamma": 0.9,
+        "boundary": true
+      },
+      "EWC": {}
+    },
+    "wall_seconds_per_arm": {
+      "MAS": 0.0,
+      "SI": 0.0,
+      "OnlineEWC(online)": 0.0,
+      "OnlineEWC(boundary)": 0.3
+    },
+    "raw_path": "results\\citation_battery_2026-09-03\\_smoke\\raw_multi_epoch.json",
+    "wall_seconds_total": 0.4
+  },
+  "arms": {
+    "MAS": {
+      "seed_records": [
+        {
+          "seed": 0,
+          "ACC": 0.39166666666666666,
+          "FGT": 0.024999999999999967,
+          "BWT": -0.024999999999999967,
+          "LA": 0.4041666666666667,
+          "R": [
+            [
+              0.36666666666666664,
+              0.45
+            ],
+            [
+              0.3416666666666667,
+              0.44166666666666665
+            ]
+          ]
+        },
+        {
+          "seed": 1,
+          "ACC": 0.19166666666666665,
+          "FGT": 0.21666666666666667,
+          "BWT": -0.21666666666666667,
+          "LA": 0.3,
+          "R": [
+            [
+              0.39166666666666666,
+              0.11666666666666667
+            ],
+            [
+              0.175,
+              0.20833333333333334
+            ]
+          ]
+        }
+      ]
+    },
+    "SI": {
+      "seed_records": [
+        {
+          "seed": 0,
+          "ACC": 0.625,
+          "FGT": -0.01666666666666672,
+          "BWT": 0.01666666666666672,
+          "LA": 0.6166666666666667,
+          "R": [
+            [
+              0.6916666666666667,
+              0.425
+            ],
+            [
+              0.7083333333333334,
+              0.5416666666666666
+            ]
+          ]
+        },
+        {
+          "seed": 1,
+          "ACC": 0.36666666666666664,
+          "FGT": -0.016666666666666663,
+          "BWT": 0.016666666666666663,
+          "LA": 0.35833333333333334,
+          "R": [
+            [
+              0.49166666666666664,
+              0.15833333333333333
+            ],
+            [
+              0.5083333333333333,
+              0.225
+            ]
+          ]
+        }
+      ]
+    },
+    "OnlineEWC(online)": {
+      "seed_records": [
+        {
+          "seed": 0,
+          "ACC": 0.65,
+          "FGT": 0.07499999999999996,
+          "BWT": -0.07499999999999996,
+          "LA": 0.6875,
+          "R": [
+            [
+              0.6916666666666667,
+              0.425
+            ],
+            [
+              0.6166666666666667,
+              0.6833333333333333
+            ]
+          ]
+        },
+        {
+          "seed": 1,
+          "ACC": 0.4708333333333333,
+          "FGT": 0.09999999999999998,
+          "BWT": -0.09999999999999998,
+          "LA": 0.5208333333333334,
+          "R": [
+            [
+              0.49166666666666664,
+              0.15833333333333333
+            ],
+            [
+              0.39166666666666666,
+              0.55
+            ]
+          ]
+        }
+      ]
+    },
+    "OnlineEWC(boundary)": {
+      "seed_records": [
+        {
+          "seed": 0,
+          "ACC": 0.6875,
+          "FGT": -0.01666666666666672,
+          "BWT": 0.01666666666666672,
+          "LA": 0.6791666666666667,
+          "R": [
+            [
+              0.6916666666666667,
+              0.425
+            ],
+            [
+              0.7083333333333334,
+              0.6666666666666666
+            ]
+          ]
+        },
+        {
+          "seed": 1,
+          "ACC": 0.39583333333333337,
+          "FGT": -0.00833333333333336,
+          "BWT": 0.00833333333333336,
+          "LA": 0.39166666666666666,
+          "R": [
+            [
+              0.49166666666666664,
+              0.15833333333333333
+            ],
+            [
+              0.5,
+              0.2916666666666667
+            ]
+          ]
+        }
+      ]
+    }
+  }
+}
