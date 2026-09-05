@@ -1,0 +1,85 @@
+{
+ "config": "g3a",
+ "stream": "roundrobin",
+ "seed": 0,
+ "knobs": {
+  "replay_passes": 15,
+  "replay_items": 256
+ },
+ "runtime_seconds": 0.83,
+ "result": {
+  "acc": 0.5801666666666667,
+  "recruited": 2,
+  "route_log": [
+   358144,
+   1856,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "fractions": [
+   0.9948,
+   0.0052,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "max_fraction": 0.9948,
+  "n_seen": [
+   248320,
+   1856,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "trained_fractions": [
+   0.9926,
+   0.0074,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "max_trained_fraction": 0.9926,
+  "dropped_batches": 0,
+  "purity": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ],
+  "replay": {
+   "n_events": 1,
+   "items_total": 256,
+   "passes_per_event": 15,
+   "recon_pre_mean": 0.01083,
+   "recon_post_mean": 0.00625,
+   "conf_pre_mean": 0.51528,
+   "conf_post_mean": 0.51329,
+   "events": [
+    {
+     "expert": 0,
+     "items": 256,
+     "passes": 15,
+     "n_seen_real": 248320,
+     "recon_pre": 0.01083,
+     "recon_post": 0.00625,
+     "conf_pre": 0.51528,
+     "conf_post": 0.51329
+    }
+   ]
+  }
+ }
+}

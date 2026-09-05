@@ -1,0 +1,65 @@
+{
+ "config": "shipped",
+ "stream": "mixed",
+ "seed": 0,
+ "knobs": {},
+ "runtime_seconds": 0.51,
+ "result": {
+  "acc": 0.5588333333333333,
+  "recruited": 2,
+  "route_log": [
+   359744,
+   256,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "fractions": [
+   0.9993,
+   0.0007,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "max_fraction": 0.9993,
+  "n_seen": [
+   121792,
+   256,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "trained_fractions": [
+   0.9979,
+   0.0021,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "max_trained_fraction": 0.9979,
+  "dropped_batches": 0,
+  "purity": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ],
+  "replay": {
+   "n_events": 0,
+   "items_total": 0
+  }
+ }
+}

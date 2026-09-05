@@ -1,0 +1,65 @@
+{
+ "config": "shipped",
+ "stream": "roundrobin",
+ "seed": 1,
+ "knobs": {},
+ "runtime_seconds": 0.9,
+ "result": {
+  "acc": 0.5916666666666667,
+  "recruited": 2,
+  "route_log": [
+   359616,
+   384,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "fractions": [
+   0.9989,
+   0.0011,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "max_fraction": 0.9989,
+  "n_seen": [
+   235136,
+   384,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "trained_fractions": [
+   0.9984,
+   0.0016,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "max_trained_fraction": 0.9984,
+  "dropped_batches": 0,
+  "purity": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ],
+  "replay": {
+   "n_events": 0,
+   "items_total": 0
+  }
+ }
+}

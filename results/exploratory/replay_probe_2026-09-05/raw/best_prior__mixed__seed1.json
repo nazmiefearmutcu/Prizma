@@ -1,0 +1,107 @@
+{
+ "config": "best_prior",
+ "stream": "mixed",
+ "seed": 1,
+ "knobs": {
+  "train_granularity": "sample",
+  "route_stat": "sample_top",
+  "replay_passes": 15,
+  "replay_items": 256
+ },
+ "runtime_seconds": 1.89,
+ "result": {
+  "acc": 0.5790000000000001,
+  "recruited": 4,
+  "route_log": [
+   197515,
+   40541,
+   34049,
+   27633,
+   0,
+   0,
+   0,
+   0
+  ],
+  "fractions": [
+   0.659,
+   0.1353,
+   0.1136,
+   0.0922,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "max_fraction": 0.659,
+  "n_seen": [
+   35490,
+   22460,
+   26199,
+   27633,
+   0,
+   0,
+   0,
+   0
+  ],
+  "trained_fractions": [
+   0.3175,
+   0.2009,
+   0.2344,
+   0.2472,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "max_trained_fraction": 0.3175,
+  "dropped_batches": 0,
+  "purity": [
+   0.3133,
+   0.46,
+   0.3267,
+   0.375,
+   0.52
+  ],
+  "replay": {
+   "n_events": 3,
+   "items_total": 768,
+   "passes_per_event": 15,
+   "recon_pre_mean": 0.02248,
+   "recon_post_mean": 0.0136,
+   "conf_pre_mean": 0.46614,
+   "conf_post_mean": 0.46436,
+   "events": [
+    {
+     "expert": 0,
+     "items": 256,
+     "passes": 15,
+     "n_seen_real": 35490,
+     "recon_pre": 0.01932,
+     "recon_post": 0.01341,
+     "conf_pre": 0.42301,
+     "conf_post": 0.42264
+    },
+    {
+     "expert": 1,
+     "items": 256,
+     "passes": 15,
+     "n_seen_real": 22460,
+     "recon_pre": 0.02517,
+     "recon_post": 0.01511,
+     "conf_pre": 0.45612,
+     "conf_post": 0.45381
+    },
+    {
+     "expert": 2,
+     "items": 256,
+     "passes": 15,
+     "n_seen_real": 26199,
+     "recon_pre": 0.02294,
+     "recon_post": 0.01226,
+     "conf_pre": 0.51929,
+     "conf_post": 0.51661
+    }
+   ]
+  }
+ }
+}

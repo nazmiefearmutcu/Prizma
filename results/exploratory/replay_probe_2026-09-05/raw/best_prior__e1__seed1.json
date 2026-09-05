@@ -1,0 +1,17 @@
+{
+ "config": "best_prior",
+ "stream": "e1",
+ "seed": 1,
+ "knobs": {
+  "train_granularity": "sample",
+  "route_stat": "sample_top",
+  "replay_passes": 15,
+  "replay_items": 256
+ },
+ "runtime_seconds": 1.99,
+ "result": {
+  "acc": 0.6733333333333335,
+  "fgt": 0.0012500000000000011,
+  "recruited": 8
+ }
+}

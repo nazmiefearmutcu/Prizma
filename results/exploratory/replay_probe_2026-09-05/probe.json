@@ -1,0 +1,579 @@
+{
+ "label": "LANE-EXPLORATORY",
+ "date": "2026-09-05",
+ "target_prereg": "docs/preregistry/2026-09-05-replay-bar6.md (PR-2026-09-03-07, IN-WRITE, seeds 20-24 = disjoint)",
+ "bar_exploratory": 0.7,
+ "settings": {
+  "K": 5,
+  "d": 24,
+  "n_classes": 8,
+  "h": 48,
+  "epochs": 15,
+  "batch": 128,
+  "n_experts": 8,
+  "z_novel": 5.0,
+  "replay": {
+   "replay_passes": 15,
+   "replay_items": 256,
+   "hidden_EMA_rate": 0.05,
+   "var_floor": 0.0001
+  },
+  "seeds": [
+   0,
+   1
+  ],
+  "stream_note": "mixed/roundrobin constructors reused verbatim from experiments/interleave_fix_probe.py; E1 guard = shipped block benchmark"
+ },
+ "selection_rule_frozen": "Eligibility (hard): max per-expert train-fraction over mixed runs <= 0.85. PASS-set = eligible AND mixed >= 0.70 AND roundrobin >= 0.70 AND E1 guard (|ACC-0.834| <= 0.02, FGT <= 0.02); choose fewest active knobs, tie-break precedence [shipped < g3a < best_prior]. If empty: best-weakest min interleaved ACC among eligible, same tie-breaks; E1 guard recorded. PR-2026-09-03-07 drafted iff the reported best is >= 0.68 on BOTH streams AND passes the ledger filter; otherwise the honest mechanistic conclusion is written (pre-committed failure branch).",
+ "selection_trace": {
+  "bar": 0.7,
+  "draft_floor": 0.68,
+  "specialization_max": 0.85,
+  "e1_guard": {
+   "target_acc": 0.834,
+   "acc_tol": 0.02,
+   "max_fgt": 0.02
+  },
+  "rule": "PASS-set EMPTY -> best-weakest min interleaved ACC among ELIGIBLE configs, then fewest knobs, then precedence; E1 guard recorded for the reported best",
+  "pass_set": [],
+  "chosen": "best_prior",
+  "pr07_draft_branch": "NO PR DRAFT (best below the 0.68 floor on some stream, or the specialization filter fails) -- write the honest mechanistic conclusion"
+ },
+ "configs": {
+  "shipped": {
+   "knobs": {},
+   "n_active_knobs": 0,
+   "precedence": "shipped",
+   "mixed": {
+    "acc_mean": 0.5695,
+    "acc_per_seed": [
+     0.5588,
+     0.5802
+    ],
+    "max_fraction_per_seed": [
+     0.9993,
+     0.9995
+    ],
+    "max_trained_fraction_per_seed": [
+     0.9979,
+     0.998
+    ],
+    "route_log_per_seed": [
+     [
+      359744,
+      256,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      359808,
+      192,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "recruited_per_seed": [
+     2,
+     2
+    ],
+    "replay_diag_per_seed": [
+     {
+      "n_events": 0,
+      "items_total": 0
+     },
+     {
+      "n_events": 0,
+      "items_total": 0
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5863,
+    "acc_per_seed": [
+     0.581,
+     0.5917
+    ],
+    "max_fraction_per_seed": [
+     0.9993,
+     0.9989
+    ],
+    "max_trained_fraction_per_seed": [
+     0.999,
+     0.9984
+    ],
+    "route_log_per_seed": [
+     [
+      359744,
+      256,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      359616,
+      384,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "recruited_per_seed": [
+     2,
+     2
+    ],
+    "replay_diag_per_seed": [
+     {
+      "n_events": 0,
+      "items_total": 0
+     },
+     {
+      "n_events": 0,
+      "items_total": 0
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.5695,
+   "maxfrac_mixed": 0.9995,
+   "specialization_ok": false,
+   "eligible": false,
+   "passes_bar": false
+  },
+  "g3a": {
+   "knobs": {
+    "replay_passes": 15,
+    "replay_items": 256
+   },
+   "n_active_knobs": 2,
+   "precedence": "g3a",
+   "mixed": {
+    "acc_mean": 0.5706,
+    "acc_per_seed": [
+     0.5593,
+     0.5818
+    ],
+    "max_fraction_per_seed": [
+     0.9975,
+     0.9984
+    ],
+    "max_trained_fraction_per_seed": [
+     0.9927,
+     0.994
+    ],
+    "route_log_per_seed": [
+     [
+      359104,
+      896,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      359424,
+      576,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "recruited_per_seed": [
+     2,
+     2
+    ],
+    "replay_diag_per_seed": [
+     {
+      "n_events": 1,
+      "items_total": 256,
+      "passes_per_event": 15,
+      "recon_pre_mean": 0.01701,
+      "recon_post_mean": 0.011,
+      "conf_pre_mean": 0.49343,
+      "conf_post_mean": 0.49219,
+      "events": [
+       {
+        "expert": 0,
+        "items": 256,
+        "passes": 15,
+        "n_seen_real": 121792,
+        "recon_pre": 0.01701,
+        "recon_post": 0.011,
+        "conf_pre": 0.49343,
+        "conf_post": 0.49219
+       }
+      ]
+     },
+     {
+      "n_events": 1,
+      "items_total": 256,
+      "passes_per_event": 15,
+      "recon_pre_mean": 0.01738,
+      "recon_post_mean": 0.0107,
+      "conf_pre_mean": 0.45985,
+      "conf_post_mean": 0.45648,
+      "events": [
+       {
+        "expert": 0,
+        "items": 256,
+        "passes": 15,
+        "n_seen_real": 95936,
+        "recon_pre": 0.01738,
+        "recon_post": 0.0107,
+        "conf_pre": 0.45985,
+        "conf_post": 0.45648
+       }
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5865,
+    "acc_per_seed": [
+     0.5802,
+     0.5928
+    ],
+    "max_fraction_per_seed": [
+     0.9948,
+     0.9975
+    ],
+    "max_trained_fraction_per_seed": [
+     0.9926,
+     0.9962
+    ],
+    "route_log_per_seed": [
+     [
+      358144,
+      1856,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      359104,
+      896,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "recruited_per_seed": [
+     2,
+     2
+    ],
+    "replay_diag_per_seed": [
+     {
+      "n_events": 1,
+      "items_total": 256,
+      "passes_per_event": 15,
+      "recon_pre_mean": 0.01083,
+      "recon_post_mean": 0.00625,
+      "conf_pre_mean": 0.51528,
+      "conf_post_mean": 0.51329,
+      "events": [
+       {
+        "expert": 0,
+        "items": 256,
+        "passes": 15,
+        "n_seen_real": 248320,
+        "recon_pre": 0.01083,
+        "recon_post": 0.00625,
+        "conf_pre": 0.51528,
+        "conf_post": 0.51329
+       }
+      ]
+     },
+     {
+      "n_events": 1,
+      "items_total": 256,
+      "passes_per_event": 15,
+      "recon_pre_mean": 0.00881,
+      "recon_post_mean": 0.00498,
+      "conf_pre_mean": 0.47877,
+      "conf_post_mean": 0.47606,
+      "events": [
+       {
+        "expert": 0,
+        "items": 256,
+        "passes": 15,
+        "n_seen_real": 235136,
+        "recon_pre": 0.00881,
+        "recon_post": 0.00498,
+        "conf_pre": 0.47877,
+        "conf_post": 0.47606
+       }
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.5706,
+   "maxfrac_mixed": 0.9984,
+   "specialization_ok": false,
+   "eligible": false,
+   "passes_bar": false
+  },
+  "best_prior": {
+   "knobs": {
+    "train_granularity": "sample",
+    "route_stat": "sample_top",
+    "replay_passes": 15,
+    "replay_items": 256
+   },
+   "n_active_knobs": 4,
+   "precedence": "best_prior",
+   "mixed": {
+    "acc_mean": 0.5569,
+    "acc_per_seed": [
+     0.5348,
+     0.579
+    ],
+    "max_fraction_per_seed": [
+     0.7268,
+     0.659
+    ],
+    "max_trained_fraction_per_seed": [
+     0.3824,
+     0.3175
+    ],
+    "route_log_per_seed": [
+     [
+      210272,
+      40735,
+      38292,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      197515,
+      40541,
+      34049,
+      27633,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "recruited_per_seed": [
+     3,
+     4
+    ],
+    "replay_diag_per_seed": [
+     {
+      "n_events": 2,
+      "items_total": 512,
+      "passes_per_event": 15,
+      "recon_pre_mean": 0.02412,
+      "recon_post_mean": 0.01467,
+      "conf_pre_mean": 0.45404,
+      "conf_post_mean": 0.45391,
+      "events": [
+       {
+        "expert": 0,
+        "items": 256,
+        "passes": 15,
+        "n_seen_real": 34398,
+        "recon_pre": 0.02212,
+        "recon_post": 0.01559,
+        "conf_pre": 0.40909,
+        "conf_post": 0.40762
+       },
+       {
+        "expert": 1,
+        "items": 256,
+        "passes": 15,
+        "n_seen_real": 27435,
+        "recon_pre": 0.02612,
+        "recon_post": 0.01374,
+        "conf_pre": 0.49899,
+        "conf_post": 0.5002
+       }
+      ]
+     },
+     {
+      "n_events": 3,
+      "items_total": 768,
+      "passes_per_event": 15,
+      "recon_pre_mean": 0.02248,
+      "recon_post_mean": 0.0136,
+      "conf_pre_mean": 0.46614,
+      "conf_post_mean": 0.46436,
+      "events": [
+       {
+        "expert": 0,
+        "items": 256,
+        "passes": 15,
+        "n_seen_real": 35490,
+        "recon_pre": 0.01932,
+        "recon_post": 0.01341,
+        "conf_pre": 0.42301,
+        "conf_post": 0.42264
+       },
+       {
+        "expert": 1,
+        "items": 256,
+        "passes": 15,
+        "n_seen_real": 22460,
+        "recon_pre": 0.02517,
+        "recon_post": 0.01511,
+        "conf_pre": 0.45612,
+        "conf_post": 0.45381
+       },
+       {
+        "expert": 2,
+        "items": 256,
+        "passes": 15,
+        "n_seen_real": 26199,
+        "recon_pre": 0.02294,
+        "recon_post": 0.01226,
+        "conf_pre": 0.51929,
+        "conf_post": 0.51661
+       }
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5639,
+    "acc_per_seed": [
+     0.5363,
+     0.5915
+    ],
+    "max_fraction_per_seed": [
+     0.7079,
+     0.7771
+    ],
+    "max_trained_fraction_per_seed": [
+     0.4427,
+     0.6747
+    ],
+    "route_log_per_seed": [
+     [
+      200477,
+      40086,
+      42630,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      223539,
+      64111,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "recruited_per_seed": [
+     3,
+     2
+    ],
+    "replay_diag_per_seed": [
+     {
+      "n_events": 2,
+      "items_total": 512,
+      "passes_per_event": 15,
+      "recon_pre_mean": 0.02725,
+      "recon_post_mean": 0.01756,
+      "conf_pre_mean": 0.44761,
+      "conf_post_mean": 0.44709,
+      "events": [
+       {
+        "expert": 0,
+        "items": 256,
+        "passes": 15,
+        "n_seen_real": 33296,
+        "recon_pre": 0.02361,
+        "recon_post": 0.01677,
+        "conf_pre": 0.41262,
+        "conf_post": 0.41117
+       },
+       {
+        "expert": 1,
+        "items": 256,
+        "passes": 15,
+        "n_seen_real": 20371,
+        "recon_pre": 0.03088,
+        "recon_post": 0.01835,
+        "conf_pre": 0.4826,
+        "conf_post": 0.48301
+       }
+      ]
+     },
+     {
+      "n_events": 1,
+      "items_total": 256,
+      "passes_per_event": 15,
+      "recon_pre_mean": 0.02554,
+      "recon_post_mean": 0.01701,
+      "conf_pre_mean": 0.41462,
+      "conf_post_mean": 0.41428,
+      "events": [
+       {
+        "expert": 0,
+        "items": 256,
+        "passes": 15,
+        "n_seen_real": 30907,
+        "recon_pre": 0.02554,
+        "recon_post": 0.01701,
+        "conf_pre": 0.41462,
+        "conf_post": 0.41428
+       }
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.5569,
+   "maxfrac_mixed": 0.7268,
+   "specialization_ok": true,
+   "eligible": true,
+   "passes_bar": false,
+   "e1": {
+    "acc_mean": 0.6663,
+    "fgt_mean": 0.0029,
+    "acc_per_seed": [
+     0.6592,
+     0.6733
+    ],
+    "fgt_per_seed": [
+     0.0046,
+     0.0013
+    ],
+    "guard_ok": false
+   }
+  }
+ },
+ "chosen": "best_prior",
+ "runtime_seconds": 17.3
+}
