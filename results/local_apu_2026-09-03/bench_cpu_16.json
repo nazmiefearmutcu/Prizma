@@ -1,0 +1,35 @@
+[
+  {
+    "mode": "cpu",
+    "threads": "16",
+    "B": 8,
+    "T": 1024,
+    "d_model": 64,
+    "H": 2,
+    "ms_per_step": 303.5,
+    "tokens_per_s": 26989,
+    "torch": "2.14.0+cpu"
+  },
+  {
+    "mode": "cpu",
+    "threads": "16",
+    "B": 8,
+    "T": 1024,
+    "d_model": 128,
+    "H": 4,
+    "ms_per_step": 751.9,
+    "tokens_per_s": 10895,
+    "torch": "2.14.0+cpu"
+  },
+  {
+    "mode": "cpu",
+    "threads": "16",
+    "B": 32,
+    "T": 1024,
+    "d_model": 128,
+    "H": 4,
+    "ms_per_step": 2230.3,
+    "tokens_per_s": 14692,
+    "torch": "2.14.0+cpu"
+  }
+]

@@ -1,0 +1,26 @@
+[
+  {
+    "mode": "dml",
+    "B": 8,
+    "T": 1024,
+    "d_model": 64,
+    "H": 2,
+    "error": "RuntimeError: The size of tensor a (0) must match the size of tensor b (64) at non-singleton dimension 3"
+  },
+  {
+    "mode": "dml",
+    "B": 8,
+    "T": 1024,
+    "d_model": 128,
+    "H": 4,
+    "error": "RuntimeError: The size of tensor a (0) must match the size of tensor b (64) at non-singleton dimension 3"
+  },
+  {
+    "mode": "dml",
+    "B": 32,
+    "T": 1024,
+    "d_model": 128,
+    "H": 4,
+    "error": "RuntimeError: The size of tensor a (0) must match the size of tensor b (64) at non-singleton dimension 3"
+  }
+]
