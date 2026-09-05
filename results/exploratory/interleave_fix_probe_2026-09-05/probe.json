@@ -1,0 +1,4029 @@
+{
+ "label": "LANE-EXPLORATORY",
+ "date": "2026-09-05",
+ "prereg_draft": "docs/preregistry/2026-09-03-interleaved-router-bar6.md (PR-2026-09-03-06, IN-WRITE, seeds 10-14 = disjoint)",
+ "bar_exploratory": 0.7,
+ "grid": {
+  "freeze_min_seen": [
+   "0",
+   "300"
+  ],
+  "dynamic_vigilance": [
+   "0.0",
+   "0.5"
+  ],
+  "hot_young": [
+   "0.0",
+   "1.0"
+  ],
+  "route_stat": [
+   "batch_mean",
+   "sample_top"
+  ],
+  "n_settle_steps": [
+   "0",
+   "2"
+  ]
+ },
+ "settings": {
+  "K": 5,
+  "d": 24,
+  "n_classes": 8,
+  "h": 48,
+  "epochs": 15,
+  "batch": 128,
+  "n_experts": 8,
+  "z_novel": 5.0,
+  "seeds": [
+   0,
+   1
+  ],
+  "stream_note": "both interleaved streams mirror experiments/expert_economy.py constructions; E1 guard = shipped block benchmark"
+ },
+ "selection_rule_frozen": "PASS-set = mixed>=0.70 AND roundrobin>=0.70 at n=2; choose fewest active levers, tie-break higher E1 ACC (computed on demand for tied candidates), then lexicographic; if empty, maximize min interleaved ACC with the same tie-breaks and draft PR-06 with the honest bar anyway.",
+ "selection_trace": {
+  "bar": 0.7,
+  "n_pass": 0,
+  "rule": "PASS-set EMPTY -> best-weakest interleaved stream, then fewest levers, then higher E1 ACC; PR-06 keeps the honest 0.70 bar",
+  "chosen_label": "hot1.0+sample_top",
+  "chosen_config": {
+   "freeze_min_seen": 0,
+   "dynamic_vigilance": 0.0,
+   "hot_young": 1.0,
+   "route_stat": "sample_top",
+   "n_settle_steps": 0
+  }
+ },
+ "configs": [
+  {
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "label": "shipped",
+   "n_active_levers": 0,
+   "mixed": {
+    "acc_mean": 0.5694999999999999,
+    "acc_per_seed": [
+     0.5588,
+     0.5802
+    ],
+    "runs": [
+     {
+      "acc": 0.5588333333333333,
+      "recruited": 2,
+      "route_log": [
+       359744,
+       256,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5801666666666666,
+      "recruited": 2,
+      "route_log": [
+       359808,
+       192,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5863333333333334,
+    "acc_per_seed": [
+     0.581,
+     0.5917
+    ],
+    "runs": [
+     {
+      "acc": 0.581,
+      "recruited": 2,
+      "route_log": [
+       359744,
+       256,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5916666666666667,
+      "recruited": 2,
+      "route_log": [
+       359616,
+       384,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.5694999999999999,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 2
+   },
+   "label": "settle2",
+   "n_active_levers": 1,
+   "mixed": {
+    "acc_mean": 0.57125,
+    "acc_per_seed": [
+     0.5568,
+     0.5857
+    ],
+    "runs": [
+     {
+      "acc": 0.5568333333333333,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5856666666666667,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5405,
+    "acc_per_seed": [
+     0.4983,
+     0.5827
+    ],
+    "runs": [
+     {
+      "acc": 0.49833333333333335,
+      "recruited": 2,
+      "route_log": [
+       359296,
+       704,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5826666666666667,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.5405,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "label": "sample_top",
+   "n_active_levers": 1,
+   "mixed": {
+    "acc_mean": 0.603,
+    "acc_per_seed": [
+     0.6007,
+     0.6053
+    ],
+    "runs": [
+     {
+      "acc": 0.6006666666666667,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.6053333333333333,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.6009166666666667,
+    "acc_per_seed": [
+     0.5965,
+     0.6053
+    ],
+    "runs": [
+     {
+      "acc": 0.5965,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.6053333333333333,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.6009166666666667,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 2
+   },
+   "label": "sample_top+settle2",
+   "n_active_levers": 2,
+   "mixed": {
+    "acc_mean": 0.57125,
+    "acc_per_seed": [
+     0.5568,
+     0.5857
+    ],
+    "runs": [
+     {
+      "acc": 0.5568333333333333,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5856666666666667,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5685,
+    "acc_per_seed": [
+     0.5543,
+     0.5827
+    ],
+    "runs": [
+     {
+      "acc": 0.5543333333333333,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5826666666666667,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.5685,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "label": "hot1.0",
+   "n_active_levers": 1,
+   "mixed": {
+    "acc_mean": 0.57,
+    "acc_per_seed": [
+     0.56,
+     0.58
+    ],
+    "runs": [
+     {
+      "acc": 0.5599999999999999,
+      "recruited": 2,
+      "route_log": [
+       359744,
+       256,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.58,
+      "recruited": 2,
+      "route_log": [
+       359808,
+       192,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5861666666666667,
+    "acc_per_seed": [
+     0.581,
+     0.5913
+    ],
+    "runs": [
+     {
+      "acc": 0.5810000000000001,
+      "recruited": 2,
+      "route_log": [
+       359744,
+       256,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5913333333333333,
+      "recruited": 2,
+      "route_log": [
+       359616,
+       384,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.57,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 2
+   },
+   "label": "hot1.0+settle2",
+   "n_active_levers": 2,
+   "mixed": {
+    "acc_mean": 0.5710833333333334,
+    "acc_per_seed": [
+     0.5567,
+     0.5855
+    ],
+    "runs": [
+     {
+      "acc": 0.5566666666666666,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5855,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.541,
+    "acc_per_seed": [
+     0.4988,
+     0.5832
+    ],
+    "runs": [
+     {
+      "acc": 0.49883333333333335,
+      "recruited": 2,
+      "route_log": [
+       359296,
+       704,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5831666666666667,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.541,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "label": "hot1.0+sample_top",
+   "n_active_levers": 2,
+   "mixed": {
+    "acc_mean": 0.60325,
+    "acc_per_seed": [
+     0.601,
+     0.6055
+    ],
+    "runs": [
+     {
+      "acc": 0.601,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.6054999999999999,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.6015833333333334,
+    "acc_per_seed": [
+     0.5973,
+     0.6058
+    ],
+    "runs": [
+     {
+      "acc": 0.5973333333333334,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.6058333333333333,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.6015833333333334,
+   "passes_bar": false,
+   "e1_acc_mean": 0.8125833333333334,
+   "e1_fgt_mean": 0.0,
+   "e1_runs": [
+    {
+     "acc": 0.8015000000000001,
+     "fgt": 0.0,
+     "recruited": 5
+    },
+    {
+     "acc": 0.8236666666666667,
+     "fgt": 0.0,
+     "recruited": 5
+    }
+   ]
+  },
+  {
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 2
+   },
+   "label": "hot1.0+sample_top+settle2",
+   "n_active_levers": 3,
+   "mixed": {
+    "acc_mean": 0.5710833333333334,
+    "acc_per_seed": [
+     0.5567,
+     0.5855
+    ],
+    "runs": [
+     {
+      "acc": 0.5566666666666666,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5855,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5686666666666668,
+    "acc_per_seed": [
+     0.5542,
+     0.5832
+    ],
+    "runs": [
+     {
+      "acc": 0.5541666666666668,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5831666666666667,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.5686666666666668,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.5,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "label": "dv0.5",
+   "n_active_levers": 1,
+   "mixed": {
+    "acc_mean": 0.5146666666666666,
+    "acc_per_seed": [
+     0.5045,
+     0.5248
+    ],
+    "runs": [
+     {
+      "acc": 0.5045,
+      "recruited": 3,
+      "route_log": [
+       325952,
+       33664,
+       384,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.7333,
+       0.7342,
+       0.7167,
+       0.645,
+       0.72
+      ]
+     },
+     {
+      "acc": 0.5248333333333334,
+      "recruited": 2,
+      "route_log": [
+       337152,
+       22848,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.7633,
+       0.7733,
+       0.7458,
+       0.8142,
+       0.7675
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.54,
+    "acc_per_seed": [
+     0.5423,
+     0.5377
+    ],
+    "runs": [
+     {
+      "acc": 0.5423333333333333,
+      "recruited": 5,
+      "route_log": [
+       303680,
+       15360,
+       39872,
+       704,
+       384,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       0.6683,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5376666666666667,
+      "recruited": 3,
+      "route_log": [
+       332032,
+       27328,
+       640,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       0.515,
+       0.7267
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.5146666666666666,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.5,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 2
+   },
+   "label": "dv0.5+settle2",
+   "n_active_levers": 2,
+   "mixed": {
+    "acc_mean": 0.4769166666666667,
+    "acc_per_seed": [
+     0.4622,
+     0.4917
+    ],
+    "runs": [
+     {
+      "acc": 0.4621666666666667,
+      "recruited": 2,
+      "route_log": [
+       357568,
+       2432,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.9992,
+       0.9992,
+       1.0,
+       0.9992,
+       0.9992
+      ]
+     },
+     {
+      "acc": 0.4916666666666667,
+      "recruited": 2,
+      "route_log": [
+       351168,
+       8832,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.9525,
+       0.9617,
+       0.9267,
+       0.9533,
+       0.9492
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.4915833333333333,
+    "acc_per_seed": [
+     0.4865,
+     0.4967
+    ],
+    "runs": [
+     {
+      "acc": 0.48649999999999993,
+      "recruited": 2,
+      "route_log": [
+       347200,
+       12800,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.9992,
+       0.8292,
+       0.6567,
+       1.0,
+       0.8775
+      ]
+     },
+     {
+      "acc": 0.4966666666666667,
+      "recruited": 3,
+      "route_log": [
+       316352,
+       41536,
+       2112,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       0.9442,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.4769166666666667,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.5,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "label": "dv0.5+sample_top",
+   "n_active_levers": 2,
+   "mixed": {
+    "acc_mean": 0.603,
+    "acc_per_seed": [
+     0.6007,
+     0.6053
+    ],
+    "runs": [
+     {
+      "acc": 0.6006666666666667,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.6053333333333333,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.6009166666666667,
+    "acc_per_seed": [
+     0.5965,
+     0.6053
+    ],
+    "runs": [
+     {
+      "acc": 0.5965,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.6053333333333333,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.6009166666666667,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.5,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 2
+   },
+   "label": "dv0.5+sample_top+settle2",
+   "n_active_levers": 3,
+   "mixed": {
+    "acc_mean": 0.57125,
+    "acc_per_seed": [
+     0.5568,
+     0.5857
+    ],
+    "runs": [
+     {
+      "acc": 0.5568333333333333,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5856666666666667,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5685,
+    "acc_per_seed": [
+     0.5543,
+     0.5827
+    ],
+    "runs": [
+     {
+      "acc": 0.5543333333333333,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5826666666666667,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.5685,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.5,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "label": "dv0.5+hot1.0",
+   "n_active_levers": 2,
+   "mixed": {
+    "acc_mean": 0.5163333333333334,
+    "acc_per_seed": [
+     0.505,
+     0.5277
+    ],
+    "runs": [
+     {
+      "acc": 0.5050000000000001,
+      "recruited": 3,
+      "route_log": [
+       325952,
+       33920,
+       128,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.7408,
+       0.7683,
+       0.74,
+       0.6708,
+       0.7433
+      ]
+     },
+     {
+      "acc": 0.5276666666666667,
+      "recruited": 2,
+      "route_log": [
+       336256,
+       23744,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.7417,
+       0.765,
+       0.7258,
+       0.7983,
+       0.7583
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.42033333333333334,
+    "acc_per_seed": [
+     0.5373,
+     0.3033
+    ],
+    "runs": [
+     {
+      "acc": 0.5373333333333333,
+      "recruited": 5,
+      "route_log": [
+       300288,
+       14400,
+       44416,
+       576,
+       320,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.9983,
+       1.0,
+       0.6425,
+       0.9992,
+       0.9975
+      ]
+     },
+     {
+      "acc": 0.30333333333333334,
+      "recruited": 4,
+      "route_log": [
+       122688,
+       145088,
+       70336,
+       21888,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.8475,
+       0.6758,
+       1.0,
+       0.5933,
+       0.8717
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.42033333333333334,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.5,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 2
+   },
+   "label": "dv0.5+hot1.0+settle2",
+   "n_active_levers": 3,
+   "mixed": {
+    "acc_mean": 0.478,
+    "acc_per_seed": [
+     0.4628,
+     0.4932
+    ],
+    "runs": [
+     {
+      "acc": 0.4628333333333333,
+      "recruited": 2,
+      "route_log": [
+       357056,
+       2944,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.9983,
+       1.0,
+       1.0,
+       0.9983,
+       0.9958
+      ]
+     },
+     {
+      "acc": 0.49316666666666664,
+      "recruited": 2,
+      "route_log": [
+       349504,
+       10496,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.9142,
+       0.9333,
+       0.8817,
+       0.9317,
+       0.9208
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.4220833333333333,
+    "acc_per_seed": [
+     0.4453,
+     0.3988
+    ],
+    "runs": [
+     {
+      "acc": 0.4453333333333333,
+      "recruited": 3,
+      "route_log": [
+       252544,
+       101952,
+       5504,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.9892,
+       1.0,
+       1.0,
+       0.5833,
+       0.9817
+      ]
+     },
+     {
+      "acc": 0.3988333333333333,
+      "recruited": 4,
+      "route_log": [
+       140608,
+       144000,
+       72192,
+       3200,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.7758,
+       0.5508,
+       0.995,
+       0.5058,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.4220833333333333,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.5,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "label": "dv0.5+hot1.0+sample_top",
+   "n_active_levers": 3,
+   "mixed": {
+    "acc_mean": 0.60325,
+    "acc_per_seed": [
+     0.601,
+     0.6055
+    ],
+    "runs": [
+     {
+      "acc": 0.601,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.6054999999999999,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.524,
+    "acc_per_seed": [
+     0.5973,
+     0.4507
+    ],
+    "runs": [
+     {
+      "acc": 0.5973333333333334,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.45066666666666666,
+      "recruited": 3,
+      "route_log": [
+       179392,
+       180032,
+       576,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       0.7292,
+       0.995,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.524,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.5,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 2
+   },
+   "label": "dv0.5+hot1.0+sample_top+settle2",
+   "n_active_levers": 4,
+   "mixed": {
+    "acc_mean": 0.5710833333333334,
+    "acc_per_seed": [
+     0.5567,
+     0.5855
+    ],
+    "runs": [
+     {
+      "acc": 0.5566666666666666,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5855,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5079166666666667,
+    "acc_per_seed": [
+     0.5542,
+     0.4617
+    ],
+    "runs": [
+     {
+      "acc": 0.5541666666666668,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.4616666666666666,
+      "recruited": 2,
+      "route_log": [
+       184384,
+       175616,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       0.9975,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.5079166666666667,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 300,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "label": "veto300",
+   "n_active_levers": 1,
+   "mixed": {
+    "acc_mean": 0.5694999999999999,
+    "acc_per_seed": [
+     0.5588,
+     0.5802
+    ],
+    "runs": [
+     {
+      "acc": 0.5588333333333333,
+      "recruited": 2,
+      "route_log": [
+       359744,
+       256,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5801666666666666,
+      "recruited": 2,
+      "route_log": [
+       359808,
+       192,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5863333333333334,
+    "acc_per_seed": [
+     0.581,
+     0.5917
+    ],
+    "runs": [
+     {
+      "acc": 0.581,
+      "recruited": 2,
+      "route_log": [
+       359744,
+       256,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5916666666666667,
+      "recruited": 2,
+      "route_log": [
+       359616,
+       384,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.5694999999999999,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 300,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 2
+   },
+   "label": "veto300+settle2",
+   "n_active_levers": 2,
+   "mixed": {
+    "acc_mean": 0.57125,
+    "acc_per_seed": [
+     0.5568,
+     0.5857
+    ],
+    "runs": [
+     {
+      "acc": 0.5568333333333333,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5856666666666667,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5405,
+    "acc_per_seed": [
+     0.4983,
+     0.5827
+    ],
+    "runs": [
+     {
+      "acc": 0.49833333333333335,
+      "recruited": 2,
+      "route_log": [
+       359296,
+       704,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5826666666666667,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.5405,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 300,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "label": "veto300+sample_top",
+   "n_active_levers": 2,
+   "mixed": {
+    "acc_mean": 0.603,
+    "acc_per_seed": [
+     0.6007,
+     0.6053
+    ],
+    "runs": [
+     {
+      "acc": 0.6006666666666667,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.6053333333333333,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.6009166666666667,
+    "acc_per_seed": [
+     0.5965,
+     0.6053
+    ],
+    "runs": [
+     {
+      "acc": 0.5965,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.6053333333333333,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.6009166666666667,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 300,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 2
+   },
+   "label": "veto300+sample_top+settle2",
+   "n_active_levers": 3,
+   "mixed": {
+    "acc_mean": 0.57125,
+    "acc_per_seed": [
+     0.5568,
+     0.5857
+    ],
+    "runs": [
+     {
+      "acc": 0.5568333333333333,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5856666666666667,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5685,
+    "acc_per_seed": [
+     0.5543,
+     0.5827
+    ],
+    "runs": [
+     {
+      "acc": 0.5543333333333333,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5826666666666667,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.5685,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 300,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "label": "veto300+hot1.0",
+   "n_active_levers": 2,
+   "mixed": {
+    "acc_mean": 0.57,
+    "acc_per_seed": [
+     0.56,
+     0.58
+    ],
+    "runs": [
+     {
+      "acc": 0.5599999999999999,
+      "recruited": 2,
+      "route_log": [
+       359744,
+       256,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.58,
+      "recruited": 2,
+      "route_log": [
+       359808,
+       192,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5861666666666667,
+    "acc_per_seed": [
+     0.581,
+     0.5913
+    ],
+    "runs": [
+     {
+      "acc": 0.5810000000000001,
+      "recruited": 2,
+      "route_log": [
+       359744,
+       256,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5913333333333333,
+      "recruited": 2,
+      "route_log": [
+       359616,
+       384,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.57,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 300,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 2
+   },
+   "label": "veto300+hot1.0+settle2",
+   "n_active_levers": 3,
+   "mixed": {
+    "acc_mean": 0.5710833333333334,
+    "acc_per_seed": [
+     0.5567,
+     0.5855
+    ],
+    "runs": [
+     {
+      "acc": 0.5566666666666666,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5855,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.541,
+    "acc_per_seed": [
+     0.4988,
+     0.5832
+    ],
+    "runs": [
+     {
+      "acc": 0.49883333333333335,
+      "recruited": 2,
+      "route_log": [
+       359296,
+       704,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5831666666666667,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.541,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 300,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "label": "veto300+hot1.0+sample_top",
+   "n_active_levers": 3,
+   "mixed": {
+    "acc_mean": 0.60325,
+    "acc_per_seed": [
+     0.601,
+     0.6055
+    ],
+    "runs": [
+     {
+      "acc": 0.601,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.6054999999999999,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.6015833333333334,
+    "acc_per_seed": [
+     0.5973,
+     0.6058
+    ],
+    "runs": [
+     {
+      "acc": 0.5973333333333334,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.6058333333333333,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.6015833333333334,
+   "passes_bar": false,
+   "e1_acc_mean": 0.8125833333333334,
+   "e1_fgt_mean": 0.0,
+   "e1_runs": [
+    {
+     "acc": 0.8015000000000001,
+     "fgt": 0.0,
+     "recruited": 5
+    },
+    {
+     "acc": 0.8236666666666667,
+     "fgt": 0.0,
+     "recruited": 5
+    }
+   ]
+  },
+  {
+   "config": {
+    "freeze_min_seen": 300,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 2
+   },
+   "label": "veto300+hot1.0+sample_top+settle2",
+   "n_active_levers": 4,
+   "mixed": {
+    "acc_mean": 0.5710833333333334,
+    "acc_per_seed": [
+     0.5567,
+     0.5855
+    ],
+    "runs": [
+     {
+      "acc": 0.5566666666666666,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5855,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5686666666666668,
+    "acc_per_seed": [
+     0.5542,
+     0.5832
+    ],
+    "runs": [
+     {
+      "acc": 0.5541666666666668,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5831666666666667,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.5686666666666668,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 300,
+    "dynamic_vigilance": 0.5,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "label": "veto300+dv0.5",
+   "n_active_levers": 2,
+   "mixed": {
+    "acc_mean": 0.5146666666666666,
+    "acc_per_seed": [
+     0.5045,
+     0.5248
+    ],
+    "runs": [
+     {
+      "acc": 0.5045,
+      "recruited": 3,
+      "route_log": [
+       325952,
+       33664,
+       384,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.7333,
+       0.7342,
+       0.7167,
+       0.645,
+       0.72
+      ]
+     },
+     {
+      "acc": 0.5248333333333334,
+      "recruited": 2,
+      "route_log": [
+       337152,
+       22848,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.7633,
+       0.7733,
+       0.7458,
+       0.8142,
+       0.7675
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.54,
+    "acc_per_seed": [
+     0.5423,
+     0.5377
+    ],
+    "runs": [
+     {
+      "acc": 0.5423333333333333,
+      "recruited": 5,
+      "route_log": [
+       303680,
+       15360,
+       39872,
+       704,
+       384,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       0.6683,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5376666666666667,
+      "recruited": 3,
+      "route_log": [
+       332032,
+       27328,
+       640,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       0.515,
+       0.7267
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.5146666666666666,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 300,
+    "dynamic_vigilance": 0.5,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 2
+   },
+   "label": "veto300+dv0.5+settle2",
+   "n_active_levers": 3,
+   "mixed": {
+    "acc_mean": 0.4769166666666667,
+    "acc_per_seed": [
+     0.4622,
+     0.4917
+    ],
+    "runs": [
+     {
+      "acc": 0.4621666666666667,
+      "recruited": 2,
+      "route_log": [
+       357568,
+       2432,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.9992,
+       0.9992,
+       1.0,
+       0.9992,
+       0.9992
+      ]
+     },
+     {
+      "acc": 0.4916666666666667,
+      "recruited": 2,
+      "route_log": [
+       351168,
+       8832,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.9525,
+       0.9617,
+       0.9267,
+       0.9533,
+       0.9492
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.4915833333333333,
+    "acc_per_seed": [
+     0.4865,
+     0.4967
+    ],
+    "runs": [
+     {
+      "acc": 0.48649999999999993,
+      "recruited": 2,
+      "route_log": [
+       347200,
+       12800,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.9992,
+       0.8292,
+       0.6567,
+       1.0,
+       0.8775
+      ]
+     },
+     {
+      "acc": 0.4966666666666667,
+      "recruited": 3,
+      "route_log": [
+       316352,
+       41536,
+       2112,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       0.9442,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.4769166666666667,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 300,
+    "dynamic_vigilance": 0.5,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "label": "veto300+dv0.5+sample_top",
+   "n_active_levers": 3,
+   "mixed": {
+    "acc_mean": 0.603,
+    "acc_per_seed": [
+     0.6007,
+     0.6053
+    ],
+    "runs": [
+     {
+      "acc": 0.6006666666666667,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.6053333333333333,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.6009166666666667,
+    "acc_per_seed": [
+     0.5965,
+     0.6053
+    ],
+    "runs": [
+     {
+      "acc": 0.5965,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.6053333333333333,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.6009166666666667,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 300,
+    "dynamic_vigilance": 0.5,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 2
+   },
+   "label": "veto300+dv0.5+sample_top+settle2",
+   "n_active_levers": 4,
+   "mixed": {
+    "acc_mean": 0.57125,
+    "acc_per_seed": [
+     0.5568,
+     0.5857
+    ],
+    "runs": [
+     {
+      "acc": 0.5568333333333333,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5856666666666667,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5685,
+    "acc_per_seed": [
+     0.5543,
+     0.5827
+    ],
+    "runs": [
+     {
+      "acc": 0.5543333333333333,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5826666666666667,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.5685,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 300,
+    "dynamic_vigilance": 0.5,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "label": "veto300+dv0.5+hot1.0",
+   "n_active_levers": 3,
+   "mixed": {
+    "acc_mean": 0.5163333333333334,
+    "acc_per_seed": [
+     0.505,
+     0.5277
+    ],
+    "runs": [
+     {
+      "acc": 0.5050000000000001,
+      "recruited": 3,
+      "route_log": [
+       325952,
+       33920,
+       128,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.7408,
+       0.7683,
+       0.74,
+       0.6708,
+       0.7433
+      ]
+     },
+     {
+      "acc": 0.5276666666666667,
+      "recruited": 2,
+      "route_log": [
+       336256,
+       23744,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.7417,
+       0.765,
+       0.7258,
+       0.7983,
+       0.7583
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.42033333333333334,
+    "acc_per_seed": [
+     0.5373,
+     0.3033
+    ],
+    "runs": [
+     {
+      "acc": 0.5373333333333333,
+      "recruited": 5,
+      "route_log": [
+       300288,
+       14400,
+       44416,
+       576,
+       320,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.9983,
+       1.0,
+       0.6425,
+       0.9992,
+       0.9975
+      ]
+     },
+     {
+      "acc": 0.30333333333333334,
+      "recruited": 4,
+      "route_log": [
+       122688,
+       145088,
+       70336,
+       21888,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.8475,
+       0.6758,
+       1.0,
+       0.5933,
+       0.8717
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.42033333333333334,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 300,
+    "dynamic_vigilance": 0.5,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 2
+   },
+   "label": "veto300+dv0.5+hot1.0+settle2",
+   "n_active_levers": 4,
+   "mixed": {
+    "acc_mean": 0.478,
+    "acc_per_seed": [
+     0.4628,
+     0.4932
+    ],
+    "runs": [
+     {
+      "acc": 0.4628333333333333,
+      "recruited": 2,
+      "route_log": [
+       357056,
+       2944,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.9983,
+       1.0,
+       1.0,
+       0.9983,
+       0.9958
+      ]
+     },
+     {
+      "acc": 0.49316666666666664,
+      "recruited": 2,
+      "route_log": [
+       349504,
+       10496,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.9142,
+       0.9333,
+       0.8817,
+       0.9317,
+       0.9208
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.4220833333333333,
+    "acc_per_seed": [
+     0.4453,
+     0.3988
+    ],
+    "runs": [
+     {
+      "acc": 0.4453333333333333,
+      "recruited": 3,
+      "route_log": [
+       252544,
+       101952,
+       5504,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.9892,
+       1.0,
+       1.0,
+       0.5833,
+       0.9817
+      ]
+     },
+     {
+      "acc": 0.3988333333333333,
+      "recruited": 4,
+      "route_log": [
+       140608,
+       144000,
+       72192,
+       3200,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       0.7758,
+       0.5508,
+       0.995,
+       0.5058,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.4220833333333333,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 300,
+    "dynamic_vigilance": 0.5,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "label": "veto300+dv0.5+hot1.0+sample_top",
+   "n_active_levers": 4,
+   "mixed": {
+    "acc_mean": 0.60325,
+    "acc_per_seed": [
+     0.601,
+     0.6055
+    ],
+    "runs": [
+     {
+      "acc": 0.601,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.6054999999999999,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.524,
+    "acc_per_seed": [
+     0.5973,
+     0.4507
+    ],
+    "runs": [
+     {
+      "acc": 0.5973333333333334,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.45066666666666666,
+      "recruited": 3,
+      "route_log": [
+       179392,
+       180032,
+       576,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       0.7292,
+       0.995,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.524,
+   "passes_bar": false
+  },
+  {
+   "config": {
+    "freeze_min_seen": 300,
+    "dynamic_vigilance": 0.5,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 2
+   },
+   "label": "veto300+dv0.5+hot1.0+sample_top+settle2",
+   "n_active_levers": 5,
+   "mixed": {
+    "acc_mean": 0.5710833333333334,
+    "acc_per_seed": [
+     0.5567,
+     0.5855
+    ],
+    "runs": [
+     {
+      "acc": 0.5566666666666666,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.5855,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5079166666666667,
+    "acc_per_seed": [
+     0.5542,
+     0.4617
+    ],
+    "runs": [
+     {
+      "acc": 0.5541666666666668,
+      "recruited": 1,
+      "route_log": [
+       360000,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     {
+      "acc": 0.4616666666666666,
+      "recruited": 2,
+      "route_log": [
+       184384,
+       175616,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "dropped_batches": 0,
+      "purity": [
+       1.0,
+       1.0,
+       0.9975,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   },
+   "min_interleaved_acc": 0.5079166666666667,
+   "passes_bar": false
+  }
+ ],
+ "chosen": {
+  "config": {
+   "freeze_min_seen": 0,
+   "dynamic_vigilance": 0.0,
+   "hot_young": 1.0,
+   "route_stat": "sample_top",
+   "n_settle_steps": 0
+  },
+  "label": "hot1.0+sample_top",
+  "n_active_levers": 2,
+  "mixed": {
+   "acc_mean": 0.60325,
+   "acc_per_seed": [
+    0.601,
+    0.6055
+   ],
+   "runs": [
+    {
+     "acc": 0.601,
+     "recruited": 1,
+     "route_log": [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "dropped_batches": 0,
+     "purity": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ]
+    },
+    {
+     "acc": 0.6054999999999999,
+     "recruited": 1,
+     "route_log": [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "dropped_batches": 0,
+     "purity": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ]
+    }
+   ]
+  },
+  "roundrobin": {
+   "acc_mean": 0.6015833333333334,
+   "acc_per_seed": [
+    0.5973,
+    0.6058
+   ],
+   "runs": [
+    {
+     "acc": 0.5973333333333334,
+     "recruited": 1,
+     "route_log": [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "dropped_batches": 0,
+     "purity": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ]
+    },
+    {
+     "acc": 0.6058333333333333,
+     "recruited": 1,
+     "route_log": [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "dropped_batches": 0,
+     "purity": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ]
+    }
+   ]
+  },
+  "min_interleaved_acc": 0.6015833333333334,
+  "passes_bar": false,
+  "e1_acc_mean": 0.8125833333333334,
+  "e1_fgt_mean": 0.0,
+  "e1_runs": [
+   {
+    "acc": 0.8015000000000001,
+    "fgt": 0.0,
+    "recruited": 5
+   },
+   {
+    "acc": 0.8236666666666667,
+    "fgt": 0.0,
+    "recruited": 5
+   }
+  ]
+ },
+ "runtime_seconds": 196.3
+}

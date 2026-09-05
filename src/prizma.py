@@ -28,6 +28,17 @@ import math
 import numpy as np
 
 
+# ---- Interleaved-router lever constants (PR-2026-09-03-06; frozen a priori) ---- #
+# WHY frozen: these are hyperparameters of the FIX MECHANISMS, not tuned knobs. Freezing
+# them before any lever run keeps the exploratory selection study a search over the four
+# lever strengths only, not over their internals (pre-registration discipline).
+HOT_YOUNG_TAU = 200.0      # hot_young decay constant: multiplier is 1+hot*e^-1 at n_seen=200
+DV_ALPHA_FAST = 0.2        # novelty-EMA fast component: ~5-batch spike response
+DV_ALPHA_SLOW = 0.02       # novelty-EMA slow component: ~50-batch regime window
+DV_THETA_LO, DV_THETA_HI = 0.25, 4.0   # clamp for the vigilance scale factor
+SAMPLE_NOVEL_FRACTION = 0.5            # sample_top: batch is NOVEL iff novel fraction >= this
+
+
 def softmax(z, axis=-1):
     z = np.clip(z, -60.0, 60.0)
     z = z - z.max(axis=axis, keepdims=True)
@@ -202,7 +213,9 @@ class Prizma:
                  route=True, eta_c=0.1, omega_consol=3.0,
                  n_settle_steps=0, eta_settle=0.1, langevin_temp=0.0,
                  weight_bits=None, act_bits=None,
-                 noise_in_std=0.0, noise_act_std=0.0, noise_weight_std=0.0):
+                 noise_in_std=0.0, noise_act_std=0.0, noise_weight_std=0.0,
+                 freeze_min_seen=0, dynamic_vigilance=0.0, hot_young=0.0,
+                 route_stat="batch_mean"):
         self.d, self.h, self.K, self.M = d, h, K, n_experts
         self.lr, self.lr_cls, self.lambda_cls = lr, lr_cls, lambda_cls
         self.feedback = feedback
@@ -226,6 +239,30 @@ class Prizma:
         self.noise_act_std = noise_act_std
         self.noise_weight_std = noise_weight_std
 
+        # ---- Interleaved-router levers (synthesis C4 + fusion spec 3.3-A/B; PR-06) ---- #
+        # All DEFAULT-OFF: at these values every code path below is bit-identical to the
+        # shipped behaviour (guarded branches; no rng consumption, no extra float ops on
+        # shipped paths). The two documented interleaved failure modes they attack:
+        #   (a) mixed batches make batch-mean surprise stationary -> batch-level vigilance
+        #       is blind (route_stat attacks the statistic);
+        #   (b) round-robin batches freeze immature precision floors that then act as
+        #       catch-all recognizers (freeze_min_seen vetoes consolidating those floors;
+        #       hot_young makes young experts train hot so floors mature faster).
+        # dynamic_vigilance lets the recognition threshold adapt to the stream regime
+        # (many NOVEL batches -> loosen; long no-novelty stretches -> tighten) without
+        # per-batch whiplash.
+        if route_stat not in ("batch_mean", "sample_top"):
+            raise ValueError(f"route_stat must be 'batch_mean' or 'sample_top', "
+                             f"got {route_stat!r}")
+        self.freeze_min_seen = int(freeze_min_seen)   # 0 = shipped: freeze at first transition
+        self.dynamic_vigilance = float(dynamic_vigilance)  # 0.0 = shipped: fixed z threshold
+        self.hot_young = float(hot_young)             # 0.0 = shipped: constant per-expert lr
+        self.route_stat = route_stat                  # "batch_mean" = shipped statistic
+        # dynamic-vigilance state: causal EMAs of the per-batch NOVEL label (0 init = the
+        # stream is assumed recognized until evidence accumulates; no lookahead).
+        self._nov_fast = 0.0
+        self._nov_slow = 0.0
+
         self.experts = [
             Expert(d, h, K, seed + 100 * (m + 1),
                    feedback=feedback, lambda_cls=lambda_cls,
@@ -237,6 +274,42 @@ class Prizma:
         ]
 
     # ----------------------------- routing ------------------------------------ #
+    def _hot_mult(self, n_seen):
+        """Metaplasticity multiplier for an expert with n_seen samples so far.
+
+        1 + hot_young*exp(-n_seen / HOT_YOUNG_TAU): young experts train hot, decaying to
+        1 + hot_young*e^-1 (~1.37x at hot_young=1) at n_seen=200 and ~1 as the expert
+        matures. Attaches the fusion-spec 3.3-B per-expert metaplasticity to the expert's
+        OWN sample count (a purely local, label-free quantity)."""
+        if self.hot_young <= 0:
+            return 1.0
+        return 1.0 + self.hot_young * math.exp(-n_seen / HOT_YOUNG_TAU)
+
+    def _note_novelty(self, novel):
+        """Update the causal novelty-rate EMAs with this batch's NOVEL label.
+
+        Two EMAs: fast (alpha=0.2, ~5 batches) responds to novelty spikes; slow
+        (alpha=0.02, ~50 batches) tracks the stream regime. Their MAX is the smoothed
+        novelty rate: fast attack, slow release (hysteresis), so the effective vigilance
+        adapts to regime changes without batch-to-batch whiplash. No-op when the lever is
+        OFF (bit-identity: no state, no arithmetic on the shipped path)."""
+        if self.dynamic_vigilance <= 0:
+            return
+        v = 1.0 if novel else 0.0
+        self._nov_fast += DV_ALPHA_FAST * (v - self._nov_fast)
+        self._nov_slow += DV_ALPHA_SLOW * (v - self._nov_slow)
+
+    def _theta_scale(self):
+        """Vigilance scale s: theta_eff = s * (mu + z*sigma).
+
+        s = clamp(1 + dv*(novelty_rate_smoothed - 0.5), 0.25, 4): at novelty rate 0 the
+        threshold TIGHTENS (x 1 - dv/2) -- the regime where a stale catch-all floor
+        recognizes everything; at rate 1 it LOOSENS (x 1 + dv/2) -- a genuinely novel
+        regime should recruit, not thrash. Clamped to [0.25, 4] x the base threshold."""
+        nov = max(self._nov_fast, self._nov_slow)
+        return min(DV_THETA_HI, max(DV_THETA_LO,
+                                    1.0 + self.dynamic_vigilance * (nov - 0.5)))
+
     def _recon_matrix(self, X):
         return np.stack([e.recon_error(X) for e in self.experts], axis=1)   # (n, M)
 
@@ -266,23 +339,32 @@ class Prizma:
         n = len(X)
         if e.init_recon is None:
             e.init_recon = float(e.recon_error(X).mean())
-            
+
+        # Metaplasticity: the multiplier is read from the PRE-update n_seen (the step the
+        # expert is about to take) and scales EVERY local delta step below (decoder, head,
+        # encoder). hot_young=0 leaves lr/lr_cls bit-identical (plain attrs, no re-multiply).
+        if self.hot_young > 0:
+            m_hot = self._hot_mult(e.n_seen)
+            lr, lr_cls = self.lr * m_hot, self.lr_cls * m_hot
+        else:
+            lr, lr_cls = self.lr, self.lr_cls
+
         Z, EPS, logits = e.forward(X, Y)
         P = softmax(logits, axis=1)
         D = (P - Y)
-        
+
         Wdec_eff = e._get_weight(e.Wdec)
         Wcls_eff = e._get_weight(e.Wcls)
-        
+
         # decoder: exact local PC rule  dWdec ~ eps (x) z
-        e.Wdec += self.lr * (EPS.T @ Z) / n
-        e.bdec += self.lr * EPS.mean(0)
+        e.Wdec += lr * (EPS.T @ Z) / n
+        e.bdec += lr * EPS.mean(0)
         # head: local delta rule  dWcls ~ (p - y) (x) z
-        e.Wcls -= self.lr_cls * (D.T @ Z) / n
-        e.bcls -= self.lr_cls * D.mean(0)
-        
+        e.Wcls -= lr_cls * (D.T @ Z) / n
+        e.bcls -= lr_cls * D.mean(0)
+
         X_in = e._get_input(X)
-        
+
         # encoder latent error signals.
         if e.n_settle_steps > 0:
             Wenc_eff = e._get_weight(e.Wenc)
@@ -301,9 +383,9 @@ class Prizma:
                 g_rec = (EPS @ Bdec_eff.T) * dZ      # fixed random feedback (DFA)
                 g_cls = (D @ Bcls_eff.T) * dZ
             g_lat = g_rec + self.lambda_cls * g_cls
-            
-        e.Wenc += self.lr * (g_lat.T @ X_in) / n
-        e.benc += self.lr * g_lat.mean(0)
+
+        e.Wenc += lr * (g_lat.T @ X_in) / n
+        e.benc += lr * g_lat.mean(0)
         e.n_seen += n
         
         # update this expert's PRECISION over its own (post-update) reconstruction surprise
@@ -316,10 +398,29 @@ class Prizma:
             e.var = 0.95 * e.var + 0.05 * d_val * d_val
 
     def _recognizes(self, e, X):
-        """Precision test: does expert e recognize this batch (recon within z*sigma of floor)?"""
+        """Precision test: does expert e recognize this batch (recon within z*sigma of floor)?
+
+        route_stat='batch_mean' (shipped): the BATCH-MEAN surprise must sit under the
+        per-expert threshold. Blind to mixed batches: a 5-domain mixture has a stationary
+        mean no matter which domains are in it, so vigilance never fires (failure mode (a)).
+        route_stat='sample_top': the SAME calibrated threshold (mu + z*sigma, no new
+        calibration) is applied PER SAMPLE, and the batch counts as recognized iff the
+        novel fraction is < SAMPLE_NOVEL_FRACTION. The decision stays batch-level (the
+        repo's v2 lesson: per-sample DECISIONS thrash); only the statistic changes, and
+        the novel fraction is stationary-robust: a 60/40 mixed batch is 60% novel for a
+        pure-domain expert even when its mean hides the change. dynamic_vigilance > 0
+        scales the threshold by _theta_scale(); at 0 the shipped expression is used
+        verbatim (bit-identity)."""
         if e.mu > 1e8:
             return False
-        return float(e.recon_error(X).mean()) <= e.mu + self.z_novel * math.sqrt(e.var)
+        S = e.recon_error(X)
+        if self.dynamic_vigilance > 0:
+            thr = self._theta_scale() * (e.mu + self.z_novel * math.sqrt(e.var))
+        else:
+            thr = e.mu + self.z_novel * math.sqrt(e.var)
+        if self.route_stat == "sample_top":
+            return float((S > thr).mean()) < SAMPLE_NOVEL_FRACTION
+        return float(S.mean()) <= thr
 
     def train_batch(self, X, Y, y):
         n = len(X)
@@ -336,6 +437,7 @@ class Prizma:
         for m in committed:
             if self._recognizes(self.experts[m], X):
                 self.route_log[m] += n
+                self._note_novelty(False)
                 return
 
         # 2) otherwise the active expert handles it. While the active expert is YOUNG (precision
@@ -351,15 +453,22 @@ class Prizma:
         if young or self._recognizes(act, X):
             self._train_expert(act, X, Y)
             self.route_log[self.active] += n
+            self._note_novelty(False)
         else:
             act.committed = True
-            if self.consolidate:
+            # Freeze-immaturity veto: consolidation may not freeze an expert whose
+            # precision floor saw fewer than freeze_min_seen samples (failure mode (b):
+            # an immature floor is loose in ABSOLUTE terms, so once frozen it recognizes
+            # every later domain and silently becomes a catch-all that stops all
+            # training). 0 = shipped behaviour (always freeze on commit).
+            if self.consolidate and act.n_seen >= self.freeze_min_seen:
                 act.frozen = True
                 act.omega = self.omega_consol + 1.0
             self.active += 1
             if self.active < self.M:
                 self._train_expert(self.experts[self.active], X, Y)
                 self.route_log[self.active] += n
+            self._note_novelty(True)
 
     def fit_task(self, X, y, epochs=10, batch=128, rng=None):
         rng = rng or np.random.default_rng(0)
