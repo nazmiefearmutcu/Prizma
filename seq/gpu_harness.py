@@ -24,7 +24,10 @@ RNG-clean task instance, exactly like gpu_bench's task_fac).
 """
 from __future__ import annotations
 
-import fcntl
+try:
+    import fcntl
+except ImportError:  # Windows: minimal flock-compatible shim (see seq/_win_flock.py)
+    from . import _win_flock as fcntl  # type: ignore[assignment]
 import hashlib
 import json
 import os
