@@ -1,0 +1,121 @@
+{
+  "registry_id": "PR-2026-09-03-04",
+  "verdict": "NOT-SUPPORTED",
+  "reason": "matched-clean gate never passed at any registered difficulty [32, 24, 16]; comparison not runnable at the registered scale (frozen rule: gate is binding, no per-arm exceptions)",
+  "difficulties_tried": [
+    32,
+    24,
+    16
+  ],
+  "gate_history": [
+    {
+      "difficulty": 32,
+      "gates": {
+        "delta": {
+          "n_seeds": 1,
+          "n_clean_ge_080": 0,
+          "all_sane": true,
+          "passes": false,
+          "clean_accs": [
+            0.0107421875
+          ],
+          "forward_accs": [
+            0.0107421875
+          ],
+          "sanity_diffs": [
+            0.0
+          ]
+        },
+        "additive": {
+          "n_seeds": 1,
+          "n_clean_ge_080": 0,
+          "all_sane": true,
+          "passes": false,
+          "clean_accs": [
+            0.015869140625
+          ],
+          "forward_accs": [
+            0.015869140625
+          ],
+          "sanity_diffs": [
+            0.0
+          ]
+        }
+      },
+      "passed": false
+    },
+    {
+      "difficulty": 24,
+      "gates": {
+        "delta": {
+          "n_seeds": 1,
+          "n_clean_ge_080": 0,
+          "all_sane": true,
+          "passes": false,
+          "clean_accs": [
+            0.007568359375
+          ],
+          "forward_accs": [
+            0.007568359375
+          ],
+          "sanity_diffs": [
+            0.0
+          ]
+        },
+        "additive": {
+          "n_seeds": 1,
+          "n_clean_ge_080": 0,
+          "all_sane": true,
+          "passes": false,
+          "clean_accs": [
+            0.0174560546875
+          ],
+          "forward_accs": [
+            0.0174560546875
+          ],
+          "sanity_diffs": [
+            0.0
+          ]
+        }
+      },
+      "passed": false
+    },
+    {
+      "difficulty": 16,
+      "gates": {
+        "delta": {
+          "n_seeds": 1,
+          "n_clean_ge_080": 0,
+          "all_sane": true,
+          "passes": false,
+          "clean_accs": [
+            0.0035400390625
+          ],
+          "forward_accs": [
+            0.0035400390625
+          ],
+          "sanity_diffs": [
+            0.0
+          ]
+        },
+        "additive": {
+          "n_seeds": 1,
+          "n_clean_ge_080": 0,
+          "all_sane": true,
+          "passes": false,
+          "clean_accs": [
+            0.0140380859375
+          ],
+          "forward_accs": [
+            0.0140380859375
+          ],
+          "sanity_diffs": [
+            0.0
+          ]
+        }
+      },
+      "passed": false
+    }
+  ],
+  "smoke": false
+}

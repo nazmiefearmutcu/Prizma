@@ -1,0 +1,114 @@
+{
+  "registry_id": "PR-2026-09-03-04",
+  "difficulty": 16,
+  "write_mode": "delta",
+  "seed": 0,
+  "lr": 0.002,
+  "train": {
+    "best_acc": 0.00379180908203125,
+    "final_acc": 0.00379180908203125,
+    "final_loss": 4.7738189697265625,
+    "seconds": 3.859874725341797,
+    "steps_to_plateau": 30,
+    "params": 106824,
+    "history": [
+      [
+        30,
+        4.7738189697265625,
+        0.00379180908203125
+      ]
+    ]
+  },
+  "forward_acc": 0.0035400390625,
+  "clean_stream_acc": 0.0035400390625,
+  "sanity_abs_diff": 0.0,
+  "sanity_pass": true,
+  "cells": [
+    {
+      "state_bits": 0,
+      "write_noise_std": 0.0,
+      "stream_acc": 0.0035400390625,
+      "stream_ce": 4.774987459182739,
+      "primary": false
+    },
+    {
+      "state_bits": 4,
+      "write_noise_std": 0.0,
+      "stream_acc": 0.0037841796875,
+      "stream_ce": 4.775009870529175,
+      "primary": true
+    },
+    {
+      "state_bits": 0,
+      "write_noise_std": 0.05,
+      "stream_acc": 0.00341796875,
+      "stream_ce": 4.778137922286987,
+      "primary": true
+    },
+    {
+      "state_bits": 6,
+      "write_noise_std": 0.0,
+      "stream_acc": 0.003662109375,
+      "stream_ce": 4.774978876113892,
+      "primary": false
+    },
+    {
+      "state_bits": 8,
+      "write_noise_std": 0.0,
+      "stream_acc": 0.003662109375,
+      "stream_ce": 4.774980068206787,
+      "primary": false
+    },
+    {
+      "state_bits": 0,
+      "write_noise_std": 0.01,
+      "stream_acc": 0.00341796875,
+      "stream_ce": 4.775144100189209,
+      "primary": false
+    },
+    {
+      "state_bits": 4,
+      "write_noise_std": 0.01,
+      "stream_acc": 0.0028076171875,
+      "stream_ce": 4.775667428970337,
+      "primary": false
+    },
+    {
+      "state_bits": 6,
+      "write_noise_std": 0.01,
+      "stream_acc": 0.0035400390625,
+      "stream_ce": 4.775219202041626,
+      "primary": false
+    },
+    {
+      "state_bits": 8,
+      "write_noise_std": 0.01,
+      "stream_acc": 0.0032958984375,
+      "stream_ce": 4.775131702423096,
+      "primary": false
+    },
+    {
+      "state_bits": 4,
+      "write_noise_std": 0.05,
+      "stream_acc": 0.0035400390625,
+      "stream_ce": 4.779770374298096,
+      "primary": false
+    },
+    {
+      "state_bits": 6,
+      "write_noise_std": 0.05,
+      "stream_acc": 0.0029296875,
+      "stream_ce": 4.778186082839966,
+      "primary": false
+    },
+    {
+      "state_bits": 8,
+      "write_noise_std": 0.05,
+      "stream_acc": 0.0035400390625,
+      "stream_ce": 4.778196811676025,
+      "primary": false
+    }
+  ],
+  "wall_seconds": 10.832340478897095,
+  "steps": 30
+}

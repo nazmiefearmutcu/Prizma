@@ -1,0 +1,139 @@
+{
+  "registry_id": "PR-2026-09-03-04",
+  "difficulty": 24,
+  "write_mode": "additive",
+  "seed": 1,
+  "lr": 0.003,
+  "train": {
+    "best_acc": 0.8732681274414062,
+    "final_acc": 0.8732681274414062,
+    "final_loss": 0.22689537703990936,
+    "seconds": 231.6521143913269,
+    "steps_to_plateau": 3000,
+    "params": 106824,
+    "history": [
+      [
+        500,
+        3.4404125213623047,
+        0.07465362548828125
+      ],
+      [
+        1000,
+        2.4504237174987793,
+        0.2415618896484375
+      ],
+      [
+        1500,
+        0.6811415553092957,
+        0.6353530883789062
+      ],
+      [
+        2000,
+        0.06056477129459381,
+        0.794281005859375
+      ],
+      [
+        2500,
+        0.05564010143280029,
+        0.8520889282226562
+      ],
+      [
+        3000,
+        0.22689537703990936,
+        0.8732681274414062
+      ]
+    ]
+  },
+  "forward_acc": 0.87188720703125,
+  "clean_stream_acc": 0.87188720703125,
+  "sanity_abs_diff": 0.0,
+  "sanity_pass": true,
+  "cells": [
+    {
+      "state_bits": 0,
+      "write_noise_std": 0.0,
+      "stream_acc": 0.87188720703125,
+      "stream_ce": 0.4241803362965584,
+      "primary": false
+    },
+    {
+      "state_bits": 4,
+      "write_noise_std": 0.0,
+      "stream_acc": 0.719482421875,
+      "stream_ce": 1.0954472720623016,
+      "primary": true
+    },
+    {
+      "state_bits": 0,
+      "write_noise_std": 0.05,
+      "stream_acc": 0.854217529296875,
+      "stream_ce": 0.48245127126574516,
+      "primary": true
+    },
+    {
+      "state_bits": 6,
+      "write_noise_std": 0.0,
+      "stream_acc": 0.865020751953125,
+      "stream_ce": 0.44865985959768295,
+      "primary": false
+    },
+    {
+      "state_bits": 8,
+      "write_noise_std": 0.0,
+      "stream_acc": 0.870758056640625,
+      "stream_ce": 0.42710429430007935,
+      "primary": false
+    },
+    {
+      "state_bits": 0,
+      "write_noise_std": 0.01,
+      "stream_acc": 0.871856689453125,
+      "stream_ce": 0.42675118520855904,
+      "primary": false
+    },
+    {
+      "state_bits": 4,
+      "write_noise_std": 0.01,
+      "stream_acc": 0.71514892578125,
+      "stream_ce": 1.1075496077537537,
+      "primary": false
+    },
+    {
+      "state_bits": 6,
+      "write_noise_std": 0.01,
+      "stream_acc": 0.865081787109375,
+      "stream_ce": 0.44776519387960434,
+      "primary": false
+    },
+    {
+      "state_bits": 8,
+      "write_noise_std": 0.01,
+      "stream_acc": 0.870391845703125,
+      "stream_ce": 0.4303363561630249,
+      "primary": false
+    },
+    {
+      "state_bits": 4,
+      "write_noise_std": 0.05,
+      "stream_acc": 0.699615478515625,
+      "stream_ce": 1.2329650223255157,
+      "primary": false
+    },
+    {
+      "state_bits": 6,
+      "write_noise_std": 0.05,
+      "stream_acc": 0.848297119140625,
+      "stream_ce": 0.5019432343542576,
+      "primary": false
+    },
+    {
+      "state_bits": 8,
+      "write_noise_std": 0.05,
+      "stream_acc": 0.85284423828125,
+      "stream_ce": 0.4860849976539612,
+      "primary": false
+    }
+  ],
+  "wall_seconds": 257.0529763698578,
+  "steps": 3000
+}

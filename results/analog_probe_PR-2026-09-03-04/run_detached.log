@@ -1,0 +1,37 @@
+[claim] PR-2026-09-03-04 device=cpu threads=8 out=results\analog_probe_PR-2026-09-03-04
+[claim] protocol: per-arm LR sweep (0.0005, 0.001, 0.0015, 0.002, 0.003) @seed0 -> matched-clean gate (>=0.8 on >=4/5) -> n=5 seeds/arm; primaries ((4, 0.0), (0, 0.05)); bar +0.05 one-sided Welch p<0.05 Holm(2)
+[claim] === difficulty D=32 ===
+[claim] sweep cached delta d32 -> lr=0.003
+[claim] sweep cached additive d32 -> lr=0.003
+[claim] FIRST-CELL WALL TIME: 2127s for the first sweep (~425s/run) -> projected ~142 min for the 20 planned units at D=32 (train only, excl. streaming eval)
+[claim] run cached delta d32 seed0 (clean=0.922)
+[claim] run cached delta d32 seed1 (clean=0.780)
+[claim] run cached delta d32 seed2 (clean=0.789)
+[claim] run cached delta d32 seed3 (clean=0.419)
+[claim] run cached delta d32 seed4 (clean=0.852)
+[claim] run cached additive d32 seed0 (clean=0.931)
+[claim] run cached additive d32 seed1 (clean=0.821)
+[claim] run cached additive d32 seed2 (clean=0.786)
+[claim] run cached additive d32 seed3 (clean=0.959)
+[claim] run cached additive d32 seed4 (clean=0.816)
+[claim] GATE delta d32: clean>=0.8 on 2/5 seeds, sanity_all=True -> FAIL clean=[0.922, 0.78, 0.789, 0.419, 0.852]
+[claim] GATE additive d32: clean>=0.8 on 4/5 seeds, sanity_all=True -> PASS clean=[0.931, 0.821, 0.786, 0.959, 0.816]
+[claim] matched-clean gate FAILED at D=32 for ['delta'] -> difficulty drops identically for BOTH arms (§7 ladder (32, 24, 16))
+[claim] === difficulty D=24 ===
+[claim] sweep cached delta d24 -> lr=0.003
+[claim] sweep cached additive d24 -> lr=0.003
+[claim] run cached delta d24 seed0 (clean=0.916)
+[claim] run delta d24 seed1: clean=0.875 train_best=0.878 sanity=0.0000 386s
+[claim] run delta d24 seed2: clean=0.822 train_best=0.819 sanity=0.0000 343s
+[claim] run delta d24 seed3: clean=0.753 train_best=0.759 sanity=0.0000 313s
+[claim] run delta d24 seed4: clean=0.924 train_best=0.926 sanity=0.0000 286s
+[claim] run additive d24 seed0: clean=0.975 train_best=0.975 sanity=0.0000 247s
+[claim] run additive d24 seed1: clean=0.872 train_best=0.873 sanity=0.0000 257s
+[claim] run additive d24 seed2: clean=0.892 train_best=0.898 sanity=0.0000 254s
+[claim] run additive d24 seed3: clean=0.991 train_best=0.988 sanity=0.0000 281s
+[claim] run additive d24 seed4: clean=0.971 train_best=0.973 sanity=0.0000 247s
+[claim] GATE delta d24: clean>=0.8 on 4/5 seeds, sanity_all=True -> PASS clean=[0.916, 0.875, 0.822, 0.753, 0.924]
+[claim] GATE additive d24: clean>=0.8 on 5/5 seeds, sanity_all=True -> PASS clean=[0.975, 0.872, 0.892, 0.991, 0.971]
+[claim] FINAL VERDICT: NOT-SUPPORTED at D=24
+[claim]   primary bits4 noise0.0: dRet=-0.092 CI[-0.170,-0.014] p1=0.9866 pHolm=0.9866 bar=False
+[claim]   primary bits0 noise0.05: dRet=+0.001 CI[-0.011,+0.013] p1=0.4215 pHolm=0.8431 bar=False

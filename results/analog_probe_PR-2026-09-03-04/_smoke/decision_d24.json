@@ -1,0 +1,92 @@
+{
+  "registry_id": "PR-2026-09-03-04",
+  "difficulty": 24,
+  "sweeps": {
+    "delta": {
+      "registry_id": "PR-2026-09-03-04",
+      "difficulty": 24,
+      "write_mode": "delta",
+      "seed": 0,
+      "grid": [
+        0.0005,
+        0.002
+      ],
+      "best_lr": 0.002,
+      "best_acc": 0.00640869140625,
+      "grid_rows": [
+        {
+          "lr": 0.0005,
+          "best_acc": 0.0,
+          "steps_to_plateau": 30
+        },
+        {
+          "lr": 0.002,
+          "best_acc": 0.00640869140625,
+          "steps_to_plateau": 30
+        }
+      ],
+      "seconds": 7.920724153518677,
+      "steps": 30
+    },
+    "additive": {
+      "registry_id": "PR-2026-09-03-04",
+      "difficulty": 24,
+      "write_mode": "additive",
+      "seed": 0,
+      "grid": [
+        0.0005,
+        0.002
+      ],
+      "best_lr": 0.002,
+      "best_acc": 0.01513671875,
+      "grid_rows": [
+        {
+          "lr": 0.0005,
+          "best_acc": 0.00548553466796875,
+          "steps_to_plateau": 30
+        },
+        {
+          "lr": 0.002,
+          "best_acc": 0.01513671875,
+          "steps_to_plateau": 30
+        }
+      ],
+      "seconds": 7.078394174575806,
+      "steps": 30
+    }
+  },
+  "gates": {
+    "delta": {
+      "n_seeds": 1,
+      "n_clean_ge_080": 0,
+      "all_sane": true,
+      "passes": false,
+      "clean_accs": [
+        0.007568359375
+      ],
+      "forward_accs": [
+        0.007568359375
+      ],
+      "sanity_diffs": [
+        0.0
+      ]
+    },
+    "additive": {
+      "n_seeds": 1,
+      "n_clean_ge_080": 0,
+      "all_sane": true,
+      "passes": false,
+      "clean_accs": [
+        0.0174560546875
+      ],
+      "forward_accs": [
+        0.0174560546875
+      ],
+      "sanity_diffs": [
+        0.0
+      ]
+    }
+  },
+  "gate_passed": false,
+  "verdict": null
+}

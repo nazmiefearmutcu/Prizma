@@ -1,0 +1,26 @@
+{
+  "registry_id": "PR-2026-09-03-04",
+  "difficulty": 16,
+  "write_mode": "delta",
+  "seed": 0,
+  "grid": [
+    0.0005,
+    0.002
+  ],
+  "best_lr": 0.002,
+  "best_acc": 0.00379180908203125,
+  "grid_rows": [
+    {
+      "lr": 0.0005,
+      "best_acc": 0.0,
+      "steps_to_plateau": 30
+    },
+    {
+      "lr": 0.002,
+      "best_acc": 0.00379180908203125,
+      "steps_to_plateau": 30
+    }
+  ],
+  "seconds": 7.207594871520996,
+  "steps": 30
+}

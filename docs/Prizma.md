@@ -183,6 +183,16 @@ Honest limits: real RTN is not white-Gaussian (Lorentzian/1/f) → "noise=sample
 RRAM endurance (~1e6–1e9 writes); device variability corrupts the MVM; a per-cell capacitor for the
 eligibility trace is expensive; the workspace+WTA+NM need digital/Loihi-class support (hybrid design).
 
+**Addendum 2026-09-06 — analog-robustness claim scoped down (PR-2026-09-03-04 NEGATIVE).** The
+registered analog-robustness pre-registration ran verbatim (n=5, per-arm LR sweep, binding
+matched-clean gate) and the pre-committed negative branch fired: at the matched-clean operating
+point, delta-mode retention under 4-bit state quantization was significantly WORSE than additive
+(Δret = −0.0923, Welch 95% CI [−0.170, −0.014]), and the write-noise primary was parity (+0.001).
+Mechanistic reading: the delta correction needs a precise `S·k` read, which low-precision state
+degrades first. "The delta rule is analog-robust" is therefore RETIRED as a claim; the §5 table
+remains a *design mapping* (arithmetical, not a robustness claim). Artifacts:
+`results/analog_probe_PR-2026-09-03-04/` (raw + RESULTS.md; retention policy applies).
+
 ---
 
 ## 6. Experiment — falsifiability gate

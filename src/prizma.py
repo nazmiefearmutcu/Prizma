@@ -247,7 +247,8 @@ class Prizma:
                  freeze_min_seen=0, dynamic_vigilance=0.0, hot_young=0.0,
                  route_stat="batch_mean",
                  train_granularity="batch", session_window=0,
-                 replay_passes=0, replay_items=256, probation=False):
+                 replay_passes=0, replay_items=256, probation=False,
+                 m_max=0):
         self.d, self.h, self.K, self.M = d, h, K, n_experts
         self.lr, self.lr_cls, self.lambda_cls = lr, lr_cls, lambda_cls
         self.feedback = feedback
@@ -435,6 +436,56 @@ class Prizma:
                              "(per-sample routed live re-processing); got "
                              f"train_granularity={train_granularity!r}")
         self.probation = probation                    # False = shipped: commit at recruit
+
+        # ---- Bounded-M economy lever (Policy A recruit-by-eviction; PR-2026-09-03-05) - #
+        # docs/EXPERT_ECONOMY.md §3.3 Policy A, VERBATIM: "on a recruit when the pool is
+        # at M_max, evict the expert with the lowest lifetime routing share (tie -> most
+        # recently recruited), re-use its slot."
+        #
+        # m_max=0 (default) = OFF = unbounded = the shipped behaviour, bit-identically on
+        # every path (the guard never fires; no rng consumption, no float ops). With
+        # m_max > 0 the lever CAPS the USABLE experts at m_max while the pool allocation
+        # self.M stays unchanged -- slots >= m_max are never used. At a recruit whose
+        # advance would move self.active to a slot >= m_max, the caller has already
+        # committed the current expert by the usual route (or, under probation, demoted
+        # it), then: the COMMITTED expert among slots [0, m_max) with the LOWEST lifetime
+        # routing share is evicted, its slot is reset to a FRESH Expert (exactly the
+        # constructor args __init__ used for that slot, incl. the seed formula
+        # seed + 100*(m+1)), its route_log entry is ZEROED, and the new recruit trains
+        # into the reused slot with self.active pointing there (it never reaches m_max).
+        #
+        # Routing share (documented semantics): share_m = route_log[m] /
+        # max(route_log.sum(), 1). The denominator is common to all candidates, so the
+        # argmin equals the argmin of raw counts; the normalised form is kept because the
+        # spec names a SHARE (raw counts are only proportional to shares when all
+        # committed experts saw equal sample totals, which block streams satisfy but
+        # interleaved ones do not). Tie-break -> HIGHEST slot index: slots fill
+        # left-to-right, so index is the recruitment-recency proxy (the first m_max
+        # recruits occupy 0..m_max-1 in order; a re-used slot always holds the newest
+        # recruit of the run). The mission's frozen operationalisation is this index
+        # proxy; true per-recruit recency ordering is NOT tracked.
+        #
+        # Honest risk (travels with any ON run): eviction reintroduces forgetting by
+        # construction -- the evicted weights are the only record of their domain and
+        # there is no replay to recover them. m_max == M is a live cap (it replaces the
+        # pool-exhaustion refusal at active == M-1 with an eviction); OFF-identity is
+        # therefore stated for m_max = 0 and any m_max > M (both tested). The shipped
+        # hard-cap drop path (`if self.active >= self.M: return`) is untouched and still
+        # fires whenever the lever is OFF -- that silent-drop behaviour is the documented
+        # Policy-B worst case and is pinned by tests/test_mmax_lever.py.
+        if m_max < 0 or int(m_max) != m_max:
+            raise ValueError(f"m_max must be a non-negative int, got {m_max!r}")
+        self.m_max = int(m_max)                       # 0 = shipped: unbounded pool use
+        self.eviction_log = []                        # Policy A diagnostics; entries are
+                                                      # appended ONLY when the lever fires
+        # expert-constructor args for slot resets (exactly what __init__ passes below)
+        self._base_seed = seed
+        self._expert_kwargs = dict(
+            feedback=feedback, lambda_cls=lambda_cls,
+            n_settle_steps=n_settle_steps, eta_settle=eta_settle,
+            langevin_temp=langevin_temp, weight_bits=weight_bits,
+            act_bits=act_bits, noise_in_std=noise_in_std,
+            noise_act_std=noise_act_std, noise_weight_std=noise_weight_std)
 
         self.experts = [
             Expert(d, h, K, seed + 100 * (m + 1),
@@ -654,6 +705,63 @@ class Prizma:
             "conf_post": float(P_post.max(axis=1).mean()),
         })
 
+    # ---------------- bounded-M economy (Policy A; PR-2026-09-03-05) ----------- #
+    def _advance_or_evict(self):
+        """Advance self.active past a recruit, evicting under the bounded-M cap.
+
+        Called at every recruit site AFTER the current expert has been committed (or,
+        under probation, demoted) by that site's own shipped machinery. Shipped advance
+        (m_max == 0 or m_max > M): `self.active += 1` verbatim -- bit-identical.
+        Lever ON and the advance would land on a slot >= m_max (0 < m_max <= M and
+        self.active + 1 >= m_max): Policy A fires -- evict the committed expert in
+        [0, m_max) with the lowest lifetime routing share (tie -> highest index),
+        reset its slot to a fresh Expert, zero its route_log entry, and point
+        self.active at the reused slot (it never reaches m_max, so slots >= m_max stay
+        unused for the whole run). If no committed expert exists inside the cap (only
+        possible when the recruit DEMOTES instead of committing, i.e. probation), the
+        recruit is refused: self.active stays put, mirroring the shipped
+        pool-exhausted refusal."""
+        if 0 < self.m_max <= self.M and self.active + 1 >= self.m_max:
+            victim = self._evict_victim()
+            if victim is not None:
+                self._evict_slot(victim)
+                self.active = victim
+            return
+        self.active += 1
+
+    def _evict_victim(self):
+        """Policy A victim: the committed expert in [0, min(m_max, M)) with the lowest
+        lifetime routing share share_m = route_log[m] / max(route_log.sum(), 1)
+        (denominator common to all candidates -> same argmin as raw counts); ties break
+        to the HIGHEST slot index (most recently recruited under the left-to-right fill
+        proxy). Returns None when no committed expert is evictable."""
+        cap = min(self.m_max, self.M)
+        cands = [m for m in range(cap) if self.experts[m].committed]
+        if not cands:
+            return None
+        tot = max(float(self.route_log.sum()), 1.0)
+        return min(cands, key=lambda m: (float(self.route_log[m]) / tot, -m))
+
+    def _evict_slot(self, victim):
+        """Policy A eviction: reset slot `victim` to a FRESH Expert built with exactly
+        the constructor args __init__ used for that slot (same seed formula
+        seed + 100*(slot+1), so the fresh expert is identical to the slot's original
+        initialisation), zero its route_log entry (the ledger keeps counting only live
+        experts), and record the fire in eviction_log."""
+        rec = {
+            "victim": int(victim),
+            "victim_route_count": int(self.route_log[victim]),
+            "victim_share": float(self.route_log[victim])
+                            / max(float(self.route_log.sum()), 1.0),
+            "route_log_at_fire": self.route_log.tolist(),
+            "active_before_reuse": int(self.active),
+        }
+        self.experts[victim] = Expert(
+            self.d, self.h, self.K, self._base_seed + 100 * (victim + 1),
+            **self._expert_kwargs)
+        self.route_log[victim] = 0
+        self.eviction_log.append(rec)
+
     def _threshold(self, e):
         """Expert e's effective recognition threshold: theta_scale*(mu + z*sigma) under
         dynamic_vigilance, else the shipped expression verbatim (identical float ops --
@@ -772,7 +880,7 @@ class Prizma:
                 self._replay_before_freeze(act)
                 act.frozen = True
                 act.omega = self.omega_consol + 1.0
-            self.active += 1
+            self._advance_or_evict()                 # bounded-M Policy A fires here
             if self.active < self.M:
                 self._train_expert(self.experts[self.active], X, Y)
                 self.route_log[self.active] += n
@@ -836,7 +944,7 @@ class Prizma:
                     self._replay_before_freeze(act)   # G3a: replay-before-freeze
                     act.frozen = True
                     act.omega = self.omega_consol + 1.0
-                self.active += 1
+                self._advance_or_evict()         # bounded-M Policy A fires here
                 if self.active < self.M:
                     act = self.experts[self.active]
             if act.n_seen == 0 and self.active < self.M:
@@ -907,7 +1015,12 @@ class Prizma:
                 # PROBATION: demote, never commit here -- the old active keeps
                 # training on later live samples until its exit test fires.
                 act.prob_since_hit = 0
-                self.active += 1
+                self._advance_or_evict()         # bounded-M Policy A fires here
+                                                 # (evictable candidates are COMMITTED
+                                                 # experts only; the just-demoted
+                                                 # active is not one, and if no
+                                                 # committed expert exists inside the
+                                                 # cap the recruit is refused)
             if self.active < self.M:
                 nact = self.experts[self.active]
                 if nact.n_seen == 0:

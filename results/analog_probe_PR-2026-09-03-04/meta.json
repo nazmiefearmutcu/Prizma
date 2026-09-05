@@ -1,0 +1,151 @@
+{
+  "registry_id": "PR-2026-09-03-04",
+  "protocol": "results/analog_probe_2026-09-03/RESULTS.md#7",
+  "date": "2026-09-06 01:53:43",
+  "task": {
+    "vocab": 128,
+    "num_queries": 64,
+    "gap": 0,
+    "min_pairs": 1,
+    "difficulties": [
+      32,
+      24,
+      16
+    ]
+  },
+  "scale": {
+    "d_model": 64,
+    "n_layers": 2,
+    "n_heads": 2
+  },
+  "feat_map": "none",
+  "steps": 3000,
+  "batch_size": 64,
+  "lr_grid": [
+    0.0005,
+    0.001,
+    0.0015,
+    0.002,
+    0.003
+  ],
+  "sweep_seed": 0,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "eval_batches": 8,
+  "eval_seed": 12345,
+  "gate": {
+    "clean_acc": 0.8,
+    "min_seeds": 4
+  },
+  "sanity_tol": 0.005,
+  "delta_bar": 0.05,
+  "alpha": 0.05,
+  "primaries": [
+    [
+      4,
+      0.0
+    ],
+    [
+      0,
+      0.05
+    ]
+  ],
+  "secondaries": [
+    [
+      6,
+      0.0
+    ],
+    [
+      8,
+      0.0
+    ],
+    [
+      0,
+      0.01
+    ],
+    [
+      4,
+      0.01
+    ],
+    [
+      6,
+      0.01
+    ],
+    [
+      8,
+      0.01
+    ]
+  ],
+  "extras_descriptive_only": [
+    [
+      4,
+      0.05
+    ],
+    [
+      6,
+      0.05
+    ],
+    [
+      8,
+      0.05
+    ]
+  ],
+  "cell_order": [
+    [
+      0,
+      0.0
+    ],
+    [
+      4,
+      0.0
+    ],
+    [
+      0,
+      0.05
+    ],
+    [
+      6,
+      0.0
+    ],
+    [
+      8,
+      0.0
+    ],
+    [
+      0,
+      0.01
+    ],
+    [
+      4,
+      0.01
+    ],
+    [
+      6,
+      0.01
+    ],
+    [
+      8,
+      0.01
+    ],
+    [
+      4,
+      0.05
+    ],
+    [
+      6,
+      0.05
+    ],
+    [
+      8,
+      0.05
+    ]
+  ],
+  "threads": 8,
+  "device": "cpu",
+  "smoke": false
+}

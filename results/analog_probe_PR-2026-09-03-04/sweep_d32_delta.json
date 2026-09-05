@@ -1,0 +1,44 @@
+{
+  "registry_id": "PR-2026-09-03-04",
+  "difficulty": 32,
+  "write_mode": "delta",
+  "seed": 0,
+  "grid": [
+    0.0005,
+    0.001,
+    0.0015,
+    0.002,
+    0.003
+  ],
+  "best_lr": 0.003,
+  "best_acc": 0.9196090698242188,
+  "grid_rows": [
+    {
+      "lr": 0.0005,
+      "best_acc": 0.10141754150390625,
+      "steps_to_plateau": 3000
+    },
+    {
+      "lr": 0.001,
+      "best_acc": 0.23741912841796875,
+      "steps_to_plateau": 3000
+    },
+    {
+      "lr": 0.0015,
+      "best_acc": 0.7395858764648438,
+      "steps_to_plateau": 3000
+    },
+    {
+      "lr": 0.002,
+      "best_acc": 0.85467529296875,
+      "steps_to_plateau": 3000
+    },
+    {
+      "lr": 0.003,
+      "best_acc": 0.9196090698242188,
+      "steps_to_plateau": 3000
+    }
+  ],
+  "seconds": 2127.497725248337,
+  "steps": 3000
+}
