@@ -19,31 +19,25 @@ wait with exact protocol pointers.
      fixed before verdict accepted; raw records untouched by the bug (disclosed in INDEX).
    - Runner gained additive `seed_start`/`lane_label` params (default behavior unchanged).
 
-2. **[PR-05 claim] Bounded-M economy** — status: `pending`
-   - Protocol: docs/EXPERT_ECONOMY.md §5 (VERBATIM): shipped E1 settings; bounded arm =
-     recruit-by-eviction M_max=5 (§3.3 policy) vs unbounded M=8; ≥10 seeds (fresh 3–12);
-     PASS iff |ΔACC| ≤ 0.02 and |ΔFGT| ≤ 0.02; eviction count reported.
-   - Runner: extend/reuse experiments/expert_economy.py (InstrumentedPrizma) into
-     results/expert_economy_PR-2026-09-03-05/.
-   - INDEX: PR-05 → ANALYZED with outcome.
+2. **[PR-05 claim] Bounded-M economy** — status: `done (commit ce7826b, 2026-09-06)`
+   - Executed VERBATIM (seeds 3-12, E1 settings, unbounded M=8 vs bounded M_max=5 Policy A).
+     **VERDICT: PASS** — ΔACC = ΔFGT = +0.000000 on all 10 seeds; 0 evictions (recruit #5
+     lands in slot 4 < M_max); the cap is INERT at home — registered-grade. m_max lever
+     shipped default-off + bit-identity-tested (10 tests). INDEX → CLAIMED.
+   - Artifacts: results/expert_economy_PR-2026-09-03-05/. Suite 315→325P/10S.
 
-3. **[PR-07' prereg+claim] Block-drift BAR-6′** — status: `pending`
-   - Write + freeze docs/preregistry/2026-09-05-blockdrift-bar6.md (id PR-2026-09-03-07,
-     lane CLAIM): sequential 3-corpus char-level continual stream (text8 → held-out slice →
-     third corpus), no labels/boundaries/replay; arms {Prizma-LM toy (seq mixer + shipped
-     router levers train_granularity+probation as needed), frozen-checkpoint control,
-     memory-matched sliding-window control}; n=5 fresh seeds; bars: retention FGT ≤ 0.05 on
-     corpus A after C, adaptation gain on C ≥ 0.10 BPC vs frozen control, E1-style home
-     guard. Maintainer registers in INDEX, commits, THEN claim run executes.
-   - NOTE (honest): streams at toy scale; corpus C needs a third committed text corpus
-     (retain raw artifacts per docs/RETENTION.md).
+3. **[PR-07′ prereg+claim] Block-drift BAR-6′** — status: `REGISTERED — claim run NOT yet
+   started (03:55 clock rule, 2026-09-06 night); NEXT SESSION RUNS THIS FIRST`
+   - Doc frozen: docs/preregistry/2026-09-05-blockdrift-bar6.md (INDEX: PR-2026-09-03-07
+     REGISTERED). Runner to write: seq/blockdrift_claim.py per doc §6 (crash-safe raw per
+     docs/RETENTION.md; corpora pinned by canonical URL + archived sha256; download failure
+     = ABORT). Bars/doc §4 VERBATIM; t_isf upper-tail convention (PR-03 lesson). ~2-3 h CPU.
 
-4. **[PR-04 claim rerun] Analog robustness** — status: `pending` (~2.5–4 h CPU)
-   - Protocol: results/analog_probe_2026-09-03/RESULTS.md §7 (VERBATIM): per-arm LR sweep,
-     matched-clean gate, n=5, Δret ≥ +0.05 at 4-bit (Welch/Holm). Runner
-     seq/analog_probe.py extended to the registered grid →
-     results/analog_probe_PR-2026-09-03-04/.
-   - Can run in BACKGROUND while other iterations proceed (accuracy-only, no timing claims).
+4. **[PR-04 claim rerun] Analog robustness** — status: `done — NEGATIVE (commit ce7826b)`
+   - Executed VERBATIM (n=5, matched-clean gate forced D=24). **VERDICT: NOT-SUPPORTED** —
+     4-bit Δret = −0.0923, Welch CI [−0.170, −0.014] (delta significantly WORSE); noise
+     primary parity. H2b recorded; "delta rule is analog-robust" RETIRED (docs/Prizma.md §5
+     addendum). INDEX → NEGATIVE. Artifacts: results/analog_probe_PR-2026-09-03-04/.
 
 5. **[exploratory] Toy Prizma-LM fusion proof-of-life** — status: `pending`
    - Prizma-Seq backbone (2-layer d=64) + vigilance-routed expert FFN (train_granularity +
@@ -63,4 +57,20 @@ wait with exact protocol pointers.
 
 ## LOG
 
-- (append per iteration: time, task, outcome, commit)
+- 2026-09-05 22:0x — loop armed: ralph-loop skill installed (~/.claude/skills/ralph-loop/),
+  RALPH.md created, PR-03/PR-05 registered (INDEX), commit 09b5936 precursor.
+- 2026-09-05 22:1x–22:3x — iter-1 PR-03: battery seeds 10-19 executed; verdict-script bug
+  (t_isf tail) caught + fixed BEFORE verdict accepted; PASS (CI [+0.024,+0.117]). Commit 09b5936.
+- 2026-09-05 22:3x–02:46 — iter-2 PR-05 (agent) + iter-4 PR-04 (agent, background): PASS /
+  NEGATIVE. Suite 325P/10S. Commits ce7826b (+09b5936). m_max + replay + probation levers
+  landed earlier (33f9d09, 7ce8867, 2e1b4ec).
+- 2026-09-06 02:52 — PR-07′ REGISTERED (doc frozen, INDEX row); claim run deferred past the
+  03:55 clock rule. HANDOFF: next session (or loop resume) = write seq/blockdrift_claim.py
+  per doc §6, execute VERBATIM, INDEX PR-07′ → outcome, then backlog items 5-6 (exploratory).
+
+## HANDOFF (2026-09-06 02:55 — clock-rule wind-down)
+
+Suite last verified 325 passed + 10 skipped (agent run); re-verify with a full `pytest -q`
+at session start. Working tree clean after the final commit. Resume point: RALPH.md task 3
+(PR-07′ claim run — registration committed, nothing else needed first). Everything else on
+the backlog is exploratory (5-6) or GPU-blocked (7-10).
