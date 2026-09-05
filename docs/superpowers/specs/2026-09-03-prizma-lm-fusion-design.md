@@ -195,6 +195,21 @@ Consequences for this spec:
   variants) to freeze PR-07's exact mechanism — the PR-06 lesson: freeze the STATISTIC, and
   check the training ledger, not just the accuracy.
 
+## Addendum 2026-09-05 (2) — G1/G2 probe outcome: specialization fixed, acquisition volume is the new binding constraint
+
+The G1/G2 probe ran (LANE-EXPLORATORY, seeds 0–1, results/exploratory/granularity_probe_2026-09-05/):
+G1 per-sample routed training DID fix specialization (max per-expert train-fraction 1.000 →
+0.706; 2–3 experts share the stream) but interleaved ACC stayed ~0.56. Two measured causes:
+(1) specialists are surprise-coherent rather than domain-coherent — floors calibrate on
+mixture data, so recruits receive mixture fragments and only 3/5 domains ever get an expert;
+(2) commit-on-recruit grants one unrepeated pass where the block stream grants 15 epochs —
+**acquisition volume**, not routing, now binds. G2's window means remain mixture-blind at
+W=8/32. Consequence: the §3.3 mechanism ladder is now measured end-to-end — thresholds
+(sample_top, +0.06) → granularity (G1, specialization ✓, ACC ✗) → **acquisition volume**.
+The remaining candidate is G3 replay-before-freeze at CL scale (state-generated pseudo-items
+grant repeated passes without a buffer, and directly serve the §3.4 consolidation story);
+it requires its own exploratory probe and pre-registration before any claim-grade run.
+
 No LM-scale parity, no ambiguity-regime gains, no attention-replacement headline, no claims
 before their pre-registrations pass, no device-validated energy numbers (arithmetic bands
 only, per report 12-H5), and no surprise-gated-write mechanism unless PR-01 survives.
