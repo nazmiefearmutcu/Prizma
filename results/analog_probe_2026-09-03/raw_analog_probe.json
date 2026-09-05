@@ -1,0 +1,762 @@
+{
+  "meta": {
+    "task": {
+      "vocab": 128,
+      "max_pairs": 32,
+      "num_queries": 64,
+      "gap": 0,
+      "min_pairs": 1
+    },
+    "scale": {
+      "d_model": 64,
+      "n_layers": 2,
+      "n_heads": 2
+    },
+    "feat_map": "none",
+    "lr": 0.002,
+    "steps": 3000,
+    "batch_size": 64,
+    "eval_batches": 8,
+    "eval_seed": 12345,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "state_bits": [
+      0,
+      4,
+      6,
+      8
+    ],
+    "noise": [
+      0.0,
+      0.01,
+      0.05
+    ],
+    "write_modes": [
+      "delta",
+      "additive"
+    ],
+    "threads": 8,
+    "smoke": false,
+    "device": "cpu",
+    "degraded_seeds": null
+  },
+  "runs": [
+    {
+      "write_mode": "delta",
+      "seed": 0,
+      "train": {
+        "best_acc": 0.85467529296875,
+        "final_acc": 0.85467529296875,
+        "final_loss": 0.0003413926169741899,
+        "seconds": 334.8863205909729,
+        "steps_to_plateau": 3000,
+        "params": 106824,
+        "history": [
+          [
+            500,
+            3.806464910507202,
+            0.044219970703125
+          ],
+          [
+            1000,
+            0.0020509841851890087,
+            0.41753387451171875
+          ],
+          [
+            1500,
+            0.008561140857636929,
+            0.637908935546875
+          ],
+          [
+            2000,
+            0.1392008364200592,
+            0.7967453002929688
+          ],
+          [
+            2500,
+            0.0026966161094605923,
+            0.83660888671875
+          ],
+          [
+            3000,
+            0.0003413926169741899,
+            0.85467529296875
+          ]
+        ]
+      },
+      "forward_acc": 0.853607177734375,
+      "cells": [
+        {
+          "state_bits": 0,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.853607177734375,
+          "stream_ce": 0.5173754915595055
+        },
+        {
+          "state_bits": 0,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.85223388671875,
+          "stream_ce": 0.5193836763501167
+        },
+        {
+          "state_bits": 0,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.829498291015625,
+          "stream_ce": 0.6035903617739677
+        },
+        {
+          "state_bits": 4,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.595947265625,
+          "stream_ce": 1.699542984366417
+        },
+        {
+          "state_bits": 4,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.604278564453125,
+          "stream_ce": 1.6818717271089554
+        },
+        {
+          "state_bits": 4,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.59783935546875,
+          "stream_ce": 1.6666148006916046
+        },
+        {
+          "state_bits": 6,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.831207275390625,
+          "stream_ce": 0.5970481038093567
+        },
+        {
+          "state_bits": 6,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.83074951171875,
+          "stream_ce": 0.5991363301873207
+        },
+        {
+          "state_bits": 6,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.81072998046875,
+          "stream_ce": 0.6783791705965996
+        },
+        {
+          "state_bits": 8,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.85211181640625,
+          "stream_ce": 0.5228385180234909
+        },
+        {
+          "state_bits": 8,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.850921630859375,
+          "stream_ce": 0.5256247036159039
+        },
+        {
+          "state_bits": 8,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.827728271484375,
+          "stream_ce": 0.6097561940550804
+        }
+      ]
+    },
+    {
+      "write_mode": "delta",
+      "seed": 1,
+      "train": {
+        "best_acc": 0.8176727294921875,
+        "final_acc": 0.8176727294921875,
+        "final_loss": 0.524125337600708,
+        "seconds": 484.9268522262573,
+        "steps_to_plateau": 3000,
+        "params": 106824,
+        "history": [
+          [
+            500,
+            3.5477635860443115,
+            0.05261993408203125
+          ],
+          [
+            1000,
+            2.537546157836914,
+            0.27117919921875
+          ],
+          [
+            1500,
+            0.8136187791824341,
+            0.562835693359375
+          ],
+          [
+            2000,
+            0.520590603351593,
+            0.7179489135742188
+          ],
+          [
+            2500,
+            0.2462848424911499,
+            0.7940139770507812
+          ],
+          [
+            3000,
+            0.524125337600708,
+            0.8176727294921875
+          ]
+        ]
+      },
+      "forward_acc": 0.812103271484375,
+      "cells": [
+        {
+          "state_bits": 0,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.812103271484375,
+          "stream_ce": 0.6453504636883736
+        },
+        {
+          "state_bits": 0,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.81207275390625,
+          "stream_ce": 0.6469879671931267
+        },
+        {
+          "state_bits": 0,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.793853759765625,
+          "stream_ce": 0.704204797744751
+        },
+        {
+          "state_bits": 4,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.596405029296875,
+          "stream_ce": 1.620403379201889
+        },
+        {
+          "state_bits": 4,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.59613037109375,
+          "stream_ce": 1.6276298761367798
+        },
+        {
+          "state_bits": 4,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.6016845703125,
+          "stream_ce": 1.5712884962558746
+        },
+        {
+          "state_bits": 6,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.79730224609375,
+          "stream_ce": 0.7123377695679665
+        },
+        {
+          "state_bits": 6,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.79718017578125,
+          "stream_ce": 0.7087623775005341
+        },
+        {
+          "state_bits": 6,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.77984619140625,
+          "stream_ce": 0.7668699249625206
+        },
+        {
+          "state_bits": 8,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.809906005859375,
+          "stream_ce": 0.6516153514385223
+        },
+        {
+          "state_bits": 8,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.81109619140625,
+          "stream_ce": 0.6526981890201569
+        },
+        {
+          "state_bits": 8,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.7928466796875,
+          "stream_ce": 0.7092679142951965
+        }
+      ]
+    },
+    {
+      "write_mode": "delta",
+      "seed": 2,
+      "train": {
+        "best_acc": 0.7728729248046875,
+        "final_acc": 0.7728729248046875,
+        "final_loss": 0.5670162439346313,
+        "seconds": 549.8883192539215,
+        "steps_to_plateau": 3000,
+        "params": 106824,
+        "history": [
+          [
+            500,
+            3.895799160003662,
+            0.05707550048828125
+          ],
+          [
+            1000,
+            0.5790056586265564,
+            0.2537384033203125
+          ],
+          [
+            1500,
+            0.05734672397375107,
+            0.4743804931640625
+          ],
+          [
+            2000,
+            0.3723604679107666,
+            0.696044921875
+          ],
+          [
+            2500,
+            0.8991844654083252,
+            0.7498092651367188
+          ],
+          [
+            3000,
+            0.5670162439346313,
+            0.7728729248046875
+          ]
+        ]
+      },
+      "forward_acc": 0.77191162109375,
+      "cells": [
+        {
+          "state_bits": 0,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.77191162109375,
+          "stream_ce": 0.7969747111201286
+        },
+        {
+          "state_bits": 0,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.771575927734375,
+          "stream_ce": 0.7997442036867142
+        },
+        {
+          "state_bits": 0,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.75103759765625,
+          "stream_ce": 0.8699836954474449
+        },
+        {
+          "state_bits": 4,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.57073974609375,
+          "stream_ce": 1.7026378214359283
+        },
+        {
+          "state_bits": 4,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.570343017578125,
+          "stream_ce": 1.7049043327569962
+        },
+        {
+          "state_bits": 4,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.5662841796875,
+          "stream_ce": 1.724428951740265
+        },
+        {
+          "state_bits": 6,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.755035400390625,
+          "stream_ce": 0.8640692383050919
+        },
+        {
+          "state_bits": 6,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.75567626953125,
+          "stream_ce": 0.8605967685580254
+        },
+        {
+          "state_bits": 6,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.73724365234375,
+          "stream_ce": 0.926049493253231
+        },
+        {
+          "state_bits": 8,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.76947021484375,
+          "stream_ce": 0.802428163588047
+        },
+        {
+          "state_bits": 8,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.769317626953125,
+          "stream_ce": 0.8074364885687828
+        },
+        {
+          "state_bits": 8,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.750457763671875,
+          "stream_ce": 0.8746002614498138
+        }
+      ]
+    },
+    {
+      "write_mode": "additive",
+      "seed": 0,
+      "train": {
+        "best_acc": 0.7461318969726562,
+        "final_acc": 0.7461318969726562,
+        "final_loss": 0.00643649697303772,
+        "seconds": 258.9181156158447,
+        "steps_to_plateau": 3000,
+        "params": 106824,
+        "history": [
+          [
+            500,
+            3.5714430809020996,
+            0.06182098388671875
+          ],
+          [
+            1000,
+            0.022649934515357018,
+            0.07289886474609375
+          ],
+          [
+            1500,
+            0.07201892882585526,
+            0.21356201171875
+          ],
+          [
+            2000,
+            1.102259874343872,
+            0.36188507080078125
+          ],
+          [
+            2500,
+            0.04141710698604584,
+            0.5948028564453125
+          ],
+          [
+            3000,
+            0.00643649697303772,
+            0.7461318969726562
+          ]
+        ]
+      },
+      "forward_acc": 0.742279052734375,
+      "cells": [
+        {
+          "state_bits": 0,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.742279052734375,
+          "stream_ce": 0.8089612200856209
+        },
+        {
+          "state_bits": 0,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.73968505859375,
+          "stream_ce": 0.822096548974514
+        },
+        {
+          "state_bits": 0,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.65887451171875,
+          "stream_ce": 1.1177786439657211
+        },
+        {
+          "state_bits": 4,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.46087646484375,
+          "stream_ce": 2.6260679960250854
+        },
+        {
+          "state_bits": 4,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.460052490234375,
+          "stream_ce": 2.600817710161209
+        },
+        {
+          "state_bits": 4,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.428985595703125,
+          "stream_ce": 2.807515174150467
+        },
+        {
+          "state_bits": 6,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.72314453125,
+          "stream_ce": 0.8891370445489883
+        },
+        {
+          "state_bits": 6,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.718780517578125,
+          "stream_ce": 0.8969672471284866
+        },
+        {
+          "state_bits": 6,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.637908935546875,
+          "stream_ce": 1.2042870372533798
+        },
+        {
+          "state_bits": 8,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.7415771484375,
+          "stream_ce": 0.8166397362947464
+        },
+        {
+          "state_bits": 8,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.737762451171875,
+          "stream_ce": 0.8283296227455139
+        },
+        {
+          "state_bits": 8,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.657135009765625,
+          "stream_ce": 1.1266711950302124
+        }
+      ]
+    },
+    {
+      "write_mode": "additive",
+      "seed": 1,
+      "train": {
+        "best_acc": 0.487579345703125,
+        "final_acc": 0.487579345703125,
+        "final_loss": 1.4428484439849854,
+        "seconds": 347.4548578262329,
+        "steps_to_plateau": 3000,
+        "params": 106824,
+        "history": [
+          [
+            500,
+            3.4301915168762207,
+            0.057403564453125
+          ],
+          [
+            1000,
+            3.7308349609375,
+            0.07286834716796875
+          ],
+          [
+            1500,
+            2.0256547927856445,
+            0.2069854736328125
+          ],
+          [
+            2000,
+            1.9124484062194824,
+            0.2592926025390625
+          ],
+          [
+            2500,
+            1.2174150943756104,
+            0.394775390625
+          ],
+          [
+            3000,
+            1.4428484439849854,
+            0.487579345703125
+          ]
+        ]
+      },
+      "forward_acc": 0.488189697265625,
+      "cells": [
+        {
+          "state_bits": 0,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.488189697265625,
+          "stream_ce": 1.4827436804771423
+        },
+        {
+          "state_bits": 0,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.48504638671875,
+          "stream_ce": 1.492417111992836
+        },
+        {
+          "state_bits": 0,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.441131591796875,
+          "stream_ce": 1.7215353846549988
+        },
+        {
+          "state_bits": 4,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.300689697265625,
+          "stream_ce": 3.696706175804138
+        },
+        {
+          "state_bits": 4,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.304595947265625,
+          "stream_ce": 3.669688045978546
+        },
+        {
+          "state_bits": 4,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.29327392578125,
+          "stream_ce": 3.7402492463588715
+        },
+        {
+          "state_bits": 6,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.4532470703125,
+          "stream_ce": 1.6872815787792206
+        },
+        {
+          "state_bits": 6,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.452972412109375,
+          "stream_ce": 1.6901971250772476
+        },
+        {
+          "state_bits": 6,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.418853759765625,
+          "stream_ce": 1.860004410147667
+        },
+        {
+          "state_bits": 8,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.4842529296875,
+          "stream_ce": 1.4985318630933762
+        },
+        {
+          "state_bits": 8,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.48187255859375,
+          "stream_ce": 1.5055842697620392
+        },
+        {
+          "state_bits": 8,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.4403076171875,
+          "stream_ce": 1.7299717366695404
+        }
+      ]
+    },
+    {
+      "write_mode": "additive",
+      "seed": 2,
+      "train": {
+        "best_acc": 0.22583770751953125,
+        "final_acc": 0.22583770751953125,
+        "final_loss": 2.1757118701934814,
+        "seconds": 380.84549593925476,
+        "steps_to_plateau": 3000,
+        "params": 106824,
+        "history": [
+          [
+            500,
+            3.823606491088867,
+            0.06702423095703125
+          ],
+          [
+            1000,
+            2.3878562450408936,
+            0.0734710693359375
+          ],
+          [
+            1500,
+            1.0264323949813843,
+            0.107574462890625
+          ],
+          [
+            2000,
+            2.112926959991455,
+            0.1552886962890625
+          ],
+          [
+            2500,
+            2.3924481868743896,
+            0.220428466796875
+          ],
+          [
+            3000,
+            2.1757118701934814,
+            0.22583770751953125
+          ]
+        ]
+      },
+      "forward_acc": 0.225921630859375,
+      "cells": [
+        {
+          "state_bits": 0,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.225921630859375,
+          "stream_ce": 2.395036965608597
+        },
+        {
+          "state_bits": 0,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.225067138671875,
+          "stream_ce": 2.4027573466300964
+        },
+        {
+          "state_bits": 0,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.211090087890625,
+          "stream_ce": 2.564731001853943
+        },
+        {
+          "state_bits": 4,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.2152099609375,
+          "stream_ce": 2.850880801677704
+        },
+        {
+          "state_bits": 4,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.215667724609375,
+          "stream_ce": 2.8503891825675964
+        },
+        {
+          "state_bits": 4,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.208221435546875,
+          "stream_ce": 3.0407610535621643
+        },
+        {
+          "state_bits": 6,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.22528076171875,
+          "stream_ce": 2.4103592932224274
+        },
+        {
+          "state_bits": 6,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.227630615234375,
+          "stream_ce": 2.416556268930435
+        },
+        {
+          "state_bits": 6,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.212890625,
+          "stream_ce": 2.562286674976349
+        },
+        {
+          "state_bits": 8,
+          "write_noise_std": 0.0,
+          "stream_acc": 0.22442626953125,
+          "stream_ce": 2.398252785205841
+        },
+        {
+          "state_bits": 8,
+          "write_noise_std": 0.01,
+          "stream_acc": 0.22467041015625,
+          "stream_ce": 2.4041593074798584
+        },
+        {
+          "state_bits": 8,
+          "write_noise_std": 0.05,
+          "stream_acc": 0.2119140625,
+          "stream_ce": 2.565465271472931
+        }
+      ]
+    }
+  ]
+}

@@ -95,6 +95,31 @@ class PrizmaSeqConfig:
                                   #   ran dropout-free to avoid regularizing only the TF (unfair) and
                                   #   leaned on weight_decay alone. Enabling this UNBLOCKS a fair
                                   #   symmetric-dropout char-LM experiment. NOT a BPC claim — capability.
+    # --- analog-robustness levers (report 12-H2, "the delta rule is analog-robust") --- #
+    # SCOPE LIMITATION (honest, load-bearing): these two levers degrade ONLY the exact O(1)
+    # streaming path `step()` — the deployment path where the carried state S is materialized.
+    # The chunk-parallel training kernel (`seq/delta.py::chunked_delta`) never materializes
+    # per-token states (the WY/UT form recomputes intra-chunk states from chunk aggregates),
+    # so a shared per-write quantization would require re-deriving that kernel. The knobs are
+    # therefore WIRED TO step() ONLY: train in FP32 (forward() untouched, byte-identical),
+    # deploy degraded (step()). This is exactly the inference-time-emulation protocol of
+    # commission report 12-H2 ("quantize S to b bits after every write ... reads see the
+    # quantized S — write-and-read both degraded"), and it PRESERVES the O(1) step()==forward()
+    # guard at defaults. With knobs ON, step() intentionally deviates from forward() (the
+    # FP32 reference) — that deviation IS the measured deployment degradation, not a bug.
+    state_bits: int = 0           # quantize the carried state S after each write, per head, on the
+                                  #   per-head max-abs range (uniform symmetric quantizer, round-
+                                  #   to-nearest, straight-through estimator — Bengio et al. 2013).
+                                  #   0 = OFF (bit-identical; no extra ops, no rng). In {4,6,8} = the
+                                  #   deployment emulation bits (report 12-H2 grid).
+    write_noise_std: float = 0.0  # add Gaussian noise ~ N(0, write_noise_std^2) to the write update
+                                  #   u_t BEFORE it is added to the state (noisy analog write).
+                                  #   0.0 = OFF (bit-identical; draws NO rng).
+    write_noise_seed: int = 1234  # reproducibility plumbing (mirrors surprise_seed, R8/R9): each
+                                  #   step() owns a fresh torch.Generator seeded with
+                                  #   write_noise_seed + pos (pos = token index from the streaming
+                                  #   state), so noise is i.i.d. per write AND reproducible for a
+                                  #   fixed evaluation order — no hidden cross-call generator state.
 
     def __post_init__(self):
         if self.d_ff is None:
@@ -115,6 +140,11 @@ class PrizmaSeqConfig:
         assert not (self.inctx_lr and self.surprise_gate), \
             "inctx_lr and surprise_gate are mutually exclusive novel-core candidates; enable exactly one."
         # d_phi = delta key/query dim after the optional feature map (= d_h when 'none').
+        # Analog levers (report 12-H2): validate the degradation knobs (both default OFF).
+        assert self.state_bits == 0 or self.state_bits >= 2, \
+            f"state_bits must be 0 (off) or >= 2, got {self.state_bits}"
+        assert self.write_noise_std >= 0.0, \
+            f"write_noise_std must be >= 0.0 (0.0 = off), got {self.write_noise_std}"
         # 'rand_linear' = a FIXED random linear map d_h->d_phi (a CONTROL: it stays in a d_h-rank
         # subspace so it must give NO capacity gain, proving the quad2 MONOMIALS are what help).
         # 'quad2_lowrank': effective r = feat_rank if feat_rank > 0 else 14 (default);
@@ -152,6 +182,30 @@ def _apply_rope(x, cos, sin):
 
 def _l2(x, eps=1e-6):
     return x / (x.norm(dim=-1, keepdim=True) + eps)
+
+
+def _quantize_state_symmetric(x, bits):
+    """Uniform SYMMETRIC per-head max-abs quantizer with a straight-through estimator — the
+    state-S deployment emulation for the analog-robustness probe (report 12-H2).
+
+    Forward: each head's matrix (the trailing two dims of x[..., d_v, d_k]) is mapped to the
+    integer grid {-qmax, ..., 0, ..., +qmax} * s with qmax = 2^(bits-1) - 1 and s = max|x| / qmax
+    (round-to-nearest, clamped). The grid is symmetric about 0 and round-to-nearest is monotone
+    non-decreasing, so the quantizer is symmetric (q(-x) == -q(x)) and monotone (x1 <= x2 =>
+    q(x1) <= q(x2)) — both are unit-tested (tests/test_analog_lever.py).
+    Backward: straight-through estimator (identity gradient), the standard quasi-gradient for
+    quantization (Bengio, Léonard & Courville 2013, "Estimating or Propagating Gradients Through
+    Stochastic Discrete Variables"). step() runs under no_grad so the STE is inert there today,
+    but the helper is written STE-correct so future QAT (report 12-H2's optional follow-up) can
+    reuse it without a silent wrong-gradient trap.
+
+    Returns a tensor with the quantized VALUES of x and (via the STE residual) gradients of x.
+    """
+    qmax = 2 ** (bits - 1) - 1
+    amax = x.abs().amax(dim=(-2, -1), keepdim=True).clamp_min(1e-12)   # per-head max-abs range
+    s = amax / qmax
+    xq = torch.clamp(torch.round(x / s), -qmax, qmax) * s
+    return x + (xq - x).detach()      # forward value == xq; backward gradient == identity (STE)
 
 
 # --------------------------------- the block ---------------------------------------------- #
@@ -374,10 +428,33 @@ class PrizmaSeqBlock(nn.Module):
         h = h + self.drop(self.mlp(self.norm2(h)))
         return h
 
+    # ---- analog levers (report 12-H2): noisy write + low-precision carried state ------------
+    def _noisy(self, u, pos, sub=0):
+        """Add write noise ~ N(0, write_noise_std^2) to the write update u (step() path only).
+        Owns a FRESH generator per call seeded write_noise_seed + pos*8 + sub, so the noise is a
+        deterministic function of (config, token index, sub-step) — i.i.d. across writes and
+        reproducible for a fixed evaluation order (surprise_seed discipline, R8/R9). Guarded: at
+        write_noise_std == 0.0 this draws NO rng and returns u untouched (bit-identity)."""
+        if self.cfg.write_noise_std <= 0.0:
+            return u
+        g = torch.Generator(device=u.device).manual_seed(self.cfg.write_noise_seed + pos * 8 + sub)
+        return u + self.cfg.write_noise_std * torch.randn(u.shape, generator=g,
+                                                          device=u.device, dtype=u.dtype)
+
+    def _quantized(self, S):
+        """Quantize the carried state S post-write (step() path only). Guarded: state_bits == 0
+        returns S untouched (bit-identity; no extra ops at all on the default path)."""
+        if self.cfg.state_bits <= 0:
+            return S
+        return _quantize_state_symmetric(S, self.cfg.state_bits)
+
     # ---- O(1)-per-step inference path (for B5 latency / true streaming) ---- #
     @torch.no_grad()
     def step(self, h_t, state):
-        """h_t:[B,1,d]; state=(S, ring_k, ring_v, conv_ring, pos). Returns o_t, new_state. O(1)."""
+        """h_t:[B,1,d]; state=(S, ring_k, ring_v, conv_ring, pos). Returns o_t, new_state. O(1).
+        Analog levers (state_bits / write_noise_std, report 12-H2) degrade THIS path only — at
+        their defaults (0 / 0.0) this method is bit-identical to the pre-lever implementation; with
+        them ON, step() intentionally deviates from the FP32 forward() (documented scope limit)."""
         B = h_t.shape[0]
         S, rk, rv, cring, pos = state
         xin = self.norm1(h_t)                                    # [B,1,d]
@@ -402,28 +479,50 @@ class PrizmaSeqBlock(nn.Module):
             o_delta = torch.einsum("bhij,bhj->bhi", S, q1p)       # pre-write read S_{t-1} phi(q)
         if self.cfg.n_delta >= 2:
             # DeltaProduct: apply n_delta sub-steps sequentially (mirrors the chunked/reference form)
-            # Sub-step 0: main kv + alpha decay
+            # Sub-step 0: main kv + alpha decay. Analog levers: noise on the write, quantize the
+            # carried state after the token's sub-step loop (same deployment emulation as n_delta==1).
+            # FIX (analog-probe finding, 2026-09-03): step() previously applied the DELTA write
+            # unconditionally, ignoring write_mode='additive' — an additive-trained model deployed
+            # through step() ran a write rule it was never trained with (streaming 0.358 vs
+            # forward 0.742 on additive MixedMQAR; no existing test covered additive+step). The
+            # additive branches below mirror _delta_reference / chunked_delta exactly; the delta
+            # path is byte-identical to the pre-fix code.
             k1_step = k1; v1_step = v1
-            Sk = torch.einsum("bhij,bhj->bhi", S, k1_step)
-            u = b1[..., None] * v1_step - b1[..., None] * (a1[..., None] * Sk)
+            if self.cfg.write_mode == "additive":
+                u = self._noisy(b1[..., None] * v1_step, pos, sub=0)
+            else:
+                Sk = torch.einsum("bhij,bhj->bhi", S, k1_step)
+                u = self._noisy(b1[..., None] * v1_step - b1[..., None] * (a1[..., None] * Sk),
+                                pos, sub=0)
             S = a1[..., None, None] * S + torch.einsum("bhi,bhj->bhij", u, k1_step)
             # Sub-steps 1..(n_delta-1): extra projections, no additional alpha decay
             x1 = x[:, 0, :]                                       # [B,d] (squeeze T=1 dim)
-            for wkv, wbeta in zip(self.W_kv_extra, self.W_beta_extra):
+            for j, (wkv, wbeta) in enumerate(zip(self.W_kv_extra, self.W_beta_extra)):
                 kv_j = wkv(x1).view(B, self.H, 2, self.dh)        # [B,H,2,dh]
                 k_j, v_j = kv_j[:, :, 0], kv_j[:, :, 1]           # [B,H,dh]
                 k_j = _l2(k_j)
                 b_j = torch.sigmoid(wbeta(x1)).view(B, self.H) * self.cfg.beta_cap  # [B,H]
-                Sk_j = torch.einsum("bhij,bhj->bhi", S, k_j)
-                u_j = b_j[..., None] * (v_j - Sk_j)
+                if self.cfg.write_mode == "additive":
+                    u_j = self._noisy(b_j[..., None] * v_j, pos, sub=j + 1)
+                else:
+                    Sk_j = torch.einsum("bhij,bhj->bhi", S, k_j)
+                    u_j = self._noisy(b_j[..., None] * (v_j - Sk_j), pos, sub=j + 1)
                 S = S + torch.einsum("bhi,bhj->bhij", u_j, k_j)
+            S = self._quantized(S)
         else:
             k1p = self._phi(k)[:, :, 0]                           # [B,H,d_phi] (delta state keys)
             be1 = beta_e[:, :, 0] if beta_e is not None else b1   # [B,H]  erase gate beta_e
             Sk = torch.einsum("bhij,bhj->bhi", S, k1p)            # [B,H,d_h]
             # Prediction error (free-energy gradient at S_{t-1}): eps = v - alpha*S*k
             eps1 = v1 - a1[..., None] * Sk                        # [B,H,d_h]
-            if eta is not None:
+            if self.cfg.write_mode == "additive":
+                # additive (linear-attn) write: u = beta_w * v, NO erase read-back. Mirrors
+                # _delta_reference write_mode='additive' (u = eta*v under Lever G) exactly, so
+                # step()==forward() now covers the additive ablation too. FIX: before the
+                # analog-probe finding (2026-09-03) this path fell through to the delta write.
+                eta1 = eta[:, :, 0] if eta is not None else None
+                u = (eta1 * v1) if eta1 is not None else b1[..., None] * v1   # [B,H,d_h]
+            elif eta is not None:
                 # Lever G: per-VALUE-channel in-context LR replaces the scalar write gate. Mirrors
                 # _delta_reference: u = eta_t (elementwise over value channels) * eps_t. Same eta the
                 # parallel forward() applies -> step()==forward() (G1 O(1) guard).
@@ -440,7 +539,12 @@ class PrizmaSeqBlock(nn.Module):
             else:
                 # decoupled: u = beta_w * v  -  beta_e * (alpha * S k)
                 u = b1[..., None] * v1 - be1[..., None] * (a1[..., None] * Sk)   # [B,H,d_h]
+            # Analog levers (report 12-H2): noise the write, then quantize the carried state
+            # post-write so the NEXT token's pre-write read sees the degraded S (write-and-read
+            # both degraded). Both calls are identity + rng-free at the defaults (bit-identity).
+            u = self._noisy(u, pos, sub=0)
             S = a1[..., None, None] * S + torch.einsum("bhi,bhj->bhij", u, k1p)   # [B,H,d_h,d_phi]
+            S = self._quantized(S)
         if self.state_rms is not None:
             o_delta = self.state_rms(o_delta)    # per-head RMSNorm [B,H,d_h], mirrors forward
         # window ring
