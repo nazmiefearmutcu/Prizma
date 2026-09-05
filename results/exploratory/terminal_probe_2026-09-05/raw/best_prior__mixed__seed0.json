@@ -1,0 +1,95 @@
+{
+ "config": "best_prior",
+ "stream": "mixed",
+ "seed": 0,
+ "knobs": {
+  "train_granularity": "sample",
+  "route_stat": "sample_top"
+ },
+ "runtime_seconds": 1.63,
+ "result": {
+  "acc": 0.5275000000000001,
+  "recruited": 3,
+  "route_log": [
+   216661,
+   93471,
+   12937,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "fractions": [
+   0.6706,
+   0.2893,
+   0.04,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "max_fraction": 0.6706,
+  "n_seen": [
+   34398,
+   30424,
+   12937,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "trained_fractions": [
+   0.4424,
+   0.3913,
+   0.1664,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "max_trained_fraction": 0.4424,
+  "committed_end": [
+   1,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "frozen_end": [
+   1,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "probationary_end": [
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "freeze_events": 2,
+  "dropped_batches": 0,
+  "purity": [
+   0.485,
+   0.4375,
+   0.4517,
+   0.5042,
+   0.3892
+  ]
+ }
+}

@@ -1,0 +1,96 @@
+{
+ "config": "settle4",
+ "stream": "roundrobin",
+ "seed": 0,
+ "knobs": {
+  "train_granularity": "sample",
+  "route_stat": "sample_top",
+  "n_settle_steps": 4
+ },
+ "runtime_seconds": 7.49,
+ "result": {
+  "acc": 0.507,
+  "recruited": 3,
+  "route_log": [
+   218297,
+   41381,
+   24593,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "fractions": [
+   0.7679,
+   0.1456,
+   0.0865,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "max_fraction": 0.7679,
+  "n_seen": [
+   34635,
+   24638,
+   24593,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "trained_fractions": [
+   0.413,
+   0.2938,
+   0.2932,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "max_trained_fraction": 0.413,
+  "committed_end": [
+   1,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "frozen_end": [
+   1,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "probationary_end": [
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "freeze_events": 2,
+  "dropped_batches": 0,
+  "purity": [
+   0.71,
+   0.7942,
+   0.645,
+   0.81,
+   0.7025
+  ]
+ }
+}

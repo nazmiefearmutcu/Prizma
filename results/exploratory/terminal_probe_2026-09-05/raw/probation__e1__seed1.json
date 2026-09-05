@@ -1,0 +1,16 @@
+{
+ "config": "probation",
+ "stream": "e1",
+ "seed": 1,
+ "knobs": {
+  "train_granularity": "sample",
+  "route_stat": "sample_top",
+  "probation": true
+ },
+ "runtime_seconds": 2.15,
+ "result": {
+  "acc": 0.6735,
+  "fgt": 0.0008333333333333526,
+  "recruited": 8
+ }
+}

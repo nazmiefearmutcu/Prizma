@@ -1,0 +1,96 @@
+{
+ "config": "settle4",
+ "stream": "mixed",
+ "seed": 0,
+ "knobs": {
+  "train_granularity": "sample",
+  "route_stat": "sample_top",
+  "n_settle_steps": 4
+ },
+ "runtime_seconds": 7.23,
+ "result": {
+  "acc": 0.5128333333333333,
+  "recruited": 3,
+  "route_log": [
+   212754,
+   33132,
+   28776,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "fractions": [
+   0.7746,
+   0.1206,
+   0.1048,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "max_fraction": 0.7746,
+  "n_seen": [
+   37256,
+   24784,
+   28776,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "trained_fractions": [
+   0.4102,
+   0.2729,
+   0.3169,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "max_trained_fraction": 0.4102,
+  "committed_end": [
+   1,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "frozen_end": [
+   1,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "probationary_end": [
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "freeze_events": 2,
+  "dropped_batches": 0,
+  "purity": [
+   0.4508,
+   0.8767,
+   0.5542,
+   0.8125,
+   0.6692
+  ]
+ }
+}

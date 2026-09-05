@@ -1,0 +1,1627 @@
+{
+ "label": "LANE-EXPLORATORY",
+ "terminal": true,
+ "date": "2026-09-05",
+ "target_prereg": "docs/preregistry/2026-09-05-terminal-bar6.md (PR-2026-09-03-07, IN-WRITE, seeds 20-24 = disjoint)",
+ "bar_exploratory": 0.7,
+ "settings": {
+  "K": 5,
+  "d": 24,
+  "n_classes": 8,
+  "h": 48,
+  "epochs": 15,
+  "batch": 128,
+  "n_experts": 8,
+  "z_novel": 5.0,
+  "probation": {
+   "PROBATION_PATIENCE": 8,
+   "requires": "train_granularity='sample'"
+  },
+  "settle": {
+   "depths": [
+    4,
+    8
+   ],
+   "note": "existing shipped knob, first sweep past 2"
+  },
+  "seeds": [
+   0,
+   1
+  ],
+  "stream_note": "mixed/roundrobin constructors reused verbatim from experiments/interleave_fix_probe.py; E1 guard = shipped block benchmark"
+ },
+ "selection_rule_frozen": "Eligibility (hard): max per-expert train-fraction over mixed runs <= 0.85. PASS-set = eligible AND mixed >= 0.70 AND roundrobin >= 0.70 AND E1 guard (|ACC-0.834| <= 0.02 i.e. ACC >= 0.814, FGT <= 0.02); choose fewest active knobs, tie-break precedence [best_prior < probation < settle4 < settle8 < probation_settle4]. If empty: best-weakest min interleaved ACC among eligible, same tie-breaks; E1 guard recorded. Terminal PR-2026-09-03-07 drafted iff the reported best is >= 0.68 on BOTH streams AND passes the ledger filter AND its E1 guard holds; otherwise the honest TERMINAL mechanistic verdict is written (pre-committed failure branch).",
+ "selection_trace": {
+  "bar": 0.7,
+  "draft_floor": 0.68,
+  "specialization_max": 0.85,
+  "e1_guard": {
+   "target_acc": 0.834,
+   "acc_tol": 0.02,
+   "min_acc": 0.814,
+   "max_fgt": 0.02
+  },
+  "rule": "PASS-set EMPTY -> best-weakest min interleaved ACC among ELIGIBLE configs (all configs if none eligible), then fewest knobs, then precedence; E1 guard recorded for the reported best",
+  "pass_set": [],
+  "chosen": "probation",
+  "e1_guard_ok": false,
+  "terminal_draft_branch": "NO PR DRAFT (terminal): write the honest mechanistic verdict -- the interleaved regime is information-bounded for this architecture at toy scale at the measured exposures"
+ },
+ "configs": {
+  "best_prior": {
+   "knobs": {
+    "train_granularity": "sample",
+    "route_stat": "sample_top"
+   },
+   "n_active_knobs": 2,
+   "precedence": "best_prior",
+   "mixed": {
+    "acc_mean": 0.56,
+    "acc_per_seed": [
+     0.5275,
+     0.5925
+    ],
+    "max_fraction_per_seed": [
+     0.6706,
+     0.7059
+    ],
+    "max_trained_fraction_per_seed": [
+     0.4424,
+     0.4559
+    ],
+    "route_log_per_seed": [
+     [
+      216661,
+      93471,
+      12937,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      206313,
+      38599,
+      47344,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "n_seen_per_seed": [
+     [
+      34398,
+      30424,
+      12937,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      35490,
+      21018,
+      47344,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "probationary_end_per_seed": [
+     [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "committed_end_per_seed": [
+     [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "frozen_end_per_seed": [
+     [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "freeze_events_per_seed": [
+     2,
+     2
+    ],
+    "recruited_per_seed": [
+     3,
+     3
+    ],
+    "purity_per_seed": [
+     [
+      0.485,
+      0.4375,
+      0.4517,
+      0.5042,
+      0.3892
+     ],
+     [
+      0.4575,
+      0.7567,
+      0.4408,
+      0.6575,
+      0.785
+     ]
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5655,
+    "acc_per_seed": [
+     0.548,
+     0.583
+    ],
+    "max_fraction_per_seed": [
+     0.7056,
+     0.8096
+    ],
+    "max_trained_fraction_per_seed": [
+     0.4638,
+     0.6389
+    ],
+    "route_log_per_seed": [
+     [
+      206263,
+      40348,
+      45719,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      232460,
+      54683,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "n_seen_per_seed": [
+     [
+      33296,
+      19557,
+      45719,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      30907,
+      54683,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "probationary_end_per_seed": [
+     [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "committed_end_per_seed": [
+     [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "frozen_end_per_seed": [
+     [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "freeze_events_per_seed": [
+     2,
+     1
+    ],
+    "recruited_per_seed": [
+     3,
+     2
+    ],
+    "purity_per_seed": [
+     [
+      0.5783,
+      0.5683,
+      0.5158,
+      0.515,
+      0.6875
+     ],
+     [
+      0.845,
+      0.7575,
+      0.7358,
+      0.7992,
+      0.8008
+     ]
+    ]
+   },
+   "min_interleaved_acc": 0.56,
+   "maxfrac_mixed": 0.7059,
+   "specialization_ok": true,
+   "eligible": true,
+   "passes_bar": false
+  },
+  "probation": {
+   "knobs": {
+    "train_granularity": "sample",
+    "route_stat": "sample_top",
+    "probation": true
+   },
+   "n_active_knobs": 3,
+   "precedence": "probation",
+   "mixed": {
+    "acc_mean": 0.5903,
+    "acc_per_seed": [
+     0.5975,
+     0.5832
+    ],
+    "max_fraction_per_seed": [
+     0.264,
+     0.2842
+    ],
+    "max_trained_fraction_per_seed": [
+     0.264,
+     0.2763
+    ],
+    "route_log_per_seed": [
+     [
+      72885,
+      86476,
+      86576,
+      51810,
+      30200,
+      0,
+      0,
+      0
+     ],
+     [
+      91975,
+      70389,
+      78184,
+      43326,
+      34505,
+      5213,
+      0,
+      0
+     ]
+    ],
+    "n_seen_per_seed": [
+     [
+      72885,
+      86476,
+      86576,
+      51810,
+      30200,
+      0,
+      0,
+      0
+     ],
+     [
+      68282,
+      67115,
+      77503,
+      42302,
+      20050,
+      5213,
+      0,
+      0
+     ]
+    ],
+    "probationary_end_per_seed": [
+     [
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+     ]
+    ],
+    "committed_end_per_seed": [
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0
+     ]
+    ],
+    "frozen_end_per_seed": [
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0
+     ]
+    ],
+    "freeze_events_per_seed": [
+     0,
+     5
+    ],
+    "recruited_per_seed": [
+     5,
+     6
+    ],
+    "purity_per_seed": [
+     [
+      0.5133,
+      0.455,
+      0.6292,
+      0.3125,
+      0.4217
+     ],
+     [
+      0.5117,
+      0.5042,
+      0.4942,
+      0.5267,
+      0.5467
+     ]
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5815,
+    "acc_per_seed": [
+     0.5632,
+     0.5998
+    ],
+    "max_fraction_per_seed": [
+     0.232,
+     0.2311
+    ],
+    "max_trained_fraction_per_seed": [
+     0.232,
+     0.2311
+    ],
+    "route_log_per_seed": [
+     [
+      61359,
+      65733,
+      74913,
+      62211,
+      32864,
+      23116,
+      2754,
+      0
+     ],
+     [
+      67886,
+      74198,
+      71008,
+      59784,
+      33532,
+      14685,
+      0,
+      0
+     ]
+    ],
+    "n_seen_per_seed": [
+     [
+      61359,
+      65733,
+      74913,
+      62211,
+      32864,
+      23116,
+      2754,
+      0
+     ],
+     [
+      67886,
+      74198,
+      71008,
+      59784,
+      33532,
+      14685,
+      0,
+      0
+     ]
+    ],
+    "probationary_end_per_seed": [
+     [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0
+     ]
+    ],
+    "committed_end_per_seed": [
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "frozen_end_per_seed": [
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "freeze_events_per_seed": [
+     0,
+     0
+    ],
+    "recruited_per_seed": [
+     7,
+     6
+    ],
+    "purity_per_seed": [
+     [
+      0.3425,
+      0.4567,
+      0.4433,
+      0.3308,
+      0.3433
+     ],
+     [
+      0.2708,
+      0.3333,
+      0.2825,
+      0.4025,
+      0.2808
+     ]
+    ]
+   },
+   "min_interleaved_acc": 0.5815,
+   "maxfrac_mixed": 0.2842,
+   "specialization_ok": true,
+   "eligible": true,
+   "passes_bar": false,
+   "e1": {
+    "acc_mean": 0.6683,
+    "fgt_mean": 0.0004,
+    "acc_per_seed": [
+     0.663,
+     0.6735
+    ],
+    "fgt_per_seed": [
+     0.0,
+     0.0008
+    ],
+    "guard_ok": false
+   }
+  },
+  "settle4": {
+   "knobs": {
+    "train_granularity": "sample",
+    "route_stat": "sample_top",
+    "n_settle_steps": 4
+   },
+   "n_active_knobs": 3,
+   "precedence": "settle4",
+   "mixed": {
+    "acc_mean": 0.5573,
+    "acc_per_seed": [
+     0.5128,
+     0.6017
+    ],
+    "max_fraction_per_seed": [
+     0.7746,
+     0.7471
+    ],
+    "max_trained_fraction_per_seed": [
+     0.4102,
+     0.4319
+    ],
+    "route_log_per_seed": [
+     [
+      212754,
+      33132,
+      28776,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      214036,
+      45153,
+      27282,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "n_seen_per_seed": [
+     [
+      37256,
+      24784,
+      28776,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      37714,
+      22317,
+      27282,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "probationary_end_per_seed": [
+     [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "committed_end_per_seed": [
+     [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "frozen_end_per_seed": [
+     [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "freeze_events_per_seed": [
+     2,
+     2
+    ],
+    "recruited_per_seed": [
+     3,
+     3
+    ],
+    "purity_per_seed": [
+     [
+      0.4508,
+      0.8767,
+      0.5542,
+      0.8125,
+      0.6692
+     ],
+     [
+      0.7433,
+      0.8233,
+      0.7167,
+      0.8258,
+      0.6692
+     ]
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5317,
+    "acc_per_seed": [
+     0.507,
+     0.5563
+    ],
+    "max_fraction_per_seed": [
+     0.7679,
+     0.8197
+    ],
+    "max_trained_fraction_per_seed": [
+     0.413,
+     0.5647
+    ],
+    "route_log_per_seed": [
+     [
+      218297,
+      41381,
+      24593,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      212236,
+      46696,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "n_seen_per_seed": [
+     [
+      34635,
+      24638,
+      24593,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      36000,
+      46696,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "probationary_end_per_seed": [
+     [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "committed_end_per_seed": [
+     [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "frozen_end_per_seed": [
+     [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "freeze_events_per_seed": [
+     2,
+     1
+    ],
+    "recruited_per_seed": [
+     3,
+     2
+    ],
+    "purity_per_seed": [
+     [
+      0.71,
+      0.7942,
+      0.645,
+      0.81,
+      0.7025
+     ],
+     [
+      0.9367,
+      0.8892,
+      0.9733,
+      0.94,
+      0.9425
+     ]
+    ]
+   },
+   "min_interleaved_acc": 0.5317,
+   "maxfrac_mixed": 0.7746,
+   "specialization_ok": true,
+   "eligible": true,
+   "passes_bar": false
+  },
+  "settle8": {
+   "knobs": {
+    "train_granularity": "sample",
+    "route_stat": "sample_top",
+    "n_settle_steps": 8
+   },
+   "n_active_knobs": 3,
+   "precedence": "settle8",
+   "mixed": {
+    "acc_mean": 0.5501,
+    "acc_per_seed": [
+     0.5335,
+     0.5667
+    ],
+    "max_fraction_per_seed": [
+     0.8026,
+     0.8751
+    ],
+    "max_trained_fraction_per_seed": [
+     0.4336,
+     0.5469
+    ],
+    "route_log_per_seed": [
+     [
+      224014,
+      35912,
+      19172,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      229108,
+      32698,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "n_seen_per_seed": [
+     [
+      39404,
+      32291,
+      19172,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      39463,
+      32698,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "probationary_end_per_seed": [
+     [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "committed_end_per_seed": [
+     [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "frozen_end_per_seed": [
+     [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "freeze_events_per_seed": [
+     2,
+     1
+    ],
+    "recruited_per_seed": [
+     3,
+     2
+    ],
+    "purity_per_seed": [
+     [
+      0.5675,
+      0.7058,
+      0.8,
+      0.8042,
+      0.5092
+     ],
+     [
+      0.5658,
+      0.8025,
+      0.9992,
+      0.61,
+      0.9292
+     ]
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.54,
+    "acc_per_seed": [
+     0.5232,
+     0.5568
+    ],
+    "max_fraction_per_seed": [
+     0.8708,
+     0.6912
+    ],
+    "max_trained_fraction_per_seed": [
+     0.5024,
+     0.3776
+    ],
+    "route_log_per_seed": [
+     [
+      237980,
+      35304,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      211721,
+      43734,
+      30480,
+      20370,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "n_seen_per_seed": [
+     [
+      35644,
+      35304,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      39464,
+      24546,
+      20134,
+      20370,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "probationary_end_per_seed": [
+     [
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "committed_end_per_seed": [
+     [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "frozen_end_per_seed": [
+     [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "freeze_events_per_seed": [
+     1,
+     3
+    ],
+    "recruited_per_seed": [
+     2,
+     4
+    ],
+    "purity_per_seed": [
+     [
+      0.975,
+      0.9133,
+      0.9692,
+      0.9783,
+      0.9367
+     ],
+     [
+      0.4558,
+      0.815,
+      0.5742,
+      0.6775,
+      0.7725
+     ]
+    ]
+   },
+   "min_interleaved_acc": 0.54,
+   "maxfrac_mixed": 0.8751,
+   "specialization_ok": false,
+   "eligible": false,
+   "passes_bar": false
+  },
+  "probation_settle4": {
+   "knobs": {
+    "train_granularity": "sample",
+    "route_stat": "sample_top",
+    "probation": true,
+    "n_settle_steps": 4
+   },
+   "n_active_knobs": 4,
+   "precedence": "probation_settle4",
+   "mixed": {
+    "acc_mean": 0.5919,
+    "acc_per_seed": [
+     0.5645,
+     0.6193
+    ],
+    "max_fraction_per_seed": [
+     0.1961,
+     0.1965
+    ],
+    "max_trained_fraction_per_seed": [
+     0.1961,
+     0.1965
+    ],
+    "route_log_per_seed": [
+     [
+      61517,
+      52845,
+      51853,
+      46136,
+      41035,
+      34672,
+      25662,
+      0
+     ],
+     [
+      61983,
+      53489,
+      48128,
+      45047,
+      39674,
+      36989,
+      28584,
+      1563
+     ]
+    ],
+    "n_seen_per_seed": [
+     [
+      61517,
+      52845,
+      51853,
+      46136,
+      41035,
+      34672,
+      25662,
+      0
+     ],
+     [
+      61983,
+      53489,
+      48128,
+      45047,
+      39674,
+      36989,
+      28584,
+      1563
+     ]
+    ],
+    "probationary_end_per_seed": [
+     [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+     ]
+    ],
+    "committed_end_per_seed": [
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "frozen_end_per_seed": [
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "freeze_events_per_seed": [
+     0,
+     0
+    ],
+    "recruited_per_seed": [
+     7,
+     8
+    ],
+    "purity_per_seed": [
+     [
+      0.405,
+      0.2667,
+      0.2725,
+      0.32,
+      0.3275
+     ],
+     [
+      0.42,
+      0.4258,
+      0.365,
+      0.3425,
+      0.3475
+     ]
+    ]
+   },
+   "roundrobin": {
+    "acc_mean": 0.5507,
+    "acc_per_seed": [
+     0.5345,
+     0.5668
+    ],
+    "max_fraction_per_seed": [
+     0.1878,
+     0.1849
+    ],
+    "max_trained_fraction_per_seed": [
+     0.1878,
+     0.1849
+    ],
+    "route_log_per_seed": [
+     [
+      59477,
+      52148,
+      48677,
+      44627,
+      41730,
+      34056,
+      27680,
+      8268
+     ],
+     [
+      59188,
+      53912,
+      46559,
+      47581,
+      41891,
+      35140,
+      26005,
+      9793
+     ]
+    ],
+    "n_seen_per_seed": [
+     [
+      59477,
+      52148,
+      48677,
+      44627,
+      41730,
+      34056,
+      27680,
+      8268
+     ],
+     [
+      59188,
+      53912,
+      46559,
+      47581,
+      41891,
+      35140,
+      26005,
+      9793
+     ]
+    ],
+    "probationary_end_per_seed": [
+     [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+     ]
+    ],
+    "committed_end_per_seed": [
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "frozen_end_per_seed": [
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "freeze_events_per_seed": [
+     0,
+     0
+    ],
+    "recruited_per_seed": [
+     8,
+     8
+    ],
+    "purity_per_seed": [
+     [
+      0.2575,
+      0.2617,
+      0.2317,
+      0.2425,
+      0.2183
+     ],
+     [
+      0.2817,
+      0.3858,
+      0.25,
+      0.2258,
+      0.3192
+     ]
+    ]
+   },
+   "min_interleaved_acc": 0.5507,
+   "maxfrac_mixed": 0.1965,
+   "specialization_ok": true,
+   "eligible": true,
+   "passes_bar": false
+  }
+ },
+ "chosen": "probation",
+ "runtime_seconds": 129.2
+}

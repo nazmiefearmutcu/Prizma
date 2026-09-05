@@ -1,0 +1,97 @@
+{
+ "config": "probation_settle4",
+ "stream": "mixed",
+ "seed": 0,
+ "knobs": {
+  "train_granularity": "sample",
+  "route_stat": "sample_top",
+  "probation": true,
+  "n_settle_steps": 4
+ },
+ "runtime_seconds": 12.26,
+ "result": {
+  "acc": 0.5645,
+  "recruited": 7,
+  "route_log": [
+   61517,
+   52845,
+   51853,
+   46136,
+   41035,
+   34672,
+   25662,
+   0
+  ],
+  "fractions": [
+   0.1961,
+   0.1684,
+   0.1653,
+   0.1471,
+   0.1308,
+   0.1105,
+   0.0818,
+   0.0
+  ],
+  "max_fraction": 0.1961,
+  "n_seen": [
+   61517,
+   52845,
+   51853,
+   46136,
+   41035,
+   34672,
+   25662,
+   0
+  ],
+  "trained_fractions": [
+   0.1961,
+   0.1684,
+   0.1653,
+   0.1471,
+   0.1308,
+   0.1105,
+   0.0818,
+   0.0
+  ],
+  "max_trained_fraction": 0.1961,
+  "committed_end": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "frozen_end": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "probationary_end": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   0
+  ],
+  "freeze_events": 0,
+  "dropped_batches": 0,
+  "purity": [
+   0.405,
+   0.2667,
+   0.2725,
+   0.32,
+   0.3275
+  ]
+ }
+}
