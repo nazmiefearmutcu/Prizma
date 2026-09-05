@@ -1,0 +1,18 @@
+{
+ "arm": "shipped",
+ "stream": "e1",
+ "seed": 10,
+ "config": {
+  "freeze_min_seen": 0,
+  "dynamic_vigilance": 0.0,
+  "hot_young": 0.0,
+  "route_stat": "batch_mean",
+  "n_settle_steps": 0
+ },
+ "runtime_seconds": 1.38,
+ "result": {
+  "acc": 0.8655000000000002,
+  "fgt": 0.0,
+  "recruited": 5
+ }
+}

@@ -166,3 +166,35 @@ after the GPU-return prerequisite ladder (§6).
 No LM-scale parity, no ambiguity-regime gains, no attention-replacement headline, no claims
 before their pre-registrations pass, no device-validated energy numbers (arithmetic bands
 only, per report 12-H5), and no surprise-gated-write mechanism unless PR-01 survives.
+
+---
+
+## Addendum 2026-09-05 — PR-06 outcome: PR-LM-1 BLOCKED on the router (granularity, not thresholds)
+
+PR-2026-09-03-06 executed its frozen protocol verbatim and fired the pre-committed
+INSUFFICIENT branch: bar 1 (E1 no-regression) PASSED (0.842 / FGT 0.000), bar 2 FAILED on
+both interleaved streams (+fixes arm 0.597/0.592, CI uppers 0.646/0.643, both short of 0.70).
+Attribution: route_stat=sample_top carries the entire effect (+0.058 round-robin);
+hot_young ≈ 0; dynamic_vigilance harms standalone; the freeze veto is ACC-neutral.
+Mechanistic ledger (n=5): the +fixes arm routes ONE expert onto 100% of the stream — the
+model lands exactly on the monolithic-learner ceiling (~0.60). Conclusion: §3.3's lever set
+(veto, dynamic vigilance, metaplasticity, settling, route statistic) repairs threshold
+sensitivity but cannot recover block-stream specialization, because `train_batch` applies the
+whole batch's delta to the single active expert. The binding constraint is **training
+granularity**, not routing sensitivity.
+
+Consequences for this spec:
+- §6 step 4 (BAR-6 check) is done — outcome NEGATIVE; PR-LM-1 stays blocked until the router
+  gains per-sample / expert-stream training granularity.
+- §3.3 candidate set is superseded by three successor mechanism classes, each requiring its
+  own pre-registration: (G1) per-sample routed delta steps (train each sample on the expert
+  that recognizes IT, not the batch's majority); (G2) recruitment-session windows (contiguous
+  sample runs routed as a unit before any consolidation); (G3) replay-before-freeze at CL
+  scale (02-P1, pulled forward from "flagship body" to "router prerequisite").
+- Exploratory lane before any new registration: an n=2 granularity probe (G1 vs G2 toy
+  variants) to freeze PR-07's exact mechanism — the PR-06 lesson: freeze the STATISTIC, and
+  check the training ledger, not just the accuracy.
+
+No LM-scale parity, no ambiguity-regime gains, no attention-replacement headline, no claims
+before their pre-registrations pass, no device-validated energy numbers (arithmetic bands
+only, per report 12-H5), and no surprise-gated-write mechanism unless PR-01 survives.

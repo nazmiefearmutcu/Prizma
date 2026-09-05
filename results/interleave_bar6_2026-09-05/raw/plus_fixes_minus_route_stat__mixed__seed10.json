@@ -1,0 +1,35 @@
+{
+ "arm": "plus_fixes_minus_route_stat",
+ "stream": "mixed",
+ "seed": 10,
+ "config": {
+  "freeze_min_seen": 0,
+  "dynamic_vigilance": 0.0,
+  "hot_young": 1.0,
+  "route_stat": "batch_mean",
+  "n_settle_steps": 0
+ },
+ "runtime_seconds": 1.0,
+ "result": {
+  "acc": 0.6221666666666666,
+  "recruited": 1,
+  "route_log": [
+   360000,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "dropped_batches": 0,
+  "purity": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ }
+}

@@ -1,0 +1,18 @@
+{
+ "arm": "plus_fixes_minus_route_stat",
+ "stream": "e1",
+ "seed": 12,
+ "config": {
+  "freeze_min_seen": 0,
+  "dynamic_vigilance": 0.0,
+  "hot_young": 1.0,
+  "route_stat": "batch_mean",
+  "n_settle_steps": 0
+ },
+ "runtime_seconds": 1.45,
+ "result": {
+  "acc": 0.8641666666666665,
+  "fgt": 0.0,
+  "recruited": 5
+ }
+}

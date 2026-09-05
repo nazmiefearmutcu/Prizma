@@ -1,0 +1,1299 @@
+{
+ "bar_070": 0.7,
+ "e1_headline": 0.834,
+ "e1_tol": 0.02,
+ "fgt_max": 0.02,
+ "table": {
+  "shipped|mixed": {
+   "n": 5,
+   "mean": 0.5871,
+   "sd": 0.0451,
+   "ci95": [
+    0.5312,
+    0.6431
+   ],
+   "per_seed": [
+    0.6213,
+    0.5745,
+    0.5715,
+    0.6413,
+    0.527
+   ]
+  },
+  "shipped|roundrobin": {
+   "n": 5,
+   "mean": 0.5647,
+   "sd": 0.042,
+   "ci95": [
+    0.5125,
+    0.6168
+   ],
+   "per_seed": [
+    0.5683,
+    0.5675,
+    0.5183,
+    0.6298,
+    0.5393
+   ]
+  },
+  "shipped|e1": {
+   "n": 5,
+   "mean": 0.8406,
+   "sd": 0.0415,
+   "ci95": [
+    0.7892,
+    0.8921
+   ],
+   "per_seed": [
+    0.8655,
+    0.8607,
+    0.863,
+    0.8463,
+    0.7677
+   ],
+   "fgt_mean": 0.0,
+   "fgt_per_seed": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "plus_fixes|mixed": {
+   "n": 5,
+   "mean": 0.5965,
+   "sd": 0.0398,
+   "ci95": [
+    0.5471,
+    0.6459
+   ],
+   "per_seed": [
+    0.6222,
+    0.5853,
+    0.5708,
+    0.6512,
+    0.553
+   ]
+  },
+  "plus_fixes|roundrobin": {
+   "n": 5,
+   "mean": 0.5916,
+   "sd": 0.0411,
+   "ci95": [
+    0.5406,
+    0.6426
+   ],
+   "per_seed": [
+    0.6162,
+    0.5798,
+    0.5667,
+    0.6492,
+    0.5462
+   ]
+  },
+  "plus_fixes|e1": {
+   "n": 5,
+   "mean": 0.8421,
+   "sd": 0.0421,
+   "ci95": [
+    0.7898,
+    0.8944
+   ],
+   "per_seed": [
+    0.871,
+    0.8607,
+    0.8642,
+    0.8462,
+    0.7685
+   ],
+   "fgt_mean": 0.0,
+   "fgt_per_seed": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "plus_fixes_minus_route_stat|mixed": {
+   "n": 5,
+   "mean": 0.5874,
+   "sd": 0.045,
+   "ci95": [
+    0.5315,
+    0.6432
+   ],
+   "per_seed": [
+    0.6222,
+    0.5747,
+    0.5708,
+    0.6413,
+    0.5278
+   ]
+  },
+  "plus_fixes_minus_route_stat|roundrobin": {
+   "n": 5,
+   "mean": 0.5339,
+   "sd": 0.0791,
+   "ci95": [
+    0.4357,
+    0.6321
+   ],
+   "per_seed": [
+    0.4138,
+    0.5668,
+    0.5193,
+    0.6302,
+    0.5395
+   ]
+  },
+  "plus_fixes_minus_route_stat|e1": {
+   "n": 5,
+   "mean": 0.8412,
+   "sd": 0.0413,
+   "ci95": [
+    0.7899,
+    0.8925
+   ],
+   "per_seed": [
+    0.866,
+    0.8607,
+    0.8642,
+    0.8467,
+    0.7685
+   ],
+   "fgt_mean": 0.0,
+   "fgt_per_seed": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "plus_fixes_minus_hot_young|mixed": {
+   "n": 5,
+   "mean": 0.5963,
+   "sd": 0.0397,
+   "ci95": [
+    0.547,
+    0.6455
+   ],
+   "per_seed": [
+    0.6213,
+    0.5862,
+    0.5715,
+    0.6507,
+    0.5517
+   ]
+  },
+  "plus_fixes_minus_hot_young|roundrobin": {
+   "n": 5,
+   "mean": 0.592,
+   "sd": 0.0414,
+   "ci95": [
+    0.5406,
+    0.6434
+   ],
+   "per_seed": [
+    0.616,
+    0.5808,
+    0.5667,
+    0.6503,
+    0.5462
+   ]
+  },
+  "plus_fixes_minus_hot_young|e1": {
+   "n": 5,
+   "mean": 0.8416,
+   "sd": 0.0423,
+   "ci95": [
+    0.789,
+    0.8941
+   ],
+   "per_seed": [
+    0.8708,
+    0.8607,
+    0.863,
+    0.8457,
+    0.7677
+   ],
+   "fgt_mean": 0.0,
+   "fgt_per_seed": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  }
+ },
+ "bar1_gate": {
+  "arm": "plus_fixes",
+  "stream": "e1",
+  "acc_mean": 0.8421,
+  "acc_window": [
+   0.814,
+   0.854
+  ],
+  "acc_ok": true,
+  "fgt_mean": 0.0,
+  "fgt_ok": true,
+  "pass": true
+ },
+ "shipped_e1_sanity": {
+  "acc_mean": 0.8406,
+  "ci95": [
+   0.7892,
+   0.8921
+  ],
+  "headline": 0.834,
+  "within_seed_noise": true
+ },
+ "bar2_recovery": {
+  "mixed": {
+   "mean": 0.5965,
+   "ci95": [
+    0.5471,
+    0.6459
+   ],
+   "pass": false
+  },
+  "roundrobin": {
+   "mean": 0.5916,
+   "ci95": [
+    0.5406,
+    0.6426
+   ],
+   "pass": false
+  },
+  "pass": false
+ },
+ "bar3_attribution": {
+  "route_stat": {
+   "minus_arm": "plus_fixes_minus_route_stat",
+   "per_stream": {
+    "mixed": {
+     "plus_fixes_mean": 0.5965,
+     "minus_mean": 0.5874,
+     "delta_plus_minus": 0.0091,
+     "welch_ci95_delta": [
+      -0.053,
+      0.0712
+     ],
+     "minus_fails_bar2": true,
+     "costs_ge_002": false
+    },
+    "roundrobin": {
+     "plus_fixes_mean": 0.5916,
+     "minus_mean": 0.5339,
+     "delta_plus_minus": 0.0577,
+     "welch_ci95_delta": [
+      -0.0398,
+      0.1552
+     ],
+     "minus_fails_bar2": true,
+     "costs_ge_002": true
+    }
+   },
+   "causally_necessary": true
+  },
+  "hot_young": {
+   "minus_arm": "plus_fixes_minus_hot_young",
+   "per_stream": {
+    "mixed": {
+     "plus_fixes_mean": 0.5965,
+     "minus_mean": 0.5963,
+     "delta_plus_minus": 0.0002,
+     "welch_ci95_delta": [
+      -0.0577,
+      0.0581
+     ],
+     "minus_fails_bar2": true,
+     "costs_ge_002": false
+    },
+    "roundrobin": {
+     "plus_fixes_mean": 0.5916,
+     "minus_mean": 0.592,
+     "delta_plus_minus": -0.0004,
+     "welch_ci95_delta": [
+      -0.0605,
+      0.0597
+     ],
+     "minus_fails_bar2": true,
+     "costs_ge_002": false
+    }
+   },
+   "causally_necessary": true
+  }
+ },
+ "verdict": "INSUFFICIENT (FAIL of bar 2 at the frozen config) -- BAR-6 recorded ANALYZED->NEGATIVE; PR-LM-1 BLOCKED on the router; the n=5 failure numbers below are the documented blocker.",
+ "blocker_ledger": {
+  "shipped": {
+   "mixed": {
+    "route_log_per_seed": [
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      359488,
+      512,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      359872,
+      128,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      359872,
+      128,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "mean_train_fraction_per_expert": [
+     0.9996,
+     0.0004,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "top_expert_fraction_mean": 0.9996,
+    "experts_with_any_training_mean": 1.6,
+    "recruited_per_seed": [
+     1,
+     2,
+     1,
+     2,
+     2
+    ],
+    "dropped_batches_per_seed": [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "purity_per_seed": [
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ]
+    ]
+   },
+   "roundrobin": {
+    "route_log_per_seed": [
+     [
+      359488,
+      512,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      359808,
+      192,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      359616,
+      384,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      359360,
+      640,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      359360,
+      640,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "mean_train_fraction_per_expert": [
+     0.9987,
+     0.0013,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "top_expert_fraction_mean": 0.9987,
+    "experts_with_any_training_mean": 2.0,
+    "recruited_per_seed": [
+     2,
+     2,
+     2,
+     2,
+     2
+    ],
+    "dropped_batches_per_seed": [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "purity_per_seed": [
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ]
+    ]
+   }
+  },
+  "plus_fixes": {
+   "mixed": {
+    "route_log_per_seed": [
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "mean_train_fraction_per_expert": [
+     1.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "top_expert_fraction_mean": 1.0,
+    "experts_with_any_training_mean": 1.0,
+    "recruited_per_seed": [
+     1,
+     1,
+     1,
+     1,
+     1
+    ],
+    "dropped_batches_per_seed": [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "purity_per_seed": [
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ]
+    ]
+   },
+   "roundrobin": {
+    "route_log_per_seed": [
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "mean_train_fraction_per_expert": [
+     1.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "top_expert_fraction_mean": 1.0,
+    "experts_with_any_training_mean": 1.0,
+    "recruited_per_seed": [
+     1,
+     1,
+     1,
+     1,
+     1
+    ],
+    "dropped_batches_per_seed": [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "purity_per_seed": [
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ]
+    ]
+   }
+  },
+  "plus_fixes_minus_route_stat": {
+   "mixed": {
+    "route_log_per_seed": [
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      359488,
+      512,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      359872,
+      128,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      359872,
+      128,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "mean_train_fraction_per_expert": [
+     0.9996,
+     0.0004,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "top_expert_fraction_mean": 0.9996,
+    "experts_with_any_training_mean": 1.6,
+    "recruited_per_seed": [
+     1,
+     2,
+     1,
+     2,
+     2
+    ],
+    "dropped_batches_per_seed": [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "purity_per_seed": [
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ]
+    ]
+   },
+   "roundrobin": {
+    "route_log_per_seed": [
+     [
+      245760,
+      70720,
+      41920,
+      1600,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      359808,
+      192,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      359616,
+      384,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      359296,
+      704,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      359232,
+      768,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "mean_train_fraction_per_expert": [
+     0.9354,
+     0.0404,
+     0.0233,
+     0.0009,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "top_expert_fraction_mean": 0.9354,
+    "experts_with_any_training_mean": 2.4,
+    "recruited_per_seed": [
+     4,
+     2,
+     2,
+     2,
+     2
+    ],
+    "dropped_batches_per_seed": [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "purity_per_seed": [
+     [
+      0.6742,
+      0.6042,
+      0.9767,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ]
+    ]
+   }
+  },
+  "plus_fixes_minus_hot_young": {
+   "mixed": {
+    "route_log_per_seed": [
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "mean_train_fraction_per_expert": [
+     1.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "top_expert_fraction_mean": 1.0,
+    "experts_with_any_training_mean": 1.0,
+    "recruited_per_seed": [
+     1,
+     1,
+     1,
+     1,
+     1
+    ],
+    "dropped_batches_per_seed": [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "purity_per_seed": [
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ]
+    ]
+   },
+   "roundrobin": {
+    "route_log_per_seed": [
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      360000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ],
+    "mean_train_fraction_per_expert": [
+     1.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "top_expert_fraction_mean": 1.0,
+    "experts_with_any_training_mean": 1.0,
+    "recruited_per_seed": [
+     1,
+     1,
+     1,
+     1,
+     1
+    ],
+    "dropped_batches_per_seed": [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "purity_per_seed": [
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ]
+    ]
+   }
+  }
+ },
+ "runtime": {
+  "seeds": [
+   10,
+   11,
+   12,
+   13,
+   14
+  ],
+  "arms": [
+   "shipped",
+   "plus_fixes",
+   "plus_fixes_minus_route_stat",
+   "plus_fixes_minus_hot_young"
+  ],
+  "streams": [
+   "mixed",
+   "roundrobin",
+   "e1"
+  ]
+ },
+ "wall_seconds": 75.1
+}

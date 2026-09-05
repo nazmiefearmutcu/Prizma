@@ -1,0 +1,1746 @@
+{
+ "label": "LANE-CLAIM",
+ "prereg": "PR-2026-09-03-06",
+ "doc": "docs/preregistry/2026-09-03-interleaved-router-bar6.md",
+ "date": "2026-09-05",
+ "seeds": [
+  10,
+  11,
+  12,
+  13,
+  14
+ ],
+ "arms": {
+  "shipped": {
+   "freeze_min_seen": 0,
+   "dynamic_vigilance": 0.0,
+   "hot_young": 0.0,
+   "route_stat": "batch_mean",
+   "n_settle_steps": 0
+  },
+  "plus_fixes": {
+   "freeze_min_seen": 0,
+   "dynamic_vigilance": 0.0,
+   "hot_young": 1.0,
+   "route_stat": "sample_top",
+   "n_settle_steps": 0
+  },
+  "plus_fixes_minus_route_stat": {
+   "freeze_min_seen": 0,
+   "dynamic_vigilance": 0.0,
+   "hot_young": 1.0,
+   "route_stat": "batch_mean",
+   "n_settle_steps": 0
+  },
+  "plus_fixes_minus_hot_young": {
+   "freeze_min_seen": 0,
+   "dynamic_vigilance": 0.0,
+   "hot_young": 0.0,
+   "route_stat": "sample_top",
+   "n_settle_steps": 0
+  }
+ },
+ "raw_dir": "results\\interleave_bar6_2026-09-05\\raw",
+ "records": [
+  {
+   "arm": "plus_fixes",
+   "stream": "e1",
+   "seed": 10,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.8710000000000001,
+    "fgt": 0.0,
+    "recruited": 5
+   }
+  },
+  {
+   "arm": "plus_fixes",
+   "stream": "e1",
+   "seed": 11,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.8606666666666667,
+    "fgt": 0.0,
+    "recruited": 5
+   }
+  },
+  {
+   "arm": "plus_fixes",
+   "stream": "e1",
+   "seed": 12,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.8641666666666665,
+    "fgt": 0.0,
+    "recruited": 5
+   }
+  },
+  {
+   "arm": "plus_fixes",
+   "stream": "e1",
+   "seed": 13,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.8461666666666666,
+    "fgt": 0.0,
+    "recruited": 5
+   }
+  },
+  {
+   "arm": "plus_fixes",
+   "stream": "e1",
+   "seed": 14,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.7685000000000001,
+    "fgt": 0.0,
+    "recruited": 5
+   }
+  },
+  {
+   "arm": "plus_fixes",
+   "stream": "mixed",
+   "seed": 10,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.6221666666666666,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes",
+   "stream": "mixed",
+   "seed": 11,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5853333333333333,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes",
+   "stream": "mixed",
+   "seed": 12,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5708333333333333,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes",
+   "stream": "mixed",
+   "seed": 13,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.6511666666666667,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes",
+   "stream": "mixed",
+   "seed": 14,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5529999999999999,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes",
+   "stream": "roundrobin",
+   "seed": 10,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.6161666666666668,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes",
+   "stream": "roundrobin",
+   "seed": 11,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5798333333333333,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes",
+   "stream": "roundrobin",
+   "seed": 12,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5666666666666667,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes",
+   "stream": "roundrobin",
+   "seed": 13,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.6491666666666667,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes",
+   "stream": "roundrobin",
+   "seed": 14,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5461666666666668,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_hot_young",
+   "stream": "e1",
+   "seed": 10,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.8708333333333333,
+    "fgt": 0.0,
+    "recruited": 5
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_hot_young",
+   "stream": "e1",
+   "seed": 11,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.8606666666666667,
+    "fgt": 0.0,
+    "recruited": 5
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_hot_young",
+   "stream": "e1",
+   "seed": 12,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.8629999999999999,
+    "fgt": 0.0,
+    "recruited": 5
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_hot_young",
+   "stream": "e1",
+   "seed": 13,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.8456666666666667,
+    "fgt": 0.0,
+    "recruited": 5
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_hot_young",
+   "stream": "e1",
+   "seed": 14,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.7676666666666666,
+    "fgt": 0.0,
+    "recruited": 5
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_hot_young",
+   "stream": "mixed",
+   "seed": 10,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.6213333333333333,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_hot_young",
+   "stream": "mixed",
+   "seed": 11,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5861666666666667,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_hot_young",
+   "stream": "mixed",
+   "seed": 12,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5715,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_hot_young",
+   "stream": "mixed",
+   "seed": 13,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.6506666666666667,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_hot_young",
+   "stream": "mixed",
+   "seed": 14,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5516666666666666,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_hot_young",
+   "stream": "roundrobin",
+   "seed": 10,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.616,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_hot_young",
+   "stream": "roundrobin",
+   "seed": 11,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5808333333333333,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_hot_young",
+   "stream": "roundrobin",
+   "seed": 12,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5666666666666667,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_hot_young",
+   "stream": "roundrobin",
+   "seed": 13,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.6503333333333334,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_hot_young",
+   "stream": "roundrobin",
+   "seed": 14,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "sample_top",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5461666666666667,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_route_stat",
+   "stream": "e1",
+   "seed": 10,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.866,
+    "fgt": 0.0,
+    "recruited": 5
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_route_stat",
+   "stream": "e1",
+   "seed": 11,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.8606666666666667,
+    "fgt": 0.0,
+    "recruited": 5
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_route_stat",
+   "stream": "e1",
+   "seed": 12,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.8641666666666665,
+    "fgt": 0.0,
+    "recruited": 5
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_route_stat",
+   "stream": "e1",
+   "seed": 13,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.8466666666666667,
+    "fgt": 0.0,
+    "recruited": 5
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_route_stat",
+   "stream": "e1",
+   "seed": 14,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.7685000000000001,
+    "fgt": 0.0,
+    "recruited": 5
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_route_stat",
+   "stream": "mixed",
+   "seed": 10,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.6221666666666666,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_route_stat",
+   "stream": "mixed",
+   "seed": 11,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5746666666666667,
+    "recruited": 2,
+    "route_log": [
+     359488,
+     512,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_route_stat",
+   "stream": "mixed",
+   "seed": 12,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5708333333333333,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_route_stat",
+   "stream": "mixed",
+   "seed": 13,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.6413333333333334,
+    "recruited": 2,
+    "route_log": [
+     359872,
+     128,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_route_stat",
+   "stream": "mixed",
+   "seed": 14,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5278333333333334,
+    "recruited": 2,
+    "route_log": [
+     359872,
+     128,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_route_stat",
+   "stream": "roundrobin",
+   "seed": 10,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.4138333333333333,
+    "recruited": 4,
+    "route_log": [
+     245760,
+     70720,
+     41920,
+     1600,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     0.6742,
+     0.6042,
+     0.9767,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_route_stat",
+   "stream": "roundrobin",
+   "seed": 11,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5668333333333333,
+    "recruited": 2,
+    "route_log": [
+     359808,
+     192,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_route_stat",
+   "stream": "roundrobin",
+   "seed": 12,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5193333333333333,
+    "recruited": 2,
+    "route_log": [
+     359616,
+     384,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_route_stat",
+   "stream": "roundrobin",
+   "seed": 13,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.6301666666666665,
+    "recruited": 2,
+    "route_log": [
+     359296,
+     704,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "plus_fixes_minus_route_stat",
+   "stream": "roundrobin",
+   "seed": 14,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 1.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5395,
+    "recruited": 2,
+    "route_log": [
+     359232,
+     768,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "shipped",
+   "stream": "e1",
+   "seed": 10,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.8655000000000002,
+    "fgt": 0.0,
+    "recruited": 5
+   }
+  },
+  {
+   "arm": "shipped",
+   "stream": "e1",
+   "seed": 11,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.8606666666666667,
+    "fgt": 0.0,
+    "recruited": 5
+   }
+  },
+  {
+   "arm": "shipped",
+   "stream": "e1",
+   "seed": 12,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.8629999999999999,
+    "fgt": 0.0,
+    "recruited": 5
+   }
+  },
+  {
+   "arm": "shipped",
+   "stream": "e1",
+   "seed": 13,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.8463333333333333,
+    "fgt": 0.0,
+    "recruited": 5
+   }
+  },
+  {
+   "arm": "shipped",
+   "stream": "e1",
+   "seed": 14,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.7676666666666666,
+    "fgt": 0.0,
+    "recruited": 5
+   }
+  },
+  {
+   "arm": "shipped",
+   "stream": "mixed",
+   "seed": 10,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.6213333333333333,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "shipped",
+   "stream": "mixed",
+   "seed": 11,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5745,
+    "recruited": 2,
+    "route_log": [
+     359488,
+     512,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "shipped",
+   "stream": "mixed",
+   "seed": 12,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5715,
+    "recruited": 1,
+    "route_log": [
+     360000,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "shipped",
+   "stream": "mixed",
+   "seed": 13,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.6413333333333333,
+    "recruited": 2,
+    "route_log": [
+     359872,
+     128,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "shipped",
+   "stream": "mixed",
+   "seed": 14,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5269999999999999,
+    "recruited": 2,
+    "route_log": [
+     359872,
+     128,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "shipped",
+   "stream": "roundrobin",
+   "seed": 10,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5683333333333334,
+    "recruited": 2,
+    "route_log": [
+     359488,
+     512,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "shipped",
+   "stream": "roundrobin",
+   "seed": 11,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5675000000000001,
+    "recruited": 2,
+    "route_log": [
+     359808,
+     192,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "shipped",
+   "stream": "roundrobin",
+   "seed": 12,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5183333333333333,
+    "recruited": 2,
+    "route_log": [
+     359616,
+     384,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "shipped",
+   "stream": "roundrobin",
+   "seed": 13,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.6298333333333332,
+    "recruited": 2,
+    "route_log": [
+     359360,
+     640,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "arm": "shipped",
+   "stream": "roundrobin",
+   "seed": 14,
+   "config": {
+    "freeze_min_seen": 0,
+    "dynamic_vigilance": 0.0,
+    "hot_young": 0.0,
+    "route_stat": "batch_mean",
+    "n_settle_steps": 0
+   },
+   "result": {
+    "acc": 0.5393333333333333,
+    "recruited": 2,
+    "route_log": [
+     359360,
+     640,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dropped_batches": 0,
+    "purity": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  }
+ ]
+}
