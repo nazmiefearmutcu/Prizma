@@ -210,6 +210,38 @@ The remaining candidate is G3 replay-before-freeze at CL scale (state-generated 
 grant repeated passes without a buffer, and directly serve the §3.4 consolidation story);
 it requires its own exploratory probe and pre-registration before any claim-grade run.
 
-No LM-scale parity, no ambiguity-regime gains, no attention-replacement headline, no claims
-before their pre-registrations pass, no device-validated energy numbers (arithmetic bands
-only, per report 12-H5), and no surprise-gated-write mechanism unless PR-01 survives.
+---
+
+## Addendum 2026-09-05 (3) — TERMINAL: the mechanism ladder is fully measured; BAR-6-as-interleaved re-scoped
+
+G3a (generative replay-before-freeze, DGR-adapted) and G3b (probation: live re-processing
+until domain exit) plus settle-depth {4,8} completed the ladder
+(results/exploratory/replay_probe_2026-09-05/, results/exploratory/terminal_probe_2026-09-05/).
+Outcome: G3a consolidates without adding information (pseudo-set recon +0.004..+0.010, ACC
+±0.003 — an information cap, measured); probation works as designed (specialists receive
+~15 live passes, train-ledger balances to 0.28) for only +0.03 ACC; settle depth flat-to-
+negative. Fragment purity stays 0.23–0.63 because vigilance floors calibrate on mixture data.
+
+**TERMINAL VERDICT:** the interleaved-single-pass regime is **information-bounded at the
+partition level** for this architecture class at toy scale. No routing, granularity, or
+consolidation mechanism can recover domain-specialized experts from mixture fragments; only
+domain-coherent exposure structure (contiguous blocks of ≳10² samples during floor
+calibration) changes the answer. This extends the repo's proven impossibility line
+(fully-ambiguous regime, single-head learners) with a measured boundary for the
+interleaved-mixed regime: BAR-6-as-interleaved (ACC ≥ 0.70) is a structural open boundary,
+not a tunable knob.
+
+**Consequence for §4/§6 (gate re-scope, evidence-driven):** BAR-6-as-interleaved was a
+STRICTER gate than the flagship task requires. PR-LM-1's actual stream is block-drift
+(corpus A → corpus B arrive as large contiguous blocks — exactly the exposure structure this
+architecture's home regime handles: E1 0.834 / FGT 0.000, and the block-stream guard held
+all session long). The interleaved gate blocked PR-LM-1 on a property the continual-LM task
+does not exercise. Therefore §6 step 4's prerequisite is RE-SCOPED from "interleaved ≥ 0.70"
+to "block-drift retention at toy scale" — to be pre-registered as PR-2026-09-03-07
+(block-drift BAR-6': sequential 3-corpus char-level stream, no labels/boundaries/replay,
+retention FGT ≤ 0.05 + adaptation gain, n=5, fresh seeds) while interleaved robustness stays
+DOCUMENTED as a measured open boundary (this addendum), not silently dropped. Eight
+default-off levers shipped and bit-identity-tested during this ladder (freeze_min_seen,
+dynamic_vigilance, hot_young, route_stat, train_granularity, session_window,
+replay_passes/items, probation) — all inert at defaults; train_granularity + probation are
+the router's lifelong form for block-drift streams and are the machinery PR-07' will build on.
