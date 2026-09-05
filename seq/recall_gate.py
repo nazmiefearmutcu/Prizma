@@ -22,7 +22,9 @@ TWO LAYERS (cleanly separated so the verdict is UNIT-TESTABLE WITHOUT TRAINING):
       LR-fairness audit), then stage-2 at the chosen LR for the requested seeds. On the MQAR-hard rung
       it also runs the FLIP-TEST (a deliberately BIGGER TF) so a tiny-TF failure is attributable to
       capacity, not "attention can't". Everything streams crash-safe (json -> .tmp -> os.replace,
-      resumable by cellkey) to results/recall_gate.json, mirroring gpu_bench.run_cell.
+      resumable by cellkey) to results/recall_gate.json for a full/campaign run — a --smoke run
+      defaults to the SEPARATE results/recall_gate_smoke.json (BAR-0 file separation, see the CLI
+      SAFETY note below), mirroring gpu_bench.run_cell.
 
 INTEGRITY.
   No fabricated metrics. The --smoke path uses a TINY config that runs in minutes on CPU/MPS purely to
@@ -39,20 +41,28 @@ PARITY DEFINITION (the council bar).
   equivalence — equivalence is the strict council bar.
 
 Run:
-  python3.13 seq/recall_gate.py --smoke        # tiny plumbing smoke (CPU/MPS, minutes) -> results/recall_gate.json
+  python3.13 seq/recall_gate.py --smoke        # tiny plumbing smoke (CPU/MPS, minutes) -> results/recall_gate_smoke.json
   python3.13 -m seq.recall_gate --smoke        # same, as a module
   python3.13 seq/recall_gate.py --full          # FULL gate (needs a GPU + budget; legs at the real scale)
   python3.13 seq/recall_gate.py                 # no-arg ALSO runs the FULL gate (explicit; same as --full)
 
-CLI SAFETY. main() parses args with argparse: it recognizes --smoke and --full and NOTHING else. An
-UNKNOWN/typo'd flag makes argparse print a usage string and exit NON-ZERO — it NEVER silently launches
-the multi-hour FULL gate (which would also overwrite the committed results/recall_gate.json). The FULL
-gate runs ONLY on an explicit no-arg invocation or --full.
+CLI SAFETY. main() parses args with argparse: it recognizes --smoke, --full, --out and
+--force-smoke-path and NOTHING else. An UNKNOWN/typo'd flag makes argparse print a usage string and
+exit NON-ZERO — it NEVER silently launches the multi-hour FULL gate (which would also overwrite the
+committed results/recall_gate.json). A --smoke run pointed AT that campaign ledger (explicit --out or
+otherwise) is REFUSED outright — smoke and campaign results live in separate files by default, and
+nothing legitimate needs smoke numbers inside the campaign file (BAR-0; the operational half of the
+results/campaign_2026-06-08/CONTAMINATION.md incident). --out overrides either default path;
+--force-smoke-path deliberately bypasses the refusal. The FULL gate runs ONLY on an explicit no-arg
+invocation or --full.
 """
 from __future__ import annotations
 
 import argparse
-import fcntl
+try:
+    import fcntl
+except ImportError:  # Windows: minimal flock-compatible shim (see seq/_win_flock.py)
+    from . import _win_flock as fcntl  # type: ignore[assignment]
 import json
 import os
 import sys
@@ -216,13 +226,50 @@ def _round_pair(p, nd=4):
 # importable + unit-testable in milliseconds without pulling in torch.
 
 # --- result IO (atomic json -> .tmp -> os.replace; resumable by cellkey; mirrors gpu_bench) ----- #
-def _results_path(explicit=None):
+# BAR-0 FILE SEPARATION (the operational half of results/campaign_2026-06-08/CONTAMINATION.md).
+# The (seed, config-fingerprint) resume key fixed mixing WITHIN a file; the other half of that
+# incident was that smoke and campaign runs wrote to the SAME results/recall_gate.json. The two
+# modes therefore default to DIFFERENT files: a campaign/full run -> recall_gate.json (the ledger a
+# verdict is cited from), a --smoke run -> recall_gate_smoke.json (plumbing evidence only). A smoke
+# run pointed at the campaign ledger is REFUSED (_resolve_results_path), so this bug class is
+# structurally impossible rather than merely guarded.
+CAMPAIGN_RESULTS_BASENAME = "recall_gate.json"
+SMOKE_RESULTS_BASENAME = "recall_gate_smoke.json"
+
+
+def _results_root():
+    root = os.environ.get("PRIZMA_RESULTS", os.path.join(os.path.dirname(__file__), "..", "results"))
+    return os.path.abspath(root)
+
+
+def _results_path(explicit=None, smoke=False):
     if explicit:
         return explicit
-    res_dir = os.environ.get("PRIZMA_RESULTS", os.path.join(os.path.dirname(__file__), "..", "results"))
-    res_dir = os.path.abspath(res_dir)
+    res_dir = _results_root()
     os.makedirs(res_dir, exist_ok=True)
-    return os.path.join(res_dir, "recall_gate.json")
+    return os.path.join(res_dir, SMOKE_RESULTS_BASENAME if smoke else CAMPAIGN_RESULTS_BASENAME)
+
+
+def _resolve_results_path(explicit=None, *, smoke=False, force_smoke_path=False):
+    """Resolve the results path for a run and enforce the smoke/campaign file separation.
+
+    Refuses (SystemExit) a --smoke run that would write into the campaign ledger — the campaign
+    default under the current $PRIZMA_RESULTS — including via an explicit --out, unless
+    force_smoke_path is set. Refusal is the safer default: a smoke ledger inside the campaign file
+    has no legitimate use (smoke numbers are plumbing-only), and separating the files is what makes
+    the 2026-06-08 contamination mechanism impossible instead of merely detectable. Deliberate
+    overrides stay possible via --force-smoke-path so the guard cannot become a straitjacket.
+    """
+    path = _results_path(explicit, smoke=smoke)
+    if smoke and not force_smoke_path:
+        campaign = _results_path(None, smoke=False)
+        if os.path.normcase(os.path.abspath(path)) == os.path.normcase(os.path.abspath(campaign)):
+            raise SystemExit(
+                f"refusing: a --smoke run was pointed at the campaign ledger ({campaign}). Smoke and "
+                f"campaign results use separate files by default (BAR-0; see "
+                f"results/campaign_2026-06-08/CONTAMINATION.md). Pass --out <path> to write the smoke "
+                f"elsewhere, or --force-smoke-path to override this guard deliberately.")
+    return path
 
 
 def _merge_dicts(dict1, dict2):
@@ -263,6 +310,42 @@ def _save(path, d):
             json.dump(merged_data, f, indent=2)
         os.replace(tmp, path)
         _merge_dicts(d, merged_data)
+
+
+# --- artifact retention (docs/RETENTION.md): raw records survive every run, pass or FAIL --------- #
+def archive_run(records, out_dir=None, *, label="recall_gate"):
+    """Snapshot RAW run records to an archive JSON under results/ and return the archive path.
+
+    WHY (docs/RETENTION.md — the B4 lesson): a FAILED run's raw per-seed data was once not retained
+    on disk, so the failure could never be re-examined and a partial result got taken for a PASS.
+    Policy: every run — pass or FAIL — persists its raw per-seed records under results/ BEFORE any
+    verdict is computed, verdicts reference the artifact path, and deleting raw artifacts is a
+    protocol violation. This helper is that policy as one function: an atomic
+    (json -> .tmp -> os.replace) snapshot of `records` EXACTLY as they are right now, so a run that
+    crashes after this call still leaves everything trained so far on disk. Earlier archives are
+    never overwritten (a counter disambiguates same-second snapshots).
+
+    Args:
+      records: the raw records to persist (plain dicts/lists — verbatim ledger content).
+      out_dir : archive directory (default <$PRIZMA_RESULTS or ./results>/runs).
+      label   : filename prefix (e.g. the leg name).
+
+    Returns the archive path — store it in the run's meta ("raw_archive") so verdicts reference it.
+    """
+    if out_dir is None:
+        out_dir = os.path.join(_results_root(), "runs")
+    os.makedirs(out_dir, exist_ok=True)
+    stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+    path = os.path.join(out_dir, f"{label}-{stamp}.json")
+    n = 0
+    while os.path.exists(path):          # never silently overwrite an earlier archive
+        n += 1
+        path = os.path.join(out_dir, f"{label}-{stamp}-{n}.json")
+    tmp = path + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(records, f, indent=2)
+    os.replace(tmp, path)
+    return path
 
 
 # --- mixed-length INDUCTION wrapper (mirrors gpu_diag._MixedInduction; COMPOSES seq.tasks) ------- #
@@ -441,6 +524,12 @@ def _run_leg(res, results_path, leg, task_fac, *, scale, prizma_kw, device, cap,
                                        "hybrid_n_attn": hybrid_n_attn})
         arm_accs[aname] = cell["best_accs"]
 
+    # RETENTION (docs/RETENTION.md): raw per-seed records must be on disk BEFORE any verdict is
+    # computed, and the verdict must reference that artifact. The per-seed streaming _save calls in
+    # _train_arm already crash-persist every seed; this run-level snapshot is the archived artifact
+    # the verdict points at (res["meta"]["raw_archive"], saved with the verdict below), and it
+    # survives even if the verdict computation itself crashes.
+    res.setdefault("meta", {})["raw_archive"] = archive_run(res, label=f"recall_gate-{leg}")
     verdict = recall_gate_verdict(arm_accs, tf_key="TF", cand_key="Prizma",
                                   tost_margin=tost_margin, solve_thresh=solve_thresh,
                                   flip_solved=flip_solved)
@@ -478,10 +567,13 @@ def _flip_test(res, results_path, scale, task_fac, *, device, cap, seeds, lr_gri
 
 # ----------------------------------------------------------------------------------------------- #
 def run_recall_gate(scale=(128, 2, 4), seeds=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), smoke=False,
-                    prizma_kw=None, results_path=None, lr_grid=None, hybrid_n_attn=1):
+                    prizma_kw=None, results_path=None, lr_grid=None, hybrid_n_attn=1,
+                    force_smoke_path=False):
     """Train the three arms on the recall legs (MQAR-hard, induction, selective-copy), run the
     flip-test on MQAR-hard, compute the powered verdict per leg + the combined gate, and stream
-    everything crash-safe to results/recall_gate.json (resumable by cellkey).
+    everything crash-safe to the results ledger (resumable by cellkey): a full/campaign run writes
+    results/recall_gate.json, a smoke run results/recall_gate_smoke.json (separate files by
+    default — BAR-0; a smoke run pointed at the campaign ledger is refused).
 
     Args:
       scale       : (d_model, n_layers, n_heads) for all arms (the param-matched arena).
@@ -490,12 +582,18 @@ def run_recall_gate(scale=(128, 2, 4), seeds=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), smo
                     result — a loud DISCLAIMER is printed). Wires argv '--smoke' to this.
       prizma_kw   : kwargs for PrizmaSeqConfig (the recall-capacity lever). Default = the v2 lean
                     'quad2_lowrank' (d_phi=137); pass feat_map='quad2', feat_n2=256 for the heavy arm.
-      results_path: explicit results JSON path (default $PRIZMA_RESULTS/recall_gate.json or ./results).
+      results_path: explicit results JSON path. Default: $PRIZMA_RESULTS/recall_gate.json (or
+                    ./results) for a campaign run; recall_gate_smoke.json in the same dir for smoke.
       lr_grid     : LR sweep grid (default seq.lrsweep.DEFAULT_GRID; smoke uses a short grid).
       hybrid_n_attn: number of attention layers in the Hybrid arm (default 1 = tiny hybrid).
+      force_smoke_path: True lets a --smoke run write to the campaign ledger it was pointed at
+                    (default: REFUSED — smoke and campaign ledgers are separate files, BAR-0).
 
     Returns the combine_gate(...) dict (gate_pass, per_leg, downgrade_word).
     """
+    # BAR-0: resolve + guard the results path FIRST, before any heavy import or write — a --smoke
+    # run aimed at the campaign ledger dies here, before it can put a single number anywhere.
+    results_path = _resolve_results_path(results_path, smoke=smoke, force_smoke_path=force_smoke_path)
     import torch
     from seq.common import get_device
     from seq.tasks import MixedMQAR, SelectiveCopy
@@ -545,7 +643,6 @@ def run_recall_gate(scale=(128, 2, 4), seeds=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), smo
         tost_margin = 0.05
         solve_thresh = 0.9
 
-    results_path = _results_path(results_path)
     print(f"device={device} results={results_path} scale=d{scale[0]}L{scale[1]}H{scale[2]} "
           f"seeds={list(seeds)} prizma_kw={prizma_kw}", flush=True)
     res = _load(results_path)
@@ -599,10 +696,13 @@ def run_recall_gate(scale=(128, 2, 4), seeds=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), smo
 
 
 def _build_parser():
-    """Argparse parser for the recall gate CLI. Recognizes ONLY --smoke and --full; argparse rejects
-    any other (unknown/typo'd) flag with a usage message + non-zero exit, so an unintended arg can
-    NEVER silently launch the multi-hour FULL gate (which would overwrite results/recall_gate.json).
-    Kept as its own helper so the arg-guard is unit-testable WITHOUT any training."""
+    """Argparse parser for the recall gate CLI. Recognizes ONLY --smoke, --full, --out and
+    --force-smoke-path; argparse rejects any other (unknown/typo'd) flag with a usage message +
+    non-zero exit, so an unintended arg can NEVER silently launch the multi-hour FULL gate (which
+    would overwrite results/recall_gate.json). --out is an explicit results path (overrides both
+    mode defaults); --force-smoke-path deliberately bypasses the smoke/campaign file-separation
+    guard (_resolve_results_path). Kept as its own helper so the arg-guard is unit-testable WITHOUT
+    any training."""
     p = argparse.ArgumentParser(
         prog="recall_gate",
         description="RECALL TOST-parity gate. With no flags (or --full) runs the FULL multi-hour gate; "
@@ -613,6 +713,11 @@ def _build_parser():
                       help="tiny plumbing-only smoke (CPU/MPS, minutes)")
     mode.add_argument("--full", action="store_true",
                       help="explicit FULL gate (same as no-arg; needs a GPU + budget)")
+    p.add_argument("--out", default=None,
+                   help="explicit results JSON path (overrides the smoke/campaign default paths)")
+    p.add_argument("--force-smoke-path", action="store_true",
+                   help="let a --smoke run write to the campaign ledger it was pointed at "
+                        "(default: REFUSED — smoke and campaign ledgers are separate files, BAR-0)")
     return p
 
 
@@ -621,7 +726,8 @@ def main(argv=None):
     # argparse SystemExits non-zero on an unknown arg (printing usage) BEFORE we ever launch a run.
     args = _build_parser().parse_args(argv)
     # FULL gate runs only on an explicit no-arg invocation or --full; --smoke runs the smoke.
-    run_recall_gate(smoke=args.smoke)
+    # The smoke/campaign path guard lives in run_recall_gate (also enforced for library callers).
+    run_recall_gate(smoke=args.smoke, results_path=args.out, force_smoke_path=args.force_smoke_path)
 
 
 if __name__ == "__main__":

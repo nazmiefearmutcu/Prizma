@@ -68,7 +68,11 @@ collapse, not 5 of 10). **The error direction was conservative**: it widened the
 the candidate, so it produced an under-claim, not an over-claim. The artifact has **not** been re-run
 and **no** replacement numbers have been invented — a clean campaign needs ~28 A100-hours. Full
 disclosure: [`results/campaign_2026-06-08/CONTAMINATION.md`](results/campaign_2026-06-08/CONTAMINATION.md).
-The bug is fixed (resume is now keyed on `(seed, config-fingerprint)`) with regression tests.
+The bug is fixed (resume is now keyed on `(seed, config-fingerprint)`) with regression tests, and
+the operational door is closed too: smoke and campaign runs now write **separate result files**
+(`recall_gate_smoke.json` vs `recall_gate.json`; a smoke run aimed at the campaign ledger is
+refused), every run archives its raw records before any verdict ([`docs/RETENTION.md`](docs/RETENTION.md)),
+and claim-grade results are governed by the pre-registration registry ([`docs/preregistry/POLICY.md`](docs/preregistry/POLICY.md)).
 
 **Baselines that were built and never run.** `seq/gla.py` (GLA), `seq/mamba2.py` (Mamba-2) and the
 4-arm head-to-head harness `seq/landscape.py` are faithful, fully-tested implementations that have

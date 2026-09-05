@@ -479,3 +479,180 @@ def test_resume_at_the_same_config_still_skips_cached_seeds(tmp_path):
         assert build.call_count == 0, "same-config resume must reuse every cached seed"
         sweep.assert_not_called()
     assert cell["best_accs"] == [0.9, 0.9, 0.9]
+
+
+# --------------------------------------------------------------------------- #
+# (R2) BAR-0 FILE SEPARATION: smoke and campaign runs write to DIFFERENT files.
+#
+# The (seed, cfgsig) resume key fixed config mixing WITHIN one file; the OPERATIONAL root cause of
+# the 2026-06-08 contamination (results/campaign_2026-06-08/CONTAMINATION.md) was that a --smoke
+# run and a full campaign both defaulted to results/recall_gate.json. That door is now closed:
+# smoke defaults to recall_gate_smoke.json, a smoke run aimed at the campaign ledger is REFUSED,
+# and the campaign ledger is never touched by smoke entries. Also here: the artifact-retention
+# policy (docs/RETENTION.md, the B4 lesson) — every run's raw per-seed records survive on disk,
+# pass or FAIL, and a mid-campaign crash leaves the earlier seeds archived.
+# --------------------------------------------------------------------------- #
+def test_smoke_default_path_is_distinct_from_campaign_default(tmp_path, monkeypatch):
+    """(a) The two modes must never share a default results file."""
+    import os
+    monkeypatch.setenv("PRIZMA_RESULTS", str(tmp_path))
+    from seq.recall_gate import _results_path, _resolve_results_path
+
+    camp = _results_path(None, smoke=False)
+    smk = _results_path(None, smoke=True)
+    assert camp.endswith("recall_gate.json"), f"campaign default changed: {camp}"
+    assert smk.endswith("recall_gate_smoke.json"), f"smoke default changed: {smk}"
+    assert os.path.abspath(smk) != os.path.abspath(camp)
+
+    # the guarded resolver (what run_recall_gate actually calls) preserves the distinction
+    assert _resolve_results_path(None, smoke=False) == camp
+    assert _resolve_results_path(None, smoke=True) == smk
+    # an explicit --out wins in both modes (the guard only refuses smoke -> campaign path)
+    explicit = str(tmp_path / "elsewhere.json")
+    assert _resolve_results_path(explicit, smoke=True) == explicit
+    assert _resolve_results_path(explicit, smoke=False) == explicit
+
+
+def test_smoke_then_campaign_run_leaves_campaign_ledger_untouched(tmp_path, monkeypatch):
+    """(b) The contamination scenario at the FILE level: a smoke pass then a campaign pass, each
+    going through its mode's default path. The campaign ledger must contain ZERO smoke-written
+    entries — the smoke's records live only in the smoke ledger."""
+    import json
+    import os
+    from unittest.mock import MagicMock
+    monkeypatch.setenv("PRIZMA_RESULTS", str(tmp_path))
+    from seq import recall_gate as rg
+
+    smoke_path = rg._results_path(None, smoke=True)      # where a --smoke run writes
+    campaign_path = rg._results_path(None, smoke=False)  # where a full run writes
+    assert os.path.abspath(smoke_path) != os.path.abspath(campaign_path)
+
+    task = MagicMock()
+    task.vocab, task.seq_len = 10, 5
+    task_fac = MagicMock(return_value=task)
+    common = dict(leg="MQAR-HARD", arm="Prizma", model_fac=MagicMock(), task_fac=task_fac,
+                  device="cpu", cap=10, lr_grid=(1e-3,), recipe={}, eval_every=5, batch_size=4)
+
+    # --- pass 1: the smoke (tiny model, lever OFF, seeds 0-1) -> the SMOKE ledger ---
+    p_sweep, p_build = _fake_train_arm_deps(lambda: 101_696)
+    with p_sweep, p_build:
+        rg._train_arm(res={}, results_path=smoke_path, seeds=(0, 1),
+                      cfg_payload={"scale": [64, 2, 2], "prizma_kw": {"feat_map": "none"}}, **common)
+
+    # --- pass 2: the campaign (real model, seeds 0-3) -> the CAMPAIGN ledger ---
+    p_sweep, p_build = _fake_train_arm_deps(lambda: 461_440)
+    with p_sweep, p_build:
+        rg._train_arm(res={}, results_path=campaign_path, seeds=(0, 1, 2, 3),
+                      cfg_payload={"scale": [128, 2, 4], "prizma_kw": {"feat_map": "quad2_lowrank"}},
+                      **common)
+
+    with open(campaign_path) as f:
+        camp = json.load(f)
+    with open(smoke_path) as f:
+        smk = json.load(f)
+
+    camp_cell = camp["cells"]["MQAR-HARD.Prizma"]
+    assert camp_cell["cfgsig"] != smk["cells"]["MQAR-HARD.Prizma"]["cfgsig"]
+    assert all(rec["params"] == 461_440 for rec in camp_cell["seeds"].values()), \
+        f"smoke entries leaked into the campaign ledger: {camp_cell['seeds']}"
+    assert set(camp_cell["seeds"]) == {"0", "1", "2", "3"}, "campaign seeds missing"
+    # the smoke's own audit trail is intact, in the file a smoke run actually owns
+    smk_cell = smk["cells"]["MQAR-HARD.Prizma"]
+    assert set(smk_cell["seeds"]) == {"0", "1"}
+    assert all(rec["params"] == 101_696 for rec in smk_cell["seeds"].values())
+
+
+def test_smoke_run_refuses_the_campaign_path(tmp_path, monkeypatch):
+    """(c) A --smoke run pointed at the campaign ledger must be REFUSED before anything is written,
+    with --force-smoke-path as the only deliberate bypass."""
+    import os
+    monkeypatch.setenv("PRIZMA_RESULTS", str(tmp_path))
+    from seq import recall_gate as rg
+
+    campaign_path = rg._results_path(None, smoke=False)
+    with pytest.raises(SystemExit) as ei:
+        rg.run_recall_gate(smoke=True, results_path=campaign_path)  # an explicit --out at the ledger
+    assert "refus" in str(ei.value).lower(), f"refusal must say why, got: {ei.value}"
+    assert not os.path.exists(campaign_path), "the refused smoke run must not touch the campaign ledger"
+
+    # the default smoke path does NOT trip the guard, and the deliberate bypass exists
+    assert rg._resolve_results_path(None, smoke=True).endswith("recall_gate_smoke.json")
+    assert rg._resolve_results_path(campaign_path, smoke=True, force_smoke_path=True) == campaign_path
+
+
+def test_cli_wires_out_and_force_smoke_path(monkeypatch):
+    """--out and --force-smoke-path parse and reach run_recall_gate; no-arg stays the FULL gate."""
+    from seq import recall_gate as rg
+    seen = {}
+    monkeypatch.setattr(rg, "run_recall_gate", lambda **kw: seen.update(kw))
+
+    rg.main(["--smoke", "--out", "smoke.json"])
+    assert seen == {"smoke": True, "results_path": "smoke.json", "force_smoke_path": False}
+    rg.main(["--smoke", "--out", "smoke.json", "--force-smoke-path"])
+    assert seen["force_smoke_path"] is True
+    rg.main(["--full", "--out", "campaign.json"])
+    assert seen == {"smoke": False, "results_path": "campaign.json", "force_smoke_path": False}
+    rg.main([])
+    assert seen["smoke"] is False and seen["results_path"] is None, "no-arg must stay the FULL gate"
+
+
+def test_archive_run_persists_raw_records_and_never_overwrites(tmp_path, monkeypatch):
+    """RETENTION (docs/RETENTION.md): archive_run writes the raw records verbatim to an artifact
+    under results/, and a second snapshot never overwrites the first."""
+    import json
+    import os
+    monkeypatch.setenv("PRIZMA_RESULTS", str(tmp_path))
+    from seq.recall_gate import archive_run
+
+    recs = {"cells": {"MQAR-HARD.TF": {"seeds": {"0": {"best": 0.9, "cfgsig": "abc"}}}}}
+    p1 = archive_run(recs)  # default dir: <$PRIZMA_RESULTS>/runs
+    assert p1.startswith(os.path.join(str(tmp_path), "runs")), p1
+    with open(p1) as f:
+        assert json.load(f) == recs, "the archive must be the raw records verbatim"
+
+    p2 = archive_run(recs, str(tmp_path / "arch"), label="MQAR-HARD")
+    p3 = archive_run(recs, str(tmp_path / "arch"), label="MQAR-HARD")
+    assert os.path.dirname(p2) == str(tmp_path / "arch")
+    assert p3 != p2 and os.path.exists(p2) and os.path.exists(p3), "archives must never overwrite"
+
+
+def test_crash_mid_campaign_still_persists_earlier_raw_records(tmp_path):
+    """RETENTION (docs/RETENTION.md): a run that DIES mid-campaign still has its earlier per-seed
+    raw records on disk (streamed by _save after each seed), and the FAILED run's partial records
+    still archive — a failure is never allowed to vanish."""
+    import json
+    from unittest.mock import MagicMock, patch
+    from seq.recall_gate import _load, _train_arm, archive_run
+
+    path = str(tmp_path / "recall_gate.json")
+    res = {}
+    task = MagicMock()
+    task.vocab, task.seq_len = 10, 5
+    common = dict(results_path=path, leg="INDUCTION", arm="TF", model_fac=MagicMock(),
+                  task_fac=MagicMock(return_value=task), device="cpu", cap=10, lr_grid=(1e-3,),
+                  recipe={}, eval_every=5, batch_size=4, cfg_payload={"scale": [128, 2, 4]})
+
+    calls = {"n": 0}
+    def _crash_on_second_seed(*a, **kw):
+        calls["n"] += 1
+        if calls["n"] == 2:
+            raise RuntimeError("simulated crash mid-campaign")
+        r = MagicMock()
+        r.best_acc, r.steps_to_plateau, r.params = 0.9, 10, 99_648
+        return r
+
+    p_sweep, _ = _fake_train_arm_deps(lambda: 99_648)
+    with p_sweep, patch("seq.common.build_and_train", side_effect=_crash_on_second_seed):
+        with pytest.raises(RuntimeError):
+            _train_arm(res=res, seeds=(0, 1, 2), **common)
+
+    # the ledger on disk holds exactly the seed that finished before the crash — nothing fabricated
+    on_disk = _load(path)
+    seeds = on_disk["cells"]["INDUCTION.TF"]["seeds"]
+    assert set(seeds) == {"0"}, f"expected exactly the pre-crash seed on disk, got {sorted(seeds)}"
+    assert seeds["0"]["best"] == 0.9 and seeds["0"].get("cfgsig")
+
+    # the FAILED run's partial raw records archive like any other run's would
+    archived = archive_run(on_disk, str(tmp_path / "runs"), label="INDUCTION-TF-crash")
+    with open(archived) as f:
+        assert json.load(f)["cells"]["INDUCTION.TF"]["seeds"] == seeds
