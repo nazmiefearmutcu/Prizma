@@ -177,3 +177,102 @@ Evaluating this capacity bound for each feature map:
    $$N_{quad2} < 1 + \frac{1}{0.076} \approx 14.2$$
 
 This mathematically explains why the linear baseline fails on harder MQAR tasks (such as $D=128$), whereas both `quad2` and `quad2_lowrank` successfully solve them. By reducing the key crosstalk, the feature maps shrink the spectral norm of the error transition matrix, driving the reconstruction error to zero and expanding the associative recall capacity of the global delta memory.
+
+---
+
+## Addendum 2026-09-03 — scope correction (Flags A–C)
+
+*Drafted 2026-09-04 from the regenerated probe artifact `results/feat_map_probe.json` (the
+2026-06-08 artifact's legacy fields reproduce bit-exactly except one last-ULP float
+[`quad2_lowrank.std` …011 → …016, relative 3.2e-16 — reduction-order noise of the regenerating
+machine's BLAS]; source: committee report 11,
+`committee/brainstorm_2026-09-03/11_theory_capacity_expressivity.md`). The original text above is
+preserved verbatim; this addendum corrects its **scope**, not its algebra. Theorem 1 and Theorem 2
+stand as proven norm statements. What does not survive is what §4–§5 *implied*.*
+
+### Number provenance first: the §4 crosstalk values do not match this repo's own committed artifact
+
+Section 4 quotes `quad2 ≈ 0.076` and `quad2_lowrank ≈ 0.085`. The committed raw artifact
+`results/feat_map_probe.json` (written by `feat_map_probe.py`, single commit 55e03ac, regenerated
+2026-09-04 with legacy values reproduced to 1 ULP — see the header note) has **always** measured:
+
+| map | §4 quotes | committed artifact (D=128, d_h=32, 256 draws, seed 42) |
+|---|---|---|
+| `none` | ≈ 0.142 | **0.14228** (matches) |
+| `quad2` | ≈ 0.076 | **0.11699** (does **not** match; ratio 1.54) |
+| `quad2_lowrank` | ≈ 0.085 | **0.12648** (does **not** match; ratio 1.49) |
+
+The 0.076/0.085 figures trace to the "prior code path" the probe's own docstring flags as the
+origin of the 0.085 absolute bar; no committed script or artifact reproduces them. Everything below
+therefore uses the artifact's numbers, and the §4 bullet's relative ordering (none > lowrank > quad2)
+remains correct even though its absolute values are unreproducible.
+
+### Flag A — the Gershgorin capacity bound cannot explain the repo's own MQAR D=128 PASS
+
+What $N$ means here, carefully: §5 states the corollary for "MQAR with $N$ key–value pairs"; in the
+repo's harness the MQAR rung label $D$ **is** the pair count (`seq/tasks.py`, `MQAR(vocab, num_pairs=D)`),
+and reads are issued after all $D$ writes (dense-query protocol), so the hard rung stores
+$N = D = 128$ associations that must be *simultaneously* held. Explaining the D=128 PASS therefore
+requires an effective capacity $N^* \ge 128$.
+
+The Gershgorin corollary of §5, evaluated at the artifact's measured crosstalk, gives
+$N_{quad2} < 1 + 1/0.11699 \approx \mathbf{9.55}$ (and $N_{lowrank} \approx 8.91$; $N_{none} \approx 8.03$) — even
+*stronger* failure than the $N<14.2$ computed from the unreproducible 0.076. A bound that caps
+capacity at $N<10$ **cannot** explain a pass at $N=128$; at most it is consistent with the
+*observation* that quad2 passes where none fails, but the bound itself is violated by the repo's own
+headline result (README: "MQAR (D=128) PASS", raw artifact `results/gpu_bench.json`). The bound
+explains the **linear baseline's failure** only (and there the simpler rank cap $d_\phi = 32 < 128$
+suffices). Any text reading §5 as "resolving the capacity block on MQAR D=128" is an overclaim by
+implication.
+
+### Flag B — §5 conflates the crosstalk *mean* with the fluctuation that limits recall
+
+The step $\mathbb{E}[\|E\|_2] \approx (N-1)\,\mathbb{E}[|E_{ij}|]$ is a worst-case row-sum bound: it
+is tight only if all off-diagonal entries in a row align in sign. They are approximately zero-mean
+random variables; random-matrix reality (Wigner-type row noise) gives $\|E\|_2 \approx 2\sigma_2\sqrt{N}$
+for the *spectral* quantity, and the *per-row recall noise* that MQAR scores grows as
+$\sigma_2\sqrt{N-1}$ — not $(N-1)\,\text{cross}(\phi)$. Theorem 2 itself is correct (it is a norm
+bound and its proof is untouched); only the *capacity corollary* built on it is loose by a factor
+growing with $N$. The candidate replacement law and its derivation sketch live in
+`docs/crosstalk_capacity_law.md`.
+
+### Flag C — the correct capacity comparator is the second moment, not the mean; the law is a CANDIDATE, not yet fitted or validated
+
+`feat_map_probe.py` now additionally reports (exact definitions in its module docstring, tested in
+`tests/test_crosstalk_metrics.py`): the common mode $\mu_{\text{signed}}$ of the split
+$E = \mu\,11^\top + W$, the fluctuation $\sigma_2$ of $W$ (both as std of $|\cos|$ — the
+pre-registered probe definition — and of signed cosines), the crosstalk efficiency
+$\eta = 1/(\sigma_2^2 d_\phi)$, and $N^* = \min(1 + 1/\sigma_2^2,\ d_\phi)$ at $\varepsilon=1$.
+Measured (random keys, seed 42):
+
+| map | $\sigma_2$ (\|cos\| def) | $\sigma_2^{W}$ (signed) | $\mu_{\text{signed}}$ | $\eta^{W}$ | $N^*_{\|cos\|}$, $\varepsilon{=}1$ |
+|---|---|---|---|---|---|
+| `none` | 0.1052 | **0.1769** (floor $1/\sqrt{32}=0.1768$) | +0.00003 | **0.998** (floor 1) | 32.0 (rank-capped) |
+| `quad2` | 0.0872 | 0.1458 | **+0.00639** | 0.184 | 132.5 |
+| `quad2_lowrank` | 0.0952 | 0.1575 | +0.01601 | 0.294 | 111.4 |
+
+Three honesty notes against committee report 11's arithmetic (the repo pays for accuracy, not for
+agreeing with the commission):
+
+1. **Conversion factor slip.** Report 11 converts mean→fluctuation with $\sigma_2 \approx
+   \text{cross}\cdot\pi/2$; the correct half-normal factor is $\sqrt{\pi/2} \approx 1.2533$. Verified
+   on `none`: $0.14228\times\sqrt{\pi/2} = 0.17833$ vs measured 0.17692 (−0.8%); the $\pi/2$ factor
+   would overestimate by +26%.
+2. **The $\eta$ numbers in report 11 inherit the stale 0.076.** With measured values, quad2's
+   $\eta^W = 0.184$ (report 11 claimed ≈ 0.27), and `none` sits **at** the random floor
+   $\eta^W \approx 1.0$ (report 11 claimed ≈ 0.63 — an artifact of the wrong conversion).
+3. **The common-mode prediction is validated.** Report 11 predicts $\mu \approx \lambda/d_h \approx
+   5.6\times10^{-3}$ for quad2; measured $\mu_{\text{signed}} = +6.39\times10^{-3}$ (ratio 1.14).
+   The mean/fluctuation split itself is real and measured.
+
+**And the law at $\varepsilon=1$ does not yet explain the D=128 PASS either.** With random-key
+$\sigma_2$: the $|\cos|$-definition gives $N^* = 132.5$ (borderline vs 128), but the SNR-consistent
+signed second moment $\sqrt{\mathbb{E}[c^2]} = \sqrt{\sigma_2^{W\,2} + \mu^2} = 0.1459$ gives
+$N^* = 48.06 \ll 128$. Report 11's "consistent with $\varepsilon \approx 0.9$–$1.2$" relied on the
+unreproducible 0.076; the measured numbers imply $\varepsilon \approx 1.64$ would be needed. The
+law is therefore a **candidate** with an O(1) tolerance constant that must be *fitted once at D=64*
+and *frozen before* the deferred D-frontier run — protocol, pass/fail bars, and kill conditions are
+pre-registered in `docs/crosstalk_capacity_law.md` (registry id PR-2026-09-03-02, status IN-WRITE).
+If the fitted $\varepsilon$ lands far from 1, the law is demoted, and Flags A/B stand alone: the
+honest current statement is *"no bound in this document explains the quad2 D=128 PASS; explaining it
+is the open job of the capacity-law program."*

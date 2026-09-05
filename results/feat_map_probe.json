@@ -5,7 +5,16 @@
     "min": 0.1390841277452942,
     "max": 0.1468252103267044,
     "n_trials": 256,
-    "d_phi": 32
+    "d_phi": 32,
+    "mu": 0.142278522900693,
+    "mu_signed": 3.412643147094434e-05,
+    "sigma2": 0.10515539095929911,
+    "sigma2_signed_fluct": 0.17692044226347017,
+    "eta": 2.8260961726142284,
+    "eta_signed_fluct": 0.9983756702373985,
+    "n_star": 32.0,
+    "n_star_signed_fluct": 32.0,
+    "offdiag_count": 2080768
   },
   "quad2": {
     "mean": 0.11698661828318985,
@@ -13,15 +22,33 @@
     "min": 0.11408642900063976,
     "max": 0.1202295460747591,
     "n_trials": 256,
-    "d_phi": 256
+    "d_phi": 256,
+    "mu": 0.11698661828318983,
+    "mu_signed": 0.006388427755380356,
+    "sigma2": 0.08720670863309464,
+    "sigma2_signed_fluct": 0.14577404925594215,
+    "eta": 0.5136416630975627,
+    "eta_signed_fluct": 0.18382289415034547,
+    "n_star": 132.49226575297604,
+    "n_star_signed_fluct": 48.05866090248844,
+    "offdiag_count": 2080768
   },
   "quad2_lowrank": {
     "mean": 0.12648030188625842,
-    "std": 0.0013592200523883011,
+    "std": 0.0013592200523883016,
     "min": 0.12251510400279456,
     "max": 0.13050031949695792,
     "n_trials": 256,
-    "d_phi": 137
+    "d_phi": 137,
+    "mu": 0.1264803018862584,
+    "mu_signed": 0.016014008284431048,
+    "sigma2": 0.09517747310446488,
+    "sigma2_signed_fluct": 0.15747881525896718,
+    "eta": 0.8057699964952557,
+    "eta_signed_fluct": 0.2943304233709371,
+    "n_star": 111.39048951985004,
+    "n_star_signed_fluct": 41.323268001818384,
+    "offdiag_count": 2080768
   },
   "_meta": {
     "D": 128,
@@ -38,6 +65,19 @@
     "theory_none": 0.14104739588693907,
     "theory_quad2": 0.04986778505017909,
     "theory_lowrank": 0.06816787844959026,
-    "note": "Absolute bar 0.085 was calibrated by plan author against a different probe baseline. The BINDING criterion here is rel_pass (|gap|<=0.010) + half_pass (d_phi<=60% of quad2). For the end-to-end gate, see Task 1.D amendment: >=10-seed MQAR-D128 on A100."
+    "n_star_none": 32.0,
+    "n_star_quad2": 132.49226575297604,
+    "n_star_lowrank": 111.39048951985004,
+    "eta_none": 2.8260961726142284,
+    "eta_quad2": 0.5136416630975627,
+    "eta_lowrank": 0.8057699964952557,
+    "theory_sigma2_abs_floor_none": 0.10656280830342771,
+    "theory_sigma2_abs_floor_quad2": 0.03767564218681793,
+    "theory_sigma2_abs_floor_lowrank": 0.05150155745872729,
+    "theory_sigma2_signed_floor_none": 0.1767766952966369,
+    "theory_sigma2_signed_floor_quad2": 0.0625,
+    "theory_sigma2_signed_floor_lowrank": 0.0854357657716761,
+    "law_definition_sigma2": "sample std (ddof=1) of |phi_i.phi_j| over the i<j upper triangle, pooled over all trials; sigma2_signed_fluct is the std of the SIGNED cosines (fluctuation of W in E = mu*11^T + W). N* = min(1 + eps^2/sigma2^2, d_phi) at eps=1 (unit-norm keys); CANDIDATE law, eps not yet fitted -- see docs/crosstalk_capacity_law.md.",
+    "note": "Absolute bar 0.085 was calibrated by plan author against a different probe baseline. The BINDING criterion here is rel_pass (|gap|<=0.010) + half_pass (d_phi<=60% of quad2). For the end-to-end gate, see Task 1.D amendment: >=10-seed MQAR-D128 on A100. HISTORY NOTE (2026-09-03): README/docs quote cross(quad2)~0.076 and cross(lowrank)~0.085, but this committed artifact has always measured 0.1170/0.1265 (only cross(none)~0.142 matches). The 0.076/0.085 figures trace to an unreproducible prior code path -- see the addendum in docs/quad2_theoretical_convergence.md."
   }
 }
