@@ -211,12 +211,19 @@ def tune_lam(name, tasks, d, ncls, seed0, epochs, lr, hidden, prizma_h):
 
 
 # ---------------------------------- battery driver ---------------------------------------- #
-def run_protocol(protocol, cfg, out_dir, n_seeds=None, log=print):
-    """Run one protocol; write raw per-seed records crash-safe after every seed; return meta."""
+def run_protocol(protocol, cfg, out_dir, n_seeds=None, log=print, seed_start=0,
+                 lane_label=None):
+    """Run one protocol; write raw per-seed records crash-safe after every seed; return meta.
+
+    seed_start shifts the seed block (e.g. 10 => seeds 10..10+n-1) WITHOUT changing anything
+    else — added for registered runs whose frozen protocols pin fresh seed ranges (e.g.
+    PR-2026-09-03-03 pins seeds 10-19). Default 0 reproduces the exploratory runs exactly.
+    """
     K, d, ncls = cfg["n_tasks"], cfg["d"], cfg["ncls"]
     epochs = cfg["multi_epochs"] if protocol == "multi_epoch" else 1
     lr, hidden = cfg["lr"], cfg["hidden"]
     n_seeds = n_seeds or cfg["n_seeds"]
+    seeds = list(range(seed_start, seed_start + n_seeds))
     arms = MULTI_NEW_ARMS if protocol == "multi_epoch" else SINGLE_ARMS
 
     raw_path = os.path.join(out_dir, f"raw_{protocol}.json")
@@ -228,13 +235,16 @@ def run_protocol(protocol, cfg, out_dir, n_seeds=None, log=print):
         "n_tasks": K, "d": d, "n_classes": ncls, "n_samples_per_task": cfg["n_samples"],
         "prizma_h": cfg["prizma_h"],
         "n_seeds": n_seeds,
-        "seed_range": [0, n_seeds - 1],
+        "seed_start": seed_start,
+        "seed_range": [seed_start, seed_start + n_seeds - 1],
         "stream": "structured_permuted_tasks (src/data.py) -- identical to E1",
         "metrics": "AccuracyMatrix.acc/forgetting (src/metrics.py, Lopez-Paz & Ranzato 2017)",
         "ci": "mean +- 1.96*SEM (run_continual.ci95, E1 style)",
-        "lane": "CLAIM-CANDIDATE (multi-epoch, E1-matched protocol); SEE docs" if protocol == "multi_epoch"
-                else "EXPLORATORY (lane-exploratory; single-pass claims require a registered pre-registration)",
-        "tuning_rule": "lambda tuned on seed 0 ONLY, minimizing FGT (identical to E1's EWC rule)",
+        "lane": lane_label if lane_label else (
+            "CLAIM-CANDIDATE (multi-epoch, E1-matched protocol); SEE docs" if protocol == "multi_epoch"
+            else "EXPLORATORY (lane-exploratory; single-pass claims require a registered pre-registration)"),
+        "tuning_rule": ("lambda tuned on the run's FIRST seed ONLY, minimizing FGT "
+                        "(identical to E1's EWC rule; 'seed 0' of the run)"),
         "tuned": {},
         "fixed_hypers": {k: v for k, v in FIXED.items()},
         "wall_seconds_per_arm": {},
@@ -246,17 +256,18 @@ def run_protocol(protocol, cfg, out_dir, n_seeds=None, log=print):
     # task sequences are SHARED across arms within a seed (E1 does the same)
     tasks_by_seed = {s: structured_permuted_tasks(n_tasks=K, d=d, n_classes=ncls,
                                                   n_samples=cfg["n_samples"], seed=s)
-                     for s in range(n_seeds)}
+                     for s in seeds}
 
     t0 = time.time()
     for arm in arms:
         ta = time.time()
-        tune = tune_lam(arm, tasks_by_seed[0], d, ncls, 0, epochs, lr, hidden, cfg["prizma_h"])
+        tune = tune_lam(arm, tasks_by_seed[seed_start], d, ncls, seed_start, epochs, lr,
+                        hidden, cfg["prizma_h"])
         meta["tuned"][arm] = tune
         warn = "  *** WARNING: ALL grid values invalid (NaN) — smallest lam kept, arm is degenerate ***" \
             if tune.get("fallback") else ""
-        log(f"[{protocol}] {arm}: tuned lam={tune['lam']} (seed-0 FGT={tune['seed0_FGT']}){warn}")
-        for s in range(n_seeds):
+        log(f"[{protocol}] {arm}: tuned lam={tune['lam']} (seed-{seed_start} FGT={tune['seed0_FGT']}){warn}")
+        for s in seeds:
             R, _model = run_arm(arm, tasks_by_seed[s], d, ncls, s, epochs, lr, hidden,
                                 tune["lam"], cfg["prizma_h"])
             doc["arms"][arm]["seed_records"].append(_seed_record(R, s))

@@ -11,13 +11,13 @@ wait with exact protocol pointers.
 
 ## BACKLOG
 
-1. **[PR-03 claim] Single-pass citation bar** — status: `in-progress`
-   - Protocol: docs/CONTINUAL_CITATION_BAR.md §6 (VERBATIM). Arms = full Table-2 battery;
-     seeds 10–19; single-pass protocol; runner `experiments/run_citation_battery.py`.
-   - Run: produce results/citation_battery_PR-2026-09-03-03/{raw_single_pass.json,RESULTS.md}.
-   - Bar: ACC_PRIZMA − max(ACC_backprop, ACC_B*) ≥ −0.05 AND Welch 95% CI excludes < −0.05;
-     straddling CI ⇒ INCONCLUSIVE; FAIL ⇒ retire the single-pass competitiveness sentence.
-   - INDEX: PR-03 → ANALYZED with outcome.
+1. **[PR-03 claim] Single-pass citation bar** — status: `done (commit: see git log "PR-03 CLAIMED", 2026-09-05)`
+   - Executed VERBATIM (seeds 10-19, 8 arms, single-pass). **VERDICT: PASS** — B*=OnlineEWC(online),
+     diff +0.070, Welch 95% CI [+0.024, +0.117] (also excludes 0 → significant advantage);
+     FGT 0.192 vs 0.454. INDEX → CLAIMED. Artifacts: results/citation_battery_PR-2026-09-03-03/.
+   - Honesty note: initial verdict script had a t_isf tail-convention bug (zero-width CI);
+     fixed before verdict accepted; raw records untouched by the bug (disclosed in INDEX).
+   - Runner gained additive `seed_start`/`lane_label` params (default behavior unchanged).
 
 2. **[PR-05 claim] Bounded-M economy** — status: `pending`
    - Protocol: docs/EXPERT_ECONOMY.md §5 (VERBATIM): shipped E1 settings; bounded arm =
