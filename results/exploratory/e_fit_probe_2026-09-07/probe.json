@@ -1,0 +1,75 @@
+{
+ "meta": {
+  "lane": "EXPLORATORY (never a claim)",
+  "purpose": "direction sanity for the crosstalk capacity law before the GPU-tier fit",
+  "grid": [
+   16,
+   32
+  ],
+  "seeds": [
+   0,
+   1
+  ],
+  "steps": 8000,
+  "solve_threshold": 0.9,
+  "model": "prizma_seq_factory(d_model=64, n_layers=2, n_heads=2, feat_map='quad2', feat_n2=224)",
+  "crosstalk_geometry": {
+   "d_h": 32,
+   "feat_n2": 224
+  }
+ },
+ "runs": [
+  {
+   "D": 16,
+   "seed": 0,
+   "acc": 0.9952850341796875,
+   "wall_s": 875.8
+  },
+  {
+   "D": 16,
+   "seed": 1,
+   "acc": 0.99566650390625,
+   "wall_s": 864.3
+  },
+  {
+   "D": 32,
+   "seed": 0,
+   "acc": 0.9538421630859375,
+   "wall_s": 1060.0
+  },
+  {
+   "D": 32,
+   "seed": 1,
+   "acc": 0.9895477294921875,
+   "wall_s": 1037.6
+  }
+ ],
+ "crosstalk": {
+  "mu": 0.057472319222227494,
+  "mu_signed": 0.030245620717811054,
+  "sigma2": 0.05212044768671267,
+  "sigma2_signed_fluct": 0.07144796187444963,
+  "eta": 1.4379499162965912,
+  "eta_signed_fluct": 0.7652094865209645,
+  "n_star": 256.0,
+  "n_star_signed_fluct": 196.89362854936692,
+  "offdiag_count": 8386560
+ },
+ "summary": {
+  "16": {
+   "solve_seeds": 2,
+   "n": 2,
+   "mean_acc": 0.9954757690429688
+  },
+  "32": {
+   "solve_seeds": 2,
+   "n": 2,
+   "mean_acc": 0.9716949462890625
+  }
+ },
+ "eps_fit": {
+  "D_star_coarse": 33,
+  "eps_implied_abs": 0.29483777598202593,
+  "note": "eps = sigma2*sqrt(D*-1) implied by N*(eps)=min(1+eps^2/sigma2^2, d_phi) >= D* at the solve/no-solve transition; |cos| definition. Compare vs the law doc's N*(eps=1)=132.5 (|cos| def) and the eps~0.9-1.2 claim: if eps_implied is far from 1, the law needs the fit epsilon that far from 1 \u2014 direction info only."
+ }
+}

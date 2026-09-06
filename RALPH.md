@@ -46,11 +46,12 @@ wait with exact protocol pointers.
      probation machinery) on a block-drift 2-corpus char stream; measure retention/adaptation;
      lane-exploratory only; motivates the real PR-LM-1 registration (GPU).
 
-6. **[exploratory] PR-02 ε-fit at tiny D** — status: `in-progress (launched 01:5x, 2026-09-07)`
-   - experiments/e_fit_probe.py: D∈{16,32}, quad2 d_h=32/d_φ=256, n=2 seeds, 8000 steps,
-     4 threads (claim run finished — no contention). σ₂(|cos|)=0.05212 measured →
-     N*(ε=1)=256 (d_φ-capped). Crash-safe ledger: results/exploratory/e_fit_probe_2026-09-07/.
-     If the 03:55 clock cuts it, partial per-run records are the exploratory deliverable.
+6. **[exploratory] PR-02 ε-fit at tiny D** — status: `done — exploratory direction sanity (commit: git log "e-fit probe", 2026-09-07)`
+   - Results (n=2, 8000 steps): D=16 solves 0.995/0.996; D=32 solves 0.954/0.990 → transition
+     ABOVE the grid; ε lower bound ≈ 0.295 at σ₂(|cos|)=0.05212 (N*(ε=1)=256, d_φ-capped).
+     The law with measured σ₂ does NOT contradict the tiny-D solves; decisive test stays the
+     GPU-tier fit at the real transition (D≈96-256), i.e. PR-2026-09-03-02's registered grid.
+   - Artifacts: results/exploratory/e_fit_probe_2026-09-07/ + experiments/e_fit_probe.py.
 
 7. **[blocked: needs GPU] PR-01 surprise ablation** — frozen protocol
    (docs/preregistry/2026-09-03-surprise-gating-powered-ablation.md), ~10–15 A100-h.
@@ -72,9 +73,11 @@ wait with exact protocol pointers.
   03:55 clock rule. HANDOFF: next session (or loop resume) = write seq/blockdrift_claim.py
   per doc §6, execute VERBATIM, INDEX PR-07′ → outcome, then backlog items 5-6 (exploratory).
 
-## HANDOFF (2026-09-06 02:55 — clock-rule wind-down)
+## HANDOFF (2026-09-07 02:4x — clock-rule wind-down, second night)
 
-Suite last verified 325 passed + 10 skipped (agent run); re-verify with a full `pytest -q`
-at session start. Working tree clean after the final commit. Resume point: RALPH.md task 3
-(PR-07′ claim run — registration committed, nothing else needed first). Everything else on
-the backlog is exploratory (5-6) or GPU-blocked (7-10).
+CPU-feasible backlog is now EMPTY: items 1-4 claimed/negative (PR-03 CLAIMED, PR-05 CLAIMED,
+PR-04 NEGATIVE, PR-07′ CLAIMED), item 5 (toy fusion) and 6 (ε-fit) done/exploratory-complete.
+Remaining backlog = GPU-blocked only (items 7-10: PR-01 surprise ablation, Tier-0 repairs,
+kernel session, PR-LM-1 — each with its frozen protocol pointer). Suite last verified
+325P/10S; re-verify with full `pytest -q` at next session start. Push is the owner's manual
+step (credentials not available in-agent).
