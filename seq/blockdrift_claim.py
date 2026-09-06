@@ -28,15 +28,14 @@ import io
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.abspath(os.path.join(_HERE, ".."))
-sys.path.insert(0, _HERE)
-sys.path.insert(0, _ROOT)
+sys.path.insert(0, _ROOT)  # seq is imported AS A PACKAGE (its modules use relative imports)
 
 import numpy as np
 import torch
 import torch.nn.functional as F
 
-from prizma_seq import PrizmaSeqConfig, PrizmaSeqLM
-from transformer import TFConfig, Transformer
+from seq.prizma_seq import PrizmaSeqConfig, PrizmaSeqLM
+from seq.transformer import TFConfig, Transformer
 
 OUT = os.path.join(_ROOT, "results", "blockdrift_PR-2026-09-03-07")
 TEXT8_URL = "https://mattmahoney.net/dc/text8.zip"
