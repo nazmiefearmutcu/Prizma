@@ -26,12 +26,14 @@ wait with exact protocol pointers.
      shipped default-off + bit-identity-tested (10 tests). INDEX → CLAIMED.
    - Artifacts: results/expert_economy_PR-2026-09-03-05/. Suite 315→325P/10S.
 
-3. **[PR-07′ prereg+claim] Block-drift BAR-6′** — status: `REGISTERED — claim run NOT yet
-   started (03:55 clock rule, 2026-09-06 night); NEXT SESSION RUNS THIS FIRST`
-   - Doc frozen: docs/preregistry/2026-09-05-blockdrift-bar6.md (INDEX: PR-2026-09-03-07
-     REGISTERED). Runner to write: seq/blockdrift_claim.py per doc §6 (crash-safe raw per
-     docs/RETENTION.md; corpora pinned by canonical URL + archived sha256; download failure
-     = ABORT). Bars/doc §4 VERBATIM; t_isf upper-tail convention (PR-03 lesson). ~2-3 h CPU.
+3. **[PR-07′ prereg+claim] Block-drift BAR-6′** — status: `done — CLAIMED (PASS) (commit 4b9b737, 2026-09-07)`
+   - Executed VERBATIM (+ pre-run Addendum 2026-09-07: RESET=canary, LR per arm-family,
+     partial order). **VERDICT: PASS** — FGT_A mean −0.189 (NEGATIVE forgetting: B-training
+     improved A-eval; CI upper −0.119 ≤ 0.05); adaptation 2.954 vs FROZEN 6.132 (diff −3.178,
+     Welch CI [−3.420, −2.936]); RESET canary bit-matches STREAM; WINDOW-TF descriptive 3.112
+     (competitive; STREAM leads). Flagship block-drift prerequisite CLEARS at toy scale.
+   - Artifacts: results/blockdrift_PR-2026-09-03-07/ (corpora on disk, sha256 committed).
+   - INDEX → CLAIMED. Runtime ~9 min (2-3h estimate was 15× conservative).
 
 4. **[PR-04 claim rerun] Analog robustness** — status: `done — NEGATIVE (commit ce7826b)`
    - Executed VERBATIM (n=5, matched-clean gate forced D=24). **VERDICT: NOT-SUPPORTED** —
@@ -44,9 +46,11 @@ wait with exact protocol pointers.
      probation machinery) on a block-drift 2-corpus char stream; measure retention/adaptation;
      lane-exploratory only; motivates the real PR-LM-1 registration (GPU).
 
-6. **[exploratory] PR-02 ε-fit at tiny D** — status: `pending`
-   - CPU down-scale of the crosstalk capacity-law fit (D∈{16,32} MQAR grid, n=2) to sanity-
-     check N* prediction direction BEFORE the GPU-tier registered grid. Lane-exploratory.
+6. **[exploratory] PR-02 ε-fit at tiny D** — status: `in-progress (launched 01:5x, 2026-09-07)`
+   - experiments/e_fit_probe.py: D∈{16,32}, quad2 d_h=32/d_φ=256, n=2 seeds, 8000 steps,
+     4 threads (claim run finished — no contention). σ₂(|cos|)=0.05212 measured →
+     N*(ε=1)=256 (d_φ-capped). Crash-safe ledger: results/exploratory/e_fit_probe_2026-09-07/.
+     If the 03:55 clock cuts it, partial per-run records are the exploratory deliverable.
 
 7. **[blocked: needs GPU] PR-01 surprise ablation** — frozen protocol
    (docs/preregistry/2026-09-03-surprise-gating-powered-ablation.md), ~10–15 A100-h.
