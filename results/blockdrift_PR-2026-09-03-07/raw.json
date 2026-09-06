@@ -1,0 +1,145 @@
+{
+ "meta": {
+  "protocol": "PR-2026-09-03-07 (block-drift BAR-6'), VERBATIM + pre-run Addendum 2026-09-07",
+  "config": "PrizmaSeqConfig(vocab=65, d_model=64, n_layers=2, n_heads=4, chunk=64, window=16, d_ff=168, max_len=256, rope=False, beta_cap=0.99, gated=False, learned_pos=False, short_conv=4, precision_gate='input', write_mode='delta', use_workspace=True, use_window=True, route_readout=True, feat_map='none', feat_n2=96, feat_rank=0, out_gate=False, state_norm=False, banded_window=False, decoupled_gate=False, n_delta=1, surprise_gate=False, surprise_mode='norm', surprise_seed=1234, inctx_lr=False, dropout=0.0, state_bits=0, write_noise_std=0.0, write_noise_seed=1234)",
+  "vocab": 65,
+  "seg": 256,
+  "batch_segs": 32,
+  "seeds": [
+   0,
+   1,
+   2,
+   3,
+   4
+  ],
+  "A_sha256": "a29a713419313a2c4f0f38d3907938156a7c088a69c7c30542410124651ab5b2",
+  "B_sha256": "a9e24e23a1ec77744dad26844bfd5a09b6e041954e1eef0000e7f24cba6db735",
+  "threads": 8
+ },
+ "arms": {
+  "STREAM": {
+   "seed_records": [
+    {
+     "seed": 0,
+     "lr": 0.01,
+     "bpc_A_pre": 3.149696928480859,
+     "bpc_A_post": 3.32783616312544,
+     "bpc_B": 2.9312313354336377,
+     "fgt_A": -0.17813923464458092,
+     "wall_s": 42.6
+    },
+    {
+     "seed": 1,
+     "lr": 0.01,
+     "bpc_A_pre": 3.057325152537921,
+     "bpc_A_post": 3.297021225456797,
+     "bpc_B": 2.898833150358571,
+     "fgt_A": -0.23969607291887618,
+     "wall_s": 44.8
+    },
+    {
+     "seed": 2,
+     "lr": 0.01,
+     "bpc_A_pre": 3.111612289452019,
+     "bpc_A_post": 3.286102362696025,
+     "bpc_B": 2.9240292112422948,
+     "fgt_A": -0.174490073244006,
+     "wall_s": 41.9
+    },
+    {
+     "seed": 3,
+     "lr": 0.01,
+     "bpc_A_pre": 3.4126959520774935,
+     "bpc_A_post": 3.519564140369883,
+     "bpc_B": 3.1170360461259548,
+     "fgt_A": -0.10686818829238964,
+     "wall_s": 42.4
+    },
+    {
+     "seed": 4,
+     "lr": 0.01,
+     "bpc_A_pre": 3.0724690486991912,
+     "bpc_A_post": 3.318324220756354,
+     "bpc_B": 2.900777005026475,
+     "fgt_A": -0.2458551720571629,
+     "wall_s": 43.4
+    }
+   ]
+  },
+  "FROZEN": {
+   "seed_records": [
+    {
+     "seed": 0,
+     "lr": 0.01,
+     "bpc_A": 3.149696928480859,
+     "bpc_B": 6.206095665738083,
+     "wall_s": 21.1
+    },
+    {
+     "seed": 1,
+     "lr": 0.01,
+     "bpc_A": 3.057325152537921,
+     "bpc_B": 5.822422364349798,
+     "wall_s": 21.1
+    },
+    {
+     "seed": 2,
+     "lr": 0.01,
+     "bpc_A": 3.111612289452019,
+     "bpc_B": 6.350166438536514,
+     "wall_s": 21.0
+    },
+    {
+     "seed": 3,
+     "lr": 0.01,
+     "bpc_A": 3.4126959520774935,
+     "bpc_B": 6.199289561845577,
+     "wall_s": 21.6
+    },
+    {
+     "seed": 4,
+     "lr": 0.01,
+     "bpc_A": 3.0724690486991912,
+     "bpc_B": 6.08283249426624,
+     "wall_s": 21.5
+    }
+   ]
+  },
+  "RESET_canary": {
+   "seed_records": [
+    {
+     "seed": 0,
+     "bpc_A_pre": 3.149696928480859,
+     "bpc_A_post": 3.32783616312544,
+     "matches_STREAM": "True"
+    }
+   ]
+  },
+  "WINDOW_TF": {
+   "seed_records": [
+    {
+     "seed": 0,
+     "lr": 0.003,
+     "bpc_A_pre": 3.3008224301042826,
+     "bpc_A_post": 3.4092459836290345,
+     "bpc_B": 3.112441074546014,
+     "fgt_A": -0.10842355352475197,
+     "note": "descriptive only; budget arithmetic: KV/window not enforced at train time"
+    }
+   ]
+  }
+ },
+ "verdict": {
+  "bar1_retention": true,
+  "fgt_mean": -0.18900974823140312,
+  "fgt_ci_hi": -0.11856041314737156,
+  "bar2_adaptation": true,
+  "adapt_diff": -3.177779955309856,
+  "adapt_ci": [
+   -3.419626708427103,
+   -2.935933202192609
+  ],
+  "verdict": "PASS"
+ },
+ "results_md": "# PR-2026-09-03-07 \u2014 block-drift BAR-6' \u2014 RESULTS\n\n- STREAM FGT_A: mean -0.1890, one-sample 95% CI upper -0.1186 (bar <= 0.05: PASS)\n- Adaptation BPC_B STREAM 2.9544 vs FROZEN 6.1322: diff -3.1778, Welch 95% CI [-3.4196, -2.9359] (bar: CI upper <= -0.10 => PASS)\n- RESET canary matches STREAM: True\n\nWINDOW-TF arm: see raw.json\n\n## VERDICT: **PASS**"
+}

@@ -39,3 +39,5 @@ seq/data/text8
 # ── Lock files ───────────────────────────────────────────
 *.lock
 
+results/blockdrift_PR-2026-09-03-07/corpora/text8
+results/blockdrift_PR-2026-09-03-07/corpora/tinyshakespeare.txt
