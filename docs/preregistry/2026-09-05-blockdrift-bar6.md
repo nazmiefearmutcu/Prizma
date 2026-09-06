@@ -78,3 +78,20 @@ this protocol uses default-off knobs, so no limitation bites.
 - What would change our mind: only dated addenda (POLICY.md); the exploration that motivated
   this gate (E1 block-stream guards, 0.834/FGT 0.000 across all probes) used synthetic
   streams — real-corpus drift is exactly what this run tests.
+
+## Addendum 2026-09-07 (pre-run clarification, BEFORE any results)
+
+1. **RESET arm re-scoped to an implementation-integrity canary.** Segment training uses the
+   chunk-parallel `forward` path, whose carried state spans one segment, not the whole
+   stream; cross-stream memory at this scale is therefore WEIGHT-carried, and a
+   state-zeroing-at-the-boundary arm is vacuously identical to STREAM. The arm still runs
+   (seed 0 only) and must reproduce STREAM bit-identically; the §4 causal-ablation bar
+   (reset ΔFGT ≥ 0.15) is WITHDRAWN as vacuous — it is replaced by the canary equality
+   assertion (any deviation = broken runner, run invalid).
+2. **LR rule interpretation.** "One LR per arm ... frozen for all seeds/arms" is read as:
+   one LR per ARM FAMILY {stream-family (STREAM+RESET), frozen, window-tf}, each chosen on
+   seed 0's A-segment loss from the 3-point grid, then frozen across that family's seeds.
+   Chosen LRs are disclosed in every raw record.
+3. **Partial order.** Primaries first (STREAM, FROZEN, all seeds), then RESET canary, then
+   WINDOW-TF (descriptive; may be cut by the 03:55 clock rule with disclosure — it gates
+   nothing).
