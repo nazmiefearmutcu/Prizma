@@ -207,6 +207,27 @@ python3.13 -m venv .venv && ./.venv/bin/pip install numpy matplotlib
 
 ---
 
+## Registered pre-registration outcomes (2026-09 campaign)
+
+All runs executed under the two-lane pre-registration registry
+([docs/preregistry/INDEX.md](docs/preregistry/INDEX.md) — exact frozen protocols, fresh
+seeds, pre-committed failure branches). Raw per-seed artifacts committed under `results/`.
+
+| id | Question | Verdict |
+|---|---|---|
+| PR-03 | Is Prizma competitive with boundary-free regularizers in **single-pass** domain-incremental CL? | **CLAIMED (PASS)** — beats the best boundary-free arm by +0.070 ACC (Welch 95% CI [+0.024, +0.117]); FGT 0.192 vs 0.454. |
+| PR-05 | Is the bounded-M_max=K expert economy (recruit-by-eviction) loss-free at home? | **CLAIMED (PASS)** — ΔACC = ΔFGT = +0.000000 on all 10 fresh seeds; 0 evictions; the cap is inert in the home regime. |
+| PR-07′ | Does the O(1) state provide block-drift continual adaptation (char-LM, text8→shakespeare, no labels/boundaries/replay)? | **CLAIMED (PASS)** — FGT_A = −0.189 (B-training *improved* A); adaptation −3.18 BPC vs frozen control (CI [−3.420, −2.936]). Clears the flagship's re-scoped prerequisite at toy scale. |
+| PR-04 | Is the delta write analog-robust (low-precision state + write noise)? | **NEGATIVE** — at the matched-clean operating point 4-bit delta retention is significantly *worse* (Δ = −0.0923, CI [−0.170, −0.014]); the correction needs a precise S·k read. Retired as a claim. |
+| PR-06 (+ successors) | Can vigilance routing handle *interleaved* single-pass streams? | **NEGATIVE (terminal)** — interleaved-single-pass is information-bounded at the partition level: experts need block-coherent floor calibration (≳10² contiguous samples). In the block regime the same machinery becomes domain-coherent (expert corpus purity 0.997–1.0). |
+
+Pending GPU-tier registrations: PR-01 (powered surprise-gating ablation, frozen protocol),
+PR-02 (crosstalk capacity-law D-frontier), Tier-0 repairs (clean recall gate, B4 closure,
+first GLA/Mamba-2 landscape), kernel decision (≤1.5× TF step time), PR-LM-1 (the flagship
+continual-LM bar — unblocked on the block-drift regime by PR-07′).
+
+---
+
 ## Reproducing the falsifiability harness
 
 The invariant test suite (kernel guards, lever `off == identical` checks, O(1) `step == forward`
