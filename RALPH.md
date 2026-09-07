@@ -78,7 +78,7 @@ wait with exact protocol pointers.
 
 ## GPU SESSION (ONE Colab A100 notebook does everything)
 
-PRIZMA_GPU_CAMPAIGN.ipynb (repo root): stage 0 setup+pytest sanity (expect 374 passed) →
+PRIZMA_GPU_CAMPAIGN.ipynb (repo root): stage 0 setup+pytest sanity (expect 392 passed) →
 stage 1 recall gate --full (resumable) → stage 2 B4 both corpora n≥5 → stage 3 landscape
 --full → stage 4 PR-01 --powered → stage 5 PR-02 --powered → per-stage archives + Drive zip.
 All runners refuse to start the powered tiers without CUDA and execute frozen protocols
