@@ -100,7 +100,7 @@ CLAIM_SEEDS = (0, 1, 2, 3, 4)                   # n=5 per arm — frozen, never 
 # ---- stream pinning (doc §2 + the two disclosed notes in the module docstring) ----
 A_CHARS = 1_000_000                    # Block A: text8[0, 1.0M)
 A_EVAL_START, A_EVAL_END = 1_000_000, 1_100_000   # A-eval: text8[1.0M, 1.1M) (PR-07' pinned)
-C_OFFSET = 1_100_000                   # REPAIR (owner-approved): doc said 1.0M; see docstring
+C_OFFSET = 1_100_000                   # REPAIR (maintainer addendum): doc said 1.0M; see docstring
 C_CHARS = 1_000_000                    # Block C: text8[1.1M, 2.1M) — 1.0M chars as §2 specifies
 C_RET_START, C_RET_END = 900_000, 1_000_000       # C-retention (B2's "C-eval"): text8[0.9M, 1.0M)
 B_EVAL_FRAC = 0.10                     # B-eval = tiny-shakespeare last 10%
