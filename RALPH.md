@@ -106,3 +106,13 @@ Remaining backlog = GPU-blocked only (items 7-10: PR-01 surprise ablation, Tier-
 kernel session, PR-LM-1 — each with its frozen protocol pointer). Suite last verified
 325P/10S; re-verify with full `pytest -q` at next session start. Push is the owner's manual
 step (credentials not available in-agent).
+
+
+## PUSH STATUS (2026-09-08 02:4x — the one remaining owner gate)
+
+git push = 403 (token nazmiefearmutcu0 has PULL-ONLY on nazmiefearmutcu/Prizma — the repo
+lives under the old account). tools/ship_prizma.py prepared + dry-run verified: once the
+owner picks (a) transfer the repo to nazmiefearmutcu0, (b) add nazmiefearmutcu0 as writer,
+or (c) mirror under nazmiefearmutcu0, the ship is ONE command:
+  python tools/ship_prizma.py "Prizma campaign 2026-09" [--force]
+Loop is TERMINAL on all axes: CPU work done, GPU work notebook-gated, push decision-gated.
