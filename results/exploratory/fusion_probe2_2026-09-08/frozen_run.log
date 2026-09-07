@@ -1,0 +1,7 @@
+[fusion] lr-select fusion_e4: lr=0.001 A-loss=4.7072
+[fusion] lr-select fusion_e4: lr=0.003 A-loss=4.2168
+[fusion] lr-select fusion_e4: lr=0.01 A-loss=4.3204
+[p1-frozen] seed 0: A_pre=3.030 A_post=3.028 FGT=+0.001 B=3.544 (base-only 5.293) frozen_ok=True wall=35.1s
+[p1-frozen] seed 1: A_pre=3.047 A_post=3.043 FGT=+0.003 B=3.495 (base-only 5.256) frozen_ok=True wall=32.9s
+[p1-frozen] summary: {'n_seeds': 2, 'bpc_A_pre': 3.0382, 'bpc_A_post': 3.0358, 'fgt_A': 0.0024, 'bpc_B_combined': 3.5193, 'bpc_B_base_only': 5.2747, 'backbone_frozen_all_seeds': True, 'wall_s': 68.0}
+[probe2] wrote JSONs to C:\Users\Kullanıcı\Prizma\results\exploratory\fusion_probe2_2026-09-08

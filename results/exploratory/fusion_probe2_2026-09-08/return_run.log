@@ -1,0 +1,14 @@
+[fusion] lr-select fusion_e4: lr=0.001 A-loss=4.7072
+[fusion] lr-select fusion_e4: lr=0.003 A-loss=4.2168
+[fusion] lr-select fusion_e4: lr=0.01 A-loss=4.3204
+[fusion] lr-select plain: lr=0.001 A-loss=5.1432
+[fusion] lr-select plain: lr=0.003 A-loss=4.4588
+[fusion] lr-select plain: lr=0.01 A-loss=4.1966
+[p3-return] return_vigilant seed 0: A_pre=3.030 A_final=2.797 B_final=4.214 C_final=2.963 C-class=mixed wall=71.9s
+[p3-return] return_vigilant seed 1: A_pre=3.047 A_final=2.771 B_final=4.144 C_final=2.945 C-class=mixed wall=73.0s
+[p3-return] return_forced seed 0: A_pre=3.030 A_final=2.806 B_final=3.997 C_final=2.977 C-class=recruit wall=71.5s
+[p3-return] return_forced seed 1: A_pre=3.047 A_final=2.778 B_final=3.939 C_final=2.954 C-class=recruit wall=69.3s
+[p3-return] plain3 seed 0: A_pre=3.150 A_final=2.834 B_final=4.578 C_final=2.992 C-class=None wall=64.2s
+[p3-return] plain3 seed 1: A_pre=3.057 A_final=2.800 B_final=4.150 C_final=2.977 C-class=None wall=63.3s
+[p3-return] summary: {"return_vigilant": {"n_seeds": 2, "bpc_A_pre": 3.0382, "bpc_A_postB": 3.2316, "bpc_A_final": 2.7839, "bpc_B_postB": 2.8937, "bpc_B_final": 4.1792, "bpc_C_preC": 3.3436, "bpc_C_final": 2.9539, "c_classes": ["mixed", "mixed"], "wall_s": 144.9}, "return_forced": {"n_seeds": 2, "bpc_A_pre": 3.0382, "bpc_A_postB": 3.2316, "bpc_A_final": 2.7918, "bpc_B_postB": 2.8937, "bpc_B_final": 3.9683, "bpc_C_preC": 3.3436, "bpc_C_final": 2.9651, "c_classes": ["recruit", "recruit"], "wall_s": 140.8}, "plain3": {"n_seeds": 2, "bpc_A_pre": 3.1035, "bpc_A_postB": 3.3124, "bpc_A_final": 2.8169, "bpc_B_postB": 2.915, "bpc_B_final": 4.3639, "bpc_C_preC": 3.3965, "bpc_C_final": 2.9846, "c_classes": [null, null], "wall_s": 127.5}}
+[probe2] wrote JSONs to C:\Users\Kullanıcı\Prizma\results\exploratory\fusion_probe2_2026-09-08

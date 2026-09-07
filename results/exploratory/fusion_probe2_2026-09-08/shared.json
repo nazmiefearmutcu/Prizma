@@ -1,0 +1,325 @@
+{
+ "meta": {
+  "probe": "P2 SHARED-EXTRA-HEAD capacity control (LANE-EXPLORATORY \u2014 design-informing, never a claim)",
+  "question": "was the 2026-09-07 fusion bpc gain CAPACITY (extra params) or ROUTING? Same extra parameter budget as fusion E=4, but ONE shared head (no routing, no recruitment) trained on all segments.",
+  "arms": {
+   "plain": "re-run for within-session comparability (verbatim run_cell)",
+   "fusion_e4": "re-run for within-session comparability (verbatim run_cell)",
+   "shared_h64": "one head, same size as ONE expert head (8,385 params)",
+   "shared_h256": "one wide head ~ fusion E=4 pool budget (33,345 vs 4x8,385=33,540 params)"
+  },
+  "learning_rule": "shared head = exact _expert_train rule (detached base+hidden, private per-batch AdamW) on EVERY segment; backbone objective unchanged (base LM loss); eval over combined logits",
+  "budget_note": "at home only 2 of the E=4 experts ever commit, so the TRAINED extra-parameter budget of fusion E=4 is 2x8,385=16,770 while the ALLOCATED pool budget is 33,540; both controls bracket this",
+  "smoke": false,
+  "seeds": [
+   0,
+   1
+  ],
+  "threads": 8,
+  "head_params": {
+   "shared_h64": 8385,
+   "shared_h256": 33345
+  }
+ },
+ "lr_selection": {
+  "plain": {
+   "lr": 0.01,
+   "grid": {
+    "0.001": 5.143213668179284,
+    "0.003": 4.458794193735004,
+    "0.01": 4.19657656616867
+   }
+  },
+  "fusion_e4": {
+   "lr": 0.003,
+   "grid": {
+    "0.001": 4.707164135977779,
+    "0.003": 4.216777524511507,
+    "0.01": 4.3203619596783485
+   }
+  },
+  "shared_h64": {
+   "lr": 0.003,
+   "grid": {
+    "0.001": 4.707164135977779,
+    "0.003": 4.216777524511507,
+    "0.01": 4.3203619596783485
+   }
+  },
+  "shared_h256": {
+   "lr": 0.003,
+   "grid": {
+    "0.001": 4.317458369704526,
+    "0.003": 4.258375614930461,
+    "0.01": 4.885180928852924
+   }
+  }
+ },
+ "cells": [
+  {
+   "config": "plain",
+   "E": 0,
+   "seed": 0,
+   "lr": 0.01,
+   "bpc_A_pre": 3.149696928480859,
+   "bpc_A_post": 3.32783616312544,
+   "bpc_B": 2.9312313354336377,
+   "fgt_A": -0.17813923464458092,
+   "wall_s": 43.3,
+   "first_cell_note": "first cell wall 43.3s; 8 cells + lr-selects budgeted separately per family"
+  },
+  {
+   "config": "plain",
+   "E": 0,
+   "seed": 1,
+   "lr": 0.01,
+   "bpc_A_pre": 3.057325152537921,
+   "bpc_A_post": 3.297021225456797,
+   "bpc_B": 2.898833150358571,
+   "fgt_A": -0.23969607291887618,
+   "wall_s": 42.3
+  },
+  {
+   "config": "fusion_e4",
+   "E": 4,
+   "seed": 0,
+   "lr": 0.003,
+   "bpc_A_pre": 3.0297276592459217,
+   "bpc_A_post": 3.2404801174350597,
+   "bpc_B": 2.8934403310977945,
+   "ledger": {
+    "n_committed": 2,
+    "recruits": [
+     {
+      "slot": 0,
+      "at_batch": 0,
+      "corpus": "A",
+      "n_novel_segs": 32,
+      "trigger_z": null,
+      "reason": "empty_pool"
+     },
+     {
+      "slot": 1,
+      "at_batch": 0,
+      "corpus": "B",
+      "n_novel_segs": 32,
+      "trigger_z_max": 25.098,
+      "reason": "novel"
+     }
+    ],
+    "cap_fallback_batches": 0,
+    "cap_fallback_segments": 0,
+    "cap_events": [],
+    "per_expert": [
+     {
+      "slot": 0,
+      "committed": true,
+      "train_A": 3906,
+      "train_B": 26,
+      "train_total": 3932,
+      "expert_majority_corpus_share": 0.9933875890132248,
+      "mu": 2.0461,
+      "sigma": 0.1559,
+      "mean_calib_ce": 2.3556,
+      "n_batches": 144,
+      "n_segments": 3932,
+      "eval_A": 360,
+      "eval_B": 6
+     },
+     {
+      "slot": 1,
+      "committed": true,
+      "train_A": 0,
+      "train_B": 3895,
+      "train_total": 3895,
+      "expert_majority_corpus_share": 1.0,
+      "mu": 1.9928,
+      "sigma": 0.0979,
+      "mean_calib_ce": 2.1671,
+      "n_batches": 123,
+      "n_segments": 3895,
+      "eval_A": 30,
+      "eval_B": 429
+     },
+     {
+      "slot": 2,
+      "committed": false
+     },
+     {
+      "slot": 3,
+      "committed": false
+     }
+    ],
+    "purity": {
+     "A_majority_expert_share": 1.0,
+     "B_majority_expert_share": 0.993369038510584,
+     "mean_expert_majority_corpus_share": 0.9966937945066123
+    }
+   },
+   "fgt_A": -0.21075245818913801,
+   "wall_s": 48.2
+  },
+  {
+   "config": "fusion_e4",
+   "E": 4,
+   "seed": 1,
+   "lr": 0.003,
+   "bpc_A_pre": 3.0466566153762726,
+   "bpc_A_post": 3.2226585554714084,
+   "bpc_B": 2.894042597735895,
+   "ledger": {
+    "n_committed": 2,
+    "recruits": [
+     {
+      "slot": 0,
+      "at_batch": 0,
+      "corpus": "A",
+      "n_novel_segs": 32,
+      "trigger_z": null,
+      "reason": "empty_pool"
+     },
+     {
+      "slot": 1,
+      "at_batch": 0,
+      "corpus": "B",
+      "n_novel_segs": 32,
+      "trigger_z_max": 26.253,
+      "reason": "novel"
+     }
+    ],
+    "cap_fallback_batches": 0,
+    "cap_fallback_segments": 0,
+    "cap_events": [],
+    "per_expert": [
+     {
+      "slot": 0,
+      "committed": true,
+      "train_A": 3906,
+      "train_B": 0,
+      "train_total": 3906,
+      "expert_majority_corpus_share": 1.0,
+      "mu": 2.1152,
+      "sigma": 0.1331,
+      "mean_calib_ce": 2.3486,
+      "n_batches": 123,
+      "n_segments": 3906,
+      "eval_A": 381,
+      "eval_B": 0
+     },
+     {
+      "slot": 1,
+      "committed": true,
+      "train_A": 0,
+      "train_B": 3921,
+      "train_total": 3921,
+      "expert_majority_corpus_share": 1.0,
+      "mu": 1.9828,
+      "sigma": 0.096,
+      "mean_calib_ce": 2.1534,
+      "n_batches": 123,
+      "n_segments": 3921,
+      "eval_A": 9,
+      "eval_B": 435
+     },
+     {
+      "slot": 2,
+      "committed": false
+     },
+     {
+      "slot": 3,
+      "committed": false
+     }
+    ],
+    "purity": {
+     "A_majority_expert_share": 1.0,
+     "B_majority_expert_share": 1.0,
+     "mean_expert_majority_corpus_share": 1.0
+    }
+   },
+   "fgt_A": -0.1760019400951358,
+   "wall_s": 45.7
+  },
+  {
+   "config": "shared_h64",
+   "h_small": 64,
+   "seed": 0,
+   "lr": 0.003,
+   "routing": "none (single shared head, trained on ALL segments)",
+   "bpc_A_pre": 3.0297276592459217,
+   "bpc_A_post": 3.283580553745592,
+   "bpc_B": 2.903460876923934,
+   "fgt_A": -0.2538528944996705,
+   "wall_s": 42.3
+  },
+  {
+   "config": "shared_h64",
+   "h_small": 64,
+   "seed": 1,
+   "lr": 0.003,
+   "routing": "none (single shared head, trained on ALL segments)",
+   "bpc_A_pre": 3.0466566153762726,
+   "bpc_A_post": 3.3418344960787474,
+   "bpc_B": 2.9028820283924457,
+   "fgt_A": -0.29517788070247475,
+   "wall_s": 43.0
+  },
+  {
+   "config": "shared_h256",
+   "h_small": 256,
+   "seed": 0,
+   "lr": 0.003,
+   "routing": "none (single shared head, trained on ALL segments)",
+   "bpc_A_pre": 3.0568116917190533,
+   "bpc_A_post": 3.348219278789157,
+   "bpc_B": 2.9291709848577505,
+   "fgt_A": -0.2914075870701036,
+   "wall_s": 43.9
+  },
+  {
+   "config": "shared_h256",
+   "h_small": 256,
+   "seed": 1,
+   "lr": 0.003,
+   "routing": "none (single shared head, trained on ALL segments)",
+   "bpc_A_pre": 3.0756715914406088,
+   "bpc_A_post": 3.372069712863937,
+   "bpc_B": 2.9197325769784,
+   "fgt_A": -0.2963981214233282,
+   "wall_s": 44.4
+  }
+ ],
+ "summary": {
+  "plain": {
+   "n_seeds": 2,
+   "bpc_A_pre": 3.1035,
+   "bpc_A_post": 3.3124,
+   "fgt_A": -0.2089,
+   "bpc_B": 2.915,
+   "wall_s": 85.6
+  },
+  "fusion_e4": {
+   "n_seeds": 2,
+   "bpc_A_pre": 3.0382,
+   "bpc_A_post": 3.2316,
+   "fgt_A": -0.1934,
+   "bpc_B": 2.8937,
+   "wall_s": 93.9
+  },
+  "shared_h64": {
+   "n_seeds": 2,
+   "bpc_A_pre": 3.0382,
+   "bpc_A_post": 3.3127,
+   "fgt_A": -0.2745,
+   "bpc_B": 2.9032,
+   "wall_s": 85.3
+  },
+  "shared_h256": {
+   "n_seeds": 2,
+   "bpc_A_pre": 3.0662,
+   "bpc_A_post": 3.3601,
+   "fgt_A": -0.2939,
+   "bpc_B": 2.9245,
+   "wall_s": 88.3
+  }
+ }
+}

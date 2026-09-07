@@ -1,0 +1,426 @@
+{
+ "meta": {
+  "probe": "P3 RETURNING-DOMAIN (LANE-EXPLORATORY \u2014 design-informing, never a claim)",
+  "question": "when the stream RETURNS to a seen domain (fresh text8 after shakespeare), does the router RE-ROUTE C segments to the EXISTING text8 expert (pattern completion \u2014 the lifelong win) or RECRUIT a fresh one (treats it as novel)? And at what bpc cost either way?",
+  "stream": "text8[0:1M) -> tiny-shakespeare -> text8[1.1M:2.0M), one pass; C_eval = text8[2.0M:2.1M)",
+  "C_disclosure": "C starts at 1.1M, NOT 1.0M: text8[1.0M:1.1M) is A_eval in the PR-07'/fusion protocol \u2014 training on it would corrupt the A-retention probe. C is therefore fully text-disjoint from A_train AND A_eval, same domain (Wikipedia text8).",
+  "arms": {
+   "return_vigilant": "fusion E=4, natural per-segment vigilance on C (verbatim route_batch semantics)",
+   "return_forced": "fusion E=4, C-batch-0 force-recruits slot 2 which then owns ALL C segments exclusively (the treat-as-novel counterfactual; routing-only override \u2014 the backbone objective is identical across arms)",
+   "plain3": "plain mixer, no tissue (reference)"
+  },
+  "checkpoints": "C-eval + A-eval bpc at (0.25, 0.5, 0.75) of C_train + final \u2014 the re-mastery curve",
+  "smoke": true,
+  "seeds": [
+   0
+  ],
+  "vocab": 65,
+  "threads": 8,
+  "segments": {
+   "A_train": 64,
+   "B_train": 64,
+   "C_train": 64,
+   "A_eval": 390,
+   "B_eval": 435,
+   "C_eval": 390
+  }
+ },
+ "lr_selection": {},
+ "cells": [
+  {
+   "config": "return_vigilant",
+   "seed": 0,
+   "lr": 0.003,
+   "bpc_A_pre": 4.941736105231895,
+   "bpc_A_postB": 4.497363641802256,
+   "bpc_B_postB": 5.00345357560622,
+   "bpc_C_preC": 4.559322284466705,
+   "c_batch0_surprise": {
+    "e0": {
+     "mean_ce": 3.1386,
+     "mu_floor": 4.0506,
+     "sigma_floor": 0.4487,
+     "z_mean": -2.03,
+     "z_max": -1.79,
+     "frac_novel_z_gt5": 0.0
+    }
+   },
+   "ckpts": [
+    {
+     "after_C_segments": 32,
+     "bpc_C": 4.476008053326103,
+     "bpc_A": 4.462807116610578,
+     "routes_C_eval": [
+      390,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "after_C_segments": 32,
+     "bpc_C": 4.476008053326103,
+     "bpc_A": 4.462807116610578,
+     "routes_C_eval": [
+      390,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "after_C_segments": 64,
+     "bpc_C": 4.273051140066892,
+     "bpc_A": 4.247703910112973,
+     "routes_C_eval": [
+      390,
+      0,
+      0,
+      0
+     ]
+    }
+   ],
+   "bpc_A_final": 4.247703910112973,
+   "bpc_B_final": 5.041127577970187,
+   "bpc_C_final": 4.273051140066892,
+   "ledger": {
+    "n_committed": 1,
+    "recruits": [
+     {
+      "slot": 0,
+      "at_batch": 0,
+      "corpus": "A",
+      "n_novel_segs": 32,
+      "trigger_z": null,
+      "reason": "empty_pool"
+     }
+    ],
+    "cap_fallback_batches": 0,
+    "cap_fallback_segments": 0,
+    "cap_events": [],
+    "per_expert": [
+     {
+      "slot": 0,
+      "committed": true,
+      "train_A": 64,
+      "train_B": 64,
+      "train_C": 64,
+      "train_total": 192,
+      "mu": 3.9472,
+      "sigma": 0.5348,
+      "n_batches": 6,
+      "n_segments": 192
+     },
+     {
+      "slot": 1,
+      "committed": false
+     },
+     {
+      "slot": 2,
+      "committed": false
+     },
+     {
+      "slot": 3,
+      "committed": false
+     }
+    ],
+    "block_majority_share": {
+     "A": 1.0,
+     "B": 1.0,
+     "C": 1.0
+    },
+    "train_sums_balance": {
+     "A": {
+      "sum": 64,
+      "expected": 64,
+      "ok": true
+     },
+     "B": {
+      "sum": 64,
+      "expected": 64,
+      "ok": true
+     },
+     "C": {
+      "sum": 64,
+      "expected": 64,
+      "ok": true
+     }
+    },
+    "eval_routes": {
+     "A_eval": [
+      390,
+      0,
+      0,
+      0
+     ],
+     "B_eval": [
+      435,
+      0,
+      0,
+      0
+     ],
+     "C_eval": [
+      390,
+      0,
+      0,
+      0
+     ]
+    }
+   },
+   "c_outcome": {
+    "class": "reroute",
+    "c_on_preC_expert": 64,
+    "c_total": 64,
+    "frac_preC": 1.0,
+    "recruits_C": []
+   },
+   "fgt_A_full": 0.6940321951189219,
+   "wall_s": 10.5,
+   "first_cell_note": "first cell wall 10.5s \u2014 budget extrapolates to 1.1 min for this probe"
+  },
+  {
+   "config": "return_forced",
+   "seed": 0,
+   "lr": 0.003,
+   "bpc_A_pre": 4.941736105231895,
+   "bpc_A_postB": 4.497363641802256,
+   "bpc_B_postB": 5.00345357560622,
+   "bpc_C_preC": 4.559322284466705,
+   "c_batch0_surprise": {
+    "e0": {
+     "mean_ce": 3.1386,
+     "mu_floor": 4.0506,
+     "sigma_floor": 0.4487,
+     "z_mean": -2.03,
+     "z_max": -1.79,
+     "frac_novel_z_gt5": 0.0
+    }
+   },
+   "ckpts": [
+    {
+     "after_C_segments": 32,
+     "bpc_C": 4.520491918080176,
+     "bpc_A": 4.492221526350373,
+     "routes_C_eval": [
+      390,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "after_C_segments": 32,
+     "bpc_C": 4.520491918080176,
+     "bpc_A": 4.492221526350373,
+     "routes_C_eval": [
+      390,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "after_C_segments": 64,
+     "bpc_C": 4.401170841754755,
+     "bpc_A": 4.361887386633548,
+     "routes_C_eval": [
+      390,
+      0,
+      0,
+      0
+     ]
+    }
+   ],
+   "bpc_A_final": 4.361887386633548,
+   "bpc_B_final": 5.049015798283372,
+   "bpc_C_final": 4.401170841754755,
+   "ledger": {
+    "n_committed": 2,
+    "recruits": [
+     {
+      "slot": 0,
+      "at_batch": 0,
+      "corpus": "A",
+      "n_novel_segs": 32,
+      "trigger_z": null,
+      "reason": "empty_pool"
+     },
+     {
+      "slot": 2,
+      "at_batch": 0,
+      "corpus": "C",
+      "n_novel_segs": 32,
+      "trigger_z_max": null,
+      "reason": "forced_novel_C"
+     }
+    ],
+    "cap_fallback_batches": 0,
+    "cap_fallback_segments": 0,
+    "cap_events": [],
+    "per_expert": [
+     {
+      "slot": 0,
+      "committed": true,
+      "train_A": 64,
+      "train_B": 64,
+      "train_C": 0,
+      "train_total": 128,
+      "mu": 4.0506,
+      "sigma": 0.4487,
+      "n_batches": 4,
+      "n_segments": 128
+     },
+     {
+      "slot": 1,
+      "committed": false
+     },
+     {
+      "slot": 2,
+      "committed": true,
+      "train_A": 0,
+      "train_B": 0,
+      "train_C": 64,
+      "train_total": 64,
+      "mu": 3.4217,
+      "sigma": 0.3389,
+      "n_batches": 2,
+      "n_segments": 64
+     },
+     {
+      "slot": 3,
+      "committed": false
+     }
+    ],
+    "block_majority_share": {
+     "A": 1.0,
+     "B": 1.0,
+     "C": 1.0
+    },
+    "train_sums_balance": {
+     "A": {
+      "sum": 64,
+      "expected": 64,
+      "ok": true
+     },
+     "B": {
+      "sum": 64,
+      "expected": 64,
+      "ok": true
+     },
+     "C": {
+      "sum": 64,
+      "expected": 64,
+      "ok": true
+     }
+    },
+    "eval_routes": {
+     "A_eval": [
+      390,
+      0,
+      0,
+      0
+     ],
+     "B_eval": [
+      320,
+      0,
+      115,
+      0
+     ],
+     "C_eval": [
+      390,
+      0,
+      0,
+      0
+     ]
+    }
+   },
+   "c_outcome": {
+    "class": "recruit",
+    "c_on_preC_expert": 0,
+    "c_total": 64,
+    "frac_preC": 0.0,
+    "recruits_C": [
+     2
+    ]
+   },
+   "fgt_A_full": 0.5798487185983472,
+   "wall_s": 9.4
+  },
+  {
+   "config": "plain3",
+   "seed": 0,
+   "lr": 0.003,
+   "bpc_A_pre": 5.283897801084931,
+   "bpc_A_postB": 4.8932365814023715,
+   "bpc_B_postB": 5.154528323279006,
+   "bpc_C_preC": 4.9120729891757815,
+   "ckpts": [
+    {
+     "after_C_segments": 32,
+     "bpc_C": 4.765772396439064,
+     "bpc_A": 4.758837710227049
+    },
+    {
+     "after_C_segments": 32,
+     "bpc_C": 4.765772396439064,
+     "bpc_A": 4.758837710227049
+    },
+    {
+     "after_C_segments": 64,
+     "bpc_C": 4.558408635012637,
+     "bpc_A": 4.543082768859283
+    }
+   ],
+   "bpc_A_final": 4.543082768859283,
+   "bpc_B_final": 5.035150254913926,
+   "bpc_C_final": 4.558408635012637,
+   "routing": "none (plain mixer)",
+   "fgt_A_full": 0.7408150322256484,
+   "wall_s": 8.6
+  }
+ ],
+ "summary": {
+  "return_vigilant": {
+   "n_seeds": 1,
+   "bpc_A_pre": 4.9417,
+   "bpc_A_postB": 4.4974,
+   "bpc_A_final": 4.2477,
+   "bpc_B_postB": 5.0035,
+   "bpc_B_final": 5.0411,
+   "bpc_C_preC": 4.5593,
+   "bpc_C_final": 4.2731,
+   "c_classes": [
+    "reroute"
+   ],
+   "wall_s": 10.5
+  },
+  "return_forced": {
+   "n_seeds": 1,
+   "bpc_A_pre": 4.9417,
+   "bpc_A_postB": 4.4974,
+   "bpc_A_final": 4.3619,
+   "bpc_B_postB": 5.0035,
+   "bpc_B_final": 5.049,
+   "bpc_C_preC": 4.5593,
+   "bpc_C_final": 4.4012,
+   "c_classes": [
+    "recruit"
+   ],
+   "wall_s": 9.4
+  },
+  "plain3": {
+   "n_seeds": 1,
+   "bpc_A_pre": 5.2839,
+   "bpc_A_postB": 4.8932,
+   "bpc_A_final": 4.5431,
+   "bpc_B_postB": 5.1545,
+   "bpc_B_final": 5.0352,
+   "bpc_C_preC": 4.9121,
+   "bpc_C_final": 4.5584,
+   "c_classes": [
+    null
+   ],
+   "wall_s": 8.6
+  }
+ }
+}

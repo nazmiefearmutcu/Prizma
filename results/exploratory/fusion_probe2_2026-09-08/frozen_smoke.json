@@ -1,0 +1,100 @@
+{
+ "meta": {
+  "probe": "P1 FROZEN-BACKBONE (LANE-EXPLORATORY \u2014 design-informing, never a claim)",
+  "question": "does the expert tissue ALONE carry adaptation when the shared trunk cannot move? (backbone frozen after corpus A)",
+  "stream": "text8[0:1M) -> tiny-shakespeare, one pass (PR-07' verbatim)",
+  "phase_A": "verbatim train_stream_fusion: backbone + e0 train (same A-phase as the 2026-09-07 fusion probe)",
+  "phase_B": "train_stream_fusion_frozen: backbone forward under no_grad, NO backbone optimizer step; expert routing + local expert steps unchanged",
+  "lr_note": "fusion-e4 family LR re-selected in-session by the frozen PR-07' rule (seed 0, first-200-A-segment loss); the same LR drives phase-A and the phase-B expert steps (A-phase selection cannot distinguish a frozen-B arm; disclosed)",
+  "references": {
+   "pr07_FROZEN_bpc_B_mean_n5": 6.132,
+   "fusion_e4_backbone_trained_2026-09-07": {
+    "bpc_B": 2.8937,
+    "fgt_A": -0.1934
+   }
+  },
+  "smoke": true,
+  "seeds": [
+   0
+  ],
+  "threads": 8
+ },
+ "lr_selection": {},
+ "cells": [
+  {
+   "config": "frozen_e4",
+   "E": 4,
+   "seed": 0,
+   "lr": 0.003,
+   "bpc_A_pre": 4.941736105231895,
+   "bpc_A_pre_base": 5.283897801084931,
+   "backbone_frozen_check": true,
+   "bpc_A_post": 4.596626912498859,
+   "bpc_B": 5.0566717858764285,
+   "bpc_B_base": 5.503944287368277,
+   "ledger": {
+    "n_committed": 1,
+    "recruits": [
+     {
+      "slot": 0,
+      "at_batch": 0,
+      "corpus": "A",
+      "n_novel_segs": 32,
+      "trigger_z": null,
+      "reason": "empty_pool"
+     }
+    ],
+    "cap_fallback_batches": 0,
+    "cap_fallback_segments": 0,
+    "cap_events": [],
+    "per_expert": [
+     {
+      "slot": 0,
+      "committed": true,
+      "train_A": 64,
+      "train_B": 64,
+      "train_total": 128,
+      "expert_majority_corpus_share": 0.5,
+      "mu": 4.0548,
+      "sigma": 0.4427,
+      "mean_calib_ce": 3.6888,
+      "n_batches": 4,
+      "n_segments": 128,
+      "eval_A": 390,
+      "eval_B": 435
+     },
+     {
+      "slot": 1,
+      "committed": false
+     },
+     {
+      "slot": 2,
+      "committed": false
+     },
+     {
+      "slot": 3,
+      "committed": false
+     }
+    ],
+    "purity": {
+     "A_majority_expert_share": 1.0,
+     "B_majority_expert_share": 1.0,
+     "mean_expert_majority_corpus_share": 0.5
+    }
+   },
+   "fgt_A": 0.34510919273303564,
+   "wall_s": 5.5,
+   "first_cell_note": "first cell wall 5.5s \u2014 budget extrapolates to 0.1 min for this probe"
+  }
+ ],
+ "summary": {
+  "n_seeds": 1,
+  "bpc_A_pre": 4.9417,
+  "bpc_A_post": 4.5966,
+  "fgt_A": 0.3451,
+  "bpc_B_combined": 5.0567,
+  "bpc_B_base_only": 5.5039,
+  "backbone_frozen_all_seeds": true,
+  "wall_s": 5.5
+ }
+}

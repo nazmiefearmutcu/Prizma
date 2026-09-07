@@ -1,0 +1,157 @@
+{
+ "meta": {
+  "probe": "P2 SHARED-EXTRA-HEAD capacity control (LANE-EXPLORATORY \u2014 design-informing, never a claim)",
+  "question": "was the 2026-09-07 fusion bpc gain CAPACITY (extra params) or ROUTING? Same extra parameter budget as fusion E=4, but ONE shared head (no routing, no recruitment) trained on all segments.",
+  "arms": {
+   "plain": "re-run for within-session comparability (verbatim run_cell)",
+   "fusion_e4": "re-run for within-session comparability (verbatim run_cell)",
+   "shared_h64": "one head, same size as ONE expert head (8,385 params)",
+   "shared_h256": "one wide head ~ fusion E=4 pool budget (33,345 vs 4x8,385=33,540 params)"
+  },
+  "learning_rule": "shared head = exact _expert_train rule (detached base+hidden, private per-batch AdamW) on EVERY segment; backbone objective unchanged (base LM loss); eval over combined logits",
+  "budget_note": "at home only 2 of the E=4 experts ever commit, so the TRAINED extra-parameter budget of fusion E=4 is 2x8,385=16,770 while the ALLOCATED pool budget is 33,540; both controls bracket this",
+  "smoke": true,
+  "seeds": [
+   0
+  ],
+  "threads": 8,
+  "head_params": {
+   "shared_h64": 8385,
+   "shared_h256": 33345
+  }
+ },
+ "lr_selection": {},
+ "cells": [
+  {
+   "config": "plain",
+   "E": 0,
+   "seed": 0,
+   "lr": 0.003,
+   "bpc_A_pre": 5.283897801084931,
+   "bpc_A_post": 4.8932365814023715,
+   "bpc_B": 5.154528323279006,
+   "fgt_A": 0.39066121968255985,
+   "wall_s": 3.9,
+   "first_cell_note": "first cell wall 3.9s; 8 cells + lr-selects budgeted separately per family"
+  },
+  {
+   "config": "fusion_e4",
+   "E": 4,
+   "seed": 0,
+   "lr": 0.003,
+   "bpc_A_pre": 4.941736105231895,
+   "bpc_A_post": 4.497363641802256,
+   "bpc_B": 5.00345357560622,
+   "ledger": {
+    "n_committed": 1,
+    "recruits": [
+     {
+      "slot": 0,
+      "at_batch": 0,
+      "corpus": "A",
+      "n_novel_segs": 32,
+      "trigger_z": null,
+      "reason": "empty_pool"
+     }
+    ],
+    "cap_fallback_batches": 0,
+    "cap_fallback_segments": 0,
+    "cap_events": [],
+    "per_expert": [
+     {
+      "slot": 0,
+      "committed": true,
+      "train_A": 64,
+      "train_B": 64,
+      "train_total": 128,
+      "expert_majority_corpus_share": 0.5,
+      "mu": 4.0506,
+      "sigma": 0.4487,
+      "mean_calib_ce": 3.6669,
+      "n_batches": 4,
+      "n_segments": 128,
+      "eval_A": 390,
+      "eval_B": 435
+     },
+     {
+      "slot": 1,
+      "committed": false
+     },
+     {
+      "slot": 2,
+      "committed": false
+     },
+     {
+      "slot": 3,
+      "committed": false
+     }
+    ],
+    "purity": {
+     "A_majority_expert_share": 1.0,
+     "B_majority_expert_share": 1.0,
+     "mean_expert_majority_corpus_share": 0.5
+    }
+   },
+   "fgt_A": 0.4443724634296391,
+   "wall_s": 3.3
+  },
+  {
+   "config": "shared_h64",
+   "h_small": 64,
+   "seed": 0,
+   "lr": 0.003,
+   "routing": "none (single shared head, trained on ALL segments)",
+   "bpc_A_pre": 4.941736105231895,
+   "bpc_A_post": 4.497363641802256,
+   "bpc_B": 5.00345357560622,
+   "fgt_A": 0.4443724634296391,
+   "wall_s": 2.5
+  },
+  {
+   "config": "shared_h256",
+   "h_small": 256,
+   "seed": 0,
+   "lr": 0.003,
+   "routing": "none (single shared head, trained on ALL segments)",
+   "bpc_A_pre": 4.628746067811866,
+   "bpc_A_post": 4.376955486953714,
+   "bpc_B": 4.925680209068557,
+   "fgt_A": 0.25179058085815154,
+   "wall_s": 2.7
+  }
+ ],
+ "summary": {
+  "plain": {
+   "n_seeds": 1,
+   "bpc_A_pre": 5.2839,
+   "bpc_A_post": 4.8932,
+   "fgt_A": 0.3907,
+   "bpc_B": 5.1545,
+   "wall_s": 3.9
+  },
+  "fusion_e4": {
+   "n_seeds": 1,
+   "bpc_A_pre": 4.9417,
+   "bpc_A_post": 4.4974,
+   "fgt_A": 0.4444,
+   "bpc_B": 5.0035,
+   "wall_s": 3.3
+  },
+  "shared_h64": {
+   "n_seeds": 1,
+   "bpc_A_pre": 4.9417,
+   "bpc_A_post": 4.4974,
+   "fgt_A": 0.4444,
+   "bpc_B": 5.0035,
+   "wall_s": 2.5
+  },
+  "shared_h256": {
+   "n_seeds": 1,
+   "bpc_A_pre": 4.6287,
+   "bpc_A_post": 4.377,
+   "fgt_A": 0.2518,
+   "bpc_B": 4.9257,
+   "wall_s": 2.7
+  }
+ }
+}
