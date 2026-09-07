@@ -466,3 +466,23 @@ is disconnect-truncated, not a clean n=10. Supersedes the earlier n=2 B4 row (§
 - Backprop-free parity (local/DFA mode is a bonus axis with a measured tax, never a gate).
 - Length extrapolation beyond train length (reported, scoped).
 - Recall capacity beyond H·d_h bindings (the structural ceiling; B1b quantifies it).
+
+---
+
+## Addendum 2026-09-08 — registered outcomes since this report (see docs/preregistry/INDEX.md)
+
+This report's verdicts are unchanged; the following FROZEN pre-registrations were executed
+under the two-lane registry and are now part of the public record:
+
+- **PR-2026-09-03-07 (CLAIMED, PASS)** — block-drift continual char-LM (text8→shakespeare,
+  one pass, n=5): FGT_A = −0.189 (B-training *improved* A-eval); adaptation −3.18 BPC vs
+  frozen control. The "O(1) state + continual block drift" leg is no longer speculative at
+  toy scale.
+- **PR-2026-09-03-04 (NEGATIVE)** — the delta write is NOT analog-robust at matched-clean
+  operating points (4-bit state: delta retention significantly worse, Δ = −0.0923). Any
+  hardware-robustness reading of §"Inference" is hereby scoped out.
+- **PR-2026-09-03-08 (REGISTERED, awaiting GPU)** — the Prizma-LM flagship bar: many-block
+  fused-column continual LM with ledger-primary routing claims.
+
+Full table, honest-limit notes, and per-run artifacts: `README.md` §"Registered
+pre-registration outcomes" and `docs/preregistry/INDEX.md`.
