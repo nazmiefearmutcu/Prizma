@@ -60,8 +60,16 @@ wait with exact protocol pointers.
      GPU-tier fit at the real transition (D≈96-256), i.e. PR-2026-09-03-02's registered grid.
    - Artifacts: results/exploratory/e_fit_probe_2026-09-07/ + experiments/e_fit_probe.py.
 
-7. **[blocked: needs GPU] PR-01 surprise ablation** — frozen protocol
+7. **[IMPLEMENTATION DONE — execution needs GPU] PR-01 surprise ablation** — frozen protocol
    (docs/preregistry/2026-09-03-surprise-gating-powered-ablation.md), ~10–15 A100-h.
+   - 2026-09-07 evening: A4 arm (surprise_norm) + claim runner IMPLEMENTED per the frozen
+     checklist (seq/prizma_seq.py + seq/delta.py exact-scan routing + seq/surprise_claim.py;
+     31 tests; suite 325→356P/10S). Smoke verified all four arms end-to-end on CPU (plumbing
+     only — numbers meaningless); `--powered` refuses without CUDA; NO-TUNING gain selector
+     (seed 900) as pure function; smoke/powered ledger separation with refusal.
+   - GPU SESSION RECIPE: `python seq/surprise_claim.py --powered` — executes PR-01 VERBATIM
+     and computes the Welch+Holm verdict incl. the pre-committed RETIRED branch. One
+     disclosed operational deviation (ledger filenames) noted in the module docstring.
 8. **[blocked: needs GPU] Tier-0 repairs** — clean n=10 recall gate (~28h), init-fix reruns
    (~18h), B4 closure (~8h), GLA/Mamba-2 landscape (~60h). Order per synthesis §6.
 9. **[blocked: needs GPU] Kernel decision session** — report 08-P1, bar ≤1.5× TF step time.

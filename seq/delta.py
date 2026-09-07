@@ -42,6 +42,25 @@ In-context per-channel learning rate (Lever G — RWKV-7 "Goose" generalized del
   Decay (alpha) and the erase read-back are UNCHANGED — G is a vector-valued beta on the WRITE
   magnitude only. eta=None (default) -> the scalar-beta path, byte-identical to today.
 
+Surprise-NORM write gate (PR-2026-09-03-01 arm A4 — frozen pre-registration):
+  When `surprise_norm=(gain, lam, beta_cap)` is passed, the learned write gate is REPLACED inside
+  the recurrence by the frozen EMA-normalized surprise gate, computed per head from the running
+  state BEFORE the write (gated=False convention: alpha_t = 1):
+      s_t   = ||eps_t||_2^2                                (write-error energy)
+      m_1   = s_1 ;  m_t = (1-lam) m_{t-1} + lam s_t       (causal EMA, lam=0.02 frozen a priori)
+      beta_t = beta_cap * sigmoid( gain * ( s_t/max(m_t, 1e-6) - 1 ) )
+      u_t   = beta_t v_t - beta_t (alpha_t S_{t-1} k_t)    (erase gate == write gate)
+  beta_t is a function of the state, so GRADIENTS FLOW THROUGH THE GATE (the mechanism must learn
+  to exploit the signal). The helpers `_surprise_norm_update` / `_surprise_norm_gate` are the ONE
+  formula source shared by `_delta_reference` and PrizmaSeqBlock.step().
+
+  SPEED NOTE (training-path scope, disclosed): when surprise_norm is given, chunked_delta routes to
+  the EXACT sequential scan `_delta_reference` — the WY/UT chunk-parallel form is INVALID because
+  beta_t depends on the running state via eps_t (the R3 repeated-key argument applies verbatim, as
+  it already does for surprise=True). Training (build_and_train -> forward()) therefore runs the
+  exact scan; this is the disclosed 2-5x tax in pre-reg §5. This is NOT silently a limitation —
+  the pre-registration budgets for it.
+
   SPEED NOTE: when eta is provided, chunked_delta is CHUNK-PARALLEL (no longer a sequential scan). A
   single channel-shared WY/UT solve cannot represent a per-VALUE-channel rate, BUT the within-chunk
   recurrence SEPARATES by value channel into d_v INDEPENDENT unit-lower-triangular systems
@@ -55,6 +74,25 @@ from __future__ import annotations
 
 import math
 import torch
+
+
+def _surprise_norm_update(s_t, m_prev, lam):
+    """Causal per-(batch, head) EMA of the write-error energy (PR-2026-09-03-01 A4, step 2):
+    m_1 = s_1 ;  m_t = (1-lam) m_{t-1} + lam s_t   (lam = 0.02, frozen a priori; never tuned).
+    s_t: [B,H] current write-error energy; m_prev: [B,H] running EMA (None on the first token).
+    Differentiable by design (the gate must carry gradient); NO detach anywhere."""
+    if m_prev is None:
+        return s_t
+    return (1.0 - lam) * m_prev + lam * s_t
+
+
+def _surprise_norm_gate(s_t, m_t, gain, beta_cap):
+    """The frozen A4 gate (PR-2026-09-03-01, step 4):  beta_t = beta_cap * sigmoid(a*(s_t/max(m_t,1e-6) - 1)).
+    Properties pinned by the pre-registration: scale-free; rank-preserving (monotone non-decreasing
+    in s_t at fixed m_t); self-calibrating (s_tilde == 1 => beta_t == beta_cap/2); beta_cap applied
+    AFTER sigmoid; normalization guard max(m_t, 1e-6) exactly. s_t, m_t: [B,H]. Returns [B,H]."""
+    s_tilde = s_t / m_t.clamp_min(1e-6)
+    return beta_cap * torch.sigmoid(gain * (s_tilde - 1.0))
 
 
 def _surprise_gate(eps, mode, gen):
@@ -83,7 +121,7 @@ def _surprise_gate(eps, mode, gen):
 
 def _delta_reference(q, k, v, beta, alpha=None, S0=None, write_mode="delta", beta_e=None,
                      n_delta=1, surprise=False, surprise_mode='norm', surprise_gen=None,
-                     eta=None):
+                     eta=None, surprise_norm=None):
     """Ground-truth sequential recurrence. q,k,v:[B,H,T,d]; beta:[B,H,T]; alpha:[B,H,T] or None.
     write_mode='additive' -> u=beta*v (no erase), the linear-attn ablation.
     beta_e: optional erase gate [B,H,T]; if None, beta_e=beta (byte-identical to old behaviour).
@@ -104,7 +142,25 @@ def _delta_reference(q, k, v, beta, alpha=None, S0=None, write_mode="delta", bet
         u_t = eta_t (elementwise over the d_v value channels) * (v_t - alpha_t * S_{t-1} k_t)
     Decay (alpha) and the erase read-back are unchanged: G modulates only the per-channel WRITE
     magnitude, exactly like a vector-valued beta. eta is scoped to n_delta==1 (a NotImplementedError
-    is raised for n_delta>=2, mirroring how existing levers scope their interactions)."""
+    is raised for n_delta>=2, mirroring how existing levers scope their interactions).
+    surprise_norm: optional (gain, lam, beta_cap) tuple — the PR-2026-09-03-01 A4 EMA-normalized
+    surprise gate (see the module docstring for the frozen formula). When given, beta is computed
+    INSIDE the recurrence from the running state, so it REPLACES the learned gate: callers must
+    pass beta=None (asserted — a non-None beta would be silently ignored otherwise). Scoped to
+    n_delta==1 and write_mode='delta' (the frozen protocol config); other combinations raise
+    NotImplementedError rather than degrade silently."""
+    if surprise_norm is not None:
+        if n_delta >= 2 or write_mode != "delta":
+            raise NotImplementedError(
+                "precision_gate='surprise_norm' (PR-2026-09-03-01 A4) is scoped to n_delta==1 "
+                f"and write_mode='delta' (got n_delta={n_delta}, write_mode={write_mode!r}).")
+        if eta is not None or surprise:
+            raise ValueError(
+                "surprise_norm cannot be combined with Lever G (eta) or Lever A (surprise): "
+                "the one-novel-lever rule (config asserts already reject this combo).")
+        assert beta is None, (
+            "surprise_norm computes beta INSIDE the recurrence; pass beta=None "
+            "(the learned gate is replaced, not modulated).")
     if eta is not None and n_delta >= 2:
         raise NotImplementedError(
             "inctx_lr (per-channel eta) is only implemented for n_delta==1; "
@@ -125,6 +181,7 @@ def _delta_reference(q, k, v, beta, alpha=None, S0=None, write_mode="delta", bet
     if beta_e is None:
         beta_e = beta          # default: erase == write gate (byte-identical to today)
     erase = (write_mode == "delta")
+    m_state = None   # A4 EMA m_t, per (B,H); m_1 = s_1 (first token), then causal EMA. Differentiable.
     outs = []
     for t in range(T):
         qt = q[:, :, t]                                            # [B,H,d]
@@ -132,8 +189,9 @@ def _delta_reference(q, k, v, beta, alpha=None, S0=None, write_mode="delta", bet
         o = torch.einsum("bhij,bhj->bhi", S, qt)                   # read S_{t-1} q_t  (PRE-write)
         if n_delta == 1:
             kt, vt = k[:, :, t], v[:, :, t]                       # [B,H,d]
-            bt  = beta[:, :, t]                                    # [B,H]
-            bet = beta_e[:, :, t]
+            bt  = beta[:, :, t] if beta is not None else None      # [B,H] (None under surprise_norm:
+                                                                   #   the gate is computed below)
+            bet = beta_e[:, :, t] if beta_e is not None else None  # [B,H]
             if erase:
                 Sk = torch.einsum("bhij,bhj->bhi", S, kt)          # [B,H,d]
                 # Standard delta-rule error (free-energy gradient at S_{t-1}):
@@ -145,7 +203,17 @@ def _delta_reference(q, k, v, beta, alpha=None, S0=None, write_mode="delta", bet
                 #   which is the write vector. The eps for SIGNAL computation always uses
                 #   the symmetric beta (bt), consistent with the free-energy interpretation.
                 eps_t = vt - at[..., None] * Sk                    # [B,H,d] prediction error
-                if eta is not None:
+                if surprise_norm is not None:
+                    # PR-2026-09-03-01 A4 (frozen formula; see module docstring): the EMA-normalized
+                    # surprise gate REPLACES the learned gate. Computed from the CURRENT pre-write
+                    # state; erase gate == write gate (decoupled_gate=False); gradients flow through
+                    # the gate (differentiable EMA — the mechanism must learn to exploit the signal).
+                    gain, lam, bcap = surprise_norm
+                    s_t = (eps_t * eps_t).sum(dim=-1)              # [B,H] write-error energy ||eps||^2
+                    m_state = _surprise_norm_update(s_t, m_state, lam)
+                    b4 = _surprise_norm_gate(s_t, m_state, gain, bcap)      # [B,H]
+                    u = b4[..., None] * vt - b4[..., None] * (at[..., None] * Sk)
+                elif eta is not None:
                     # Lever G: per-VALUE-channel in-context learning rate eta_t in R^{d_v} REPLACES
                     # the scalar write gate, modulating the delta write per output channel:
                     #   u_t = eta_t (elementwise) * (v_t - alpha_t * S_{t-1} k_t) = eta_t * eps_t
@@ -300,7 +368,8 @@ def _chunked_delta_eta(q, k, v, beta, alpha, S, chunk, write_mode, beta_e, eta):
 
 
 def chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode="delta", beta_e=None,
-                  n_delta=1, surprise=False, surprise_mode='norm', surprise_gen=None, eta=None):
+                  n_delta=1, surprise=False, surprise_mode='norm', surprise_gen=None, eta=None,
+                  surprise_norm=None):
     """WY/UT chunk-parallel delta rule. Same semantics as _delta_reference, O(T d^2/C + T C d).
     alpha=None -> pure delta (no decay). write_mode='additive' -> linear-attn ablation (no erase:
     u=beta*v, used for B6 PRIZMA_noDelta). Returns O:[B,H,T,d], S_end:[B,H,d,d].
@@ -331,6 +400,22 @@ def chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode="delt
     not speed, is what matters.) eta is scoped to n_delta==1 (NotImplementedError for n_delta>=2) and
     is not combined with surprise."""
     B, H, T, d = q.shape
+
+    # SURPRISE-NORM PATH (PR-2026-09-03-01 A4): must be exact — beta_t depends on the running state
+    # via eps_t, so the WY/UT chunk-parallel shortcut is INVALID (the R3 repeated-key argument,
+    # verbatim as for surprise=True). Delegate to _delta_reference, which threads the TRUE running
+    # state through every token and computes the gate from it. Disclosed 2-5x speed tax (pre-reg §5);
+    # surprise_norm=None (every existing caller) never enters this branch -> byte-identical.
+    if surprise_norm is not None:
+        if eta is not None or surprise or n_delta >= 2 or write_mode != "delta":
+            raise NotImplementedError(
+                "precision_gate='surprise_norm' (PR-2026-09-03-01 A4) is scoped to n_delta==1, "
+                f"write_mode='delta', and no eta/surprise combination (got n_delta={n_delta}, "
+                f"write_mode={write_mode!r}, eta={'set' if eta is not None else None}, "
+                f"surprise={surprise}).")
+        return _delta_reference(q, k, v, beta, alpha=alpha, S0=S0, write_mode=write_mode,
+                                beta_e=beta_e, n_delta=n_delta, surprise_norm=surprise_norm)
+
     dv = v.shape[-1]                     # value-dim-aware init -> RECTANGULAR state S in R^{d_v x d_k}
     if S0 is None:                       #   (d_k=d). Byte-identical when d_v == d_k (every existing
         S = torch.zeros(B, H, dv, d, dtype=q.dtype, device=q.device)   # call); enables feature-map/GDM

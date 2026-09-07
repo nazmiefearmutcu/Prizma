@@ -600,7 +600,10 @@ class HybridSeqLM(nn.Module):
                 rk = torch.zeros(batch, cfg.n_heads, 0, cfg.d_h, device=device)
                 rv = torch.zeros(batch, cfg.n_heads, 0, cfg.d_h, device=device)
                 cring = torch.zeros(batch, kc1, cfg.d_model, device=device)
-                st.append((S, rk, rv, cring, 0))
+                # 6th slot: the per-head write-error EMA (PR-2026-09-03-01 A4 state contract) —
+                # mirrors PrizmaSeqLM.init_state; zeros here, carried untouched by non-A4 gates.
+                ema = torch.zeros(batch, cfg.n_heads, device=device)
+                st.append((S, rk, rv, cring, 0, ema))
             elif isinstance(blk, HybridBlock):
                 if blk.H_delta > 0:
                     S = torch.zeros(batch, blk.H_delta, cfg.d_h, state_k_dim, device=device)

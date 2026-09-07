@@ -21,7 +21,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from .transformer import RMSNorm, SwiGLU, TFConfig
-from .delta import chunked_delta
+from .delta import chunked_delta, _surprise_norm_gate, _surprise_norm_update
 
 
 @dataclass
@@ -45,6 +45,18 @@ class PrizmaSeqConfig:
                                  #   lets a token's k/v encode its predecessor -> enables recall. 0=off.
     # --- ablation knobs (B6) ---
     precision_gate: str = "input"   # 'input' (sigma(W_beta x)) | 'uniform' | 'random' (B6 controls)
+                                    #   | 'surprise_norm' (PR-2026-09-03-01 arm A4, frozen formula:
+                                    #   beta_t = beta_cap*sigmoid(a*(s_t/max(m_t,1e-6) - 1)) computed
+                                    #   INSIDE the recurrence from the running state; replaces the
+                                    #   learned gate entirely; gain `a` per the pre-reg NO-TUNING
+                                    #   rule — selected once on exploratory seed 900, then frozen).
+                                    #   TRAINING-PATH NOTE (disclosed, not silent): under
+                                    #   'surprise_norm' forward() routes to the EXACT sequential scan
+                                    #   (_delta_reference) — the WY/UT chunk-parallel form is invalid
+                                    #   because beta_t depends on the running state (R3); training via
+                                    #   build_and_train/forward() therefore carries the disclosed 2-5x
+                                    #   tax (pre-reg §5). Streaming step() mirrors it exactly (G1
+                                    #   guard, state-carried EMA).
     write_mode: str = "delta"       # 'delta' (targeted erase-and-write) | 'additive' (linear-attn)
     use_workspace: bool = True      # False -> no carried state (window head only)
     use_window: bool = True         # False -> no local window head (state only)
@@ -120,6 +132,22 @@ class PrizmaSeqConfig:
                                   #   write_noise_seed + pos (pos = token index from the streaming
                                   #   state), so noise is i.i.d. per write AND reproducible for a
                                   #   fixed evaluation order — no hidden cross-call generator state.
+    # --- surprise-NORM write gate (PR-2026-09-03-01 arm A4 — REGISTERED-FROZEN pre-registration) ---
+    # Inert unless precision_gate == "surprise_norm" (any other gate value never reads them, so the
+    # defaults leave every existing mode byte-identical). The pre-registration pins: the gate
+    # REPLACES the learned gate (not a multiplier); the signal is per-head; eps_t uses the CURRENT
+    # pre-write state; the EMA is causal, reset per sequence in forward() and state-carried in
+    # step(); the sigmoid argument is a*(s_t/max(m_t,1e-6) - 1) exactly (not a*log s_tilde, not
+    # a*s_tilde - 1); beta_cap multiplies AFTER sigmoid; the normalization guard is max(m_t, 1e-6).
+    surprise_gain: float = 1.0    # the gain `a` in beta_t = beta_cap*sigmoid(a*(s_tilde_t - 1)).
+                                  #   Supplied per-run from the frozen protocol value: selected ONCE
+                                  #   on exploratory seed 900 from {0.5, 1.0, 2.0, 4.0} (highest
+                                  #   best_acc on the frozen eval; ties -> smallest a), then frozen
+                                  #   for all claim seeds/tasks (NO-TUNING rule, pre-reg §2 A4).
+                                  #   Default 1.0 is a protocol-neutral placeholder — never tuned.
+    surprise_ema_lambda: float = 0.02  # the EMA rate lam in m_t = (1-lam)*m_{t-1} + lam*s_t.
+                                  #   FROZEN A PRIORI at 0.02 (~50-token effective horizon,
+                                  #   context-scale for T in {256, 384}); never tuned (pre-reg §2).
 
     def __post_init__(self):
         if self.d_ff is None:
@@ -128,6 +156,17 @@ class PrizmaSeqConfig:
         self.d_h = self.d_model // self.n_heads
         assert self.d_h % 2 == 0, "d_h must be even for RoPE"
         assert self.feat_map in ("none", "quad2", "quad2_lowrank", "rand_linear")
+        assert self.precision_gate in ("input", "uniform", "random", "surprise_norm"), \
+            f"precision_gate must be 'input', 'uniform', 'random', or 'surprise_norm', " \
+            f"got {self.precision_gate!r}"
+        # PR-2026-09-03-01 arm A4: the one-novel-lever rule — surprise_norm REPLACES the learned
+        # gate and is scoped to the frozen protocol config (pre-reg §2 implementation spec item 2).
+        if self.precision_gate == "surprise_norm":
+            assert not self.surprise_gate and not self.inctx_lr \
+                and not self.decoupled_gate and self.n_delta == 1, \
+                ("precision_gate='surprise_norm' (PR-2026-09-03-01 A4) replaces the learned gate "
+                 "entirely and is scoped to n_delta==1 with surprise_gate/inctx_lr/decoupled_gate "
+                 "all False; got a conflicting lever combination.")
         assert self.surprise_mode in ('norm', 'random', 'constant'), \
             f"surprise_mode must be 'norm', 'random', or 'constant', got {self.surprise_mode!r}"
         # Lever G is scoped to n_delta==1 (per-channel eta is not combined with DeltaProduct).
@@ -316,6 +355,18 @@ class PrizmaSeqBlock(nn.Module):
             beta = torch.sigmoid(self.beta_logit)[None, :, None].expand(B, self.H, T) * self.cfg.beta_cap
         elif self.cfg.precision_gate == "random":   # input-independent random write gate (B6 control)
             beta = torch.rand(B, self.H, T, device=x.device, dtype=x.dtype) * self.cfg.beta_cap
+        elif self.cfg.precision_gate == "surprise_norm":
+            # PR-2026-09-03-01 arm A4 (pre-reg implementation spec item 2): beta is computed INSIDE
+            # the recurrence from the running state (seq/delta.py::_delta_reference erase branch /
+            # step()), so _encode returns None — the learned gate is REPLACED, not modulated. The
+            # asserts pin the frozen scope (one-novel-lever rule; also enforced in __post_init__).
+            assert not self.cfg.surprise_gate and not self.cfg.inctx_lr \
+                and not self.cfg.decoupled_gate and self.cfg.n_delta == 1, \
+                ("precision_gate='surprise_norm' requires surprise_gate=False, inctx_lr=False, "
+                 f"decoupled_gate=False, n_delta==1 (got surprise_gate={self.cfg.surprise_gate}, "
+                 f"inctx_lr={self.cfg.inctx_lr}, decoupled_gate={self.cfg.decoupled_gate}, "
+                 f"n_delta={self.cfg.n_delta}).")
+            beta = None
         else:
             beta = torch.sigmoid(self.W_beta(x)).transpose(1, 2) * self.cfg.beta_cap   # [B,H,T]
         if self.W_alpha is not None:
@@ -406,13 +457,22 @@ class PrizmaSeqBlock(nn.Module):
                 surprise_gen = None
                 if self.cfg.surprise_gate and self.cfg.surprise_mode == 'random':
                     surprise_gen = torch.Generator(device=q.device).manual_seed(self.cfg.surprise_seed)
+                # PR-2026-09-03-01 A4: thread the frozen gate tuple (gain, EMA lambda, beta_cap).
+                # None on every existing path -> chunked_delta's fast WY/UT path byte-identical.
+                # Under 'surprise_norm' chunked_delta routes to the EXACT sequential scan
+                # (_delta_reference): beta_t depends on the running state (R3) — the disclosed
+                # 2-5x training tax of the pre-registration, documented in PrizmaSeqConfig.
+                surprise_norm = None
+                if self.cfg.precision_gate == "surprise_norm":
+                    surprise_norm = (self.cfg.surprise_gain, self.cfg.surprise_ema_lambda,
+                                     self.cfg.beta_cap)
                 o_delta, _ = chunked_delta(self._phi(q), self._phi(k), v, beta, alpha,
                                            chunk=self.cfg.chunk, write_mode=self.cfg.write_mode,
                                            beta_e=beta_e,
                                            surprise=self.cfg.surprise_gate,
                                            surprise_mode=self.cfg.surprise_mode,
                                            surprise_gen=surprise_gen,
-                                           eta=eta)   # [B,H,T,d_h]
+                                           eta=eta, surprise_norm=surprise_norm)   # [B,H,T,d_h]
             # delta state keyed by phi(q),phi(k) (dim d_phi); values stay d_h -> state [B,H,d_h,d_phi]
             if self.state_rms is not None:
                 o_delta = self.state_rms(o_delta)    # per-head RMSNorm over d_h
@@ -451,12 +511,17 @@ class PrizmaSeqBlock(nn.Module):
     # ---- O(1)-per-step inference path (for B5 latency / true streaming) ---- #
     @torch.no_grad()
     def step(self, h_t, state):
-        """h_t:[B,1,d]; state=(S, ring_k, ring_v, conv_ring, pos). Returns o_t, new_state. O(1).
+        """h_t:[B,1,d]; state=(S, ring_k, ring_v, conv_ring, pos, ema_m). Returns o_t, new_state. O(1).
+        The 6th slot ema_m is the per-head EMA of the write-error energy for the PR-2026-09-03-01
+        A4 surprise-norm gate (init zeros; the first token, pos==0, sets m = s — mirroring
+        forward()'s per-sequence reset m_1 = s_1 exactly). All pre-A4 modes carry it untouched
+        (no ops, no rng -> bit-identical outputs).
         Analog levers (state_bits / write_noise_std, report 12-H2) degrade THIS path only — at
         their defaults (0 / 0.0) this method is bit-identical to the pre-lever implementation; with
         them ON, step() intentionally deviates from the FP32 forward() (documented scope limit)."""
         B = h_t.shape[0]
-        S, rk, rv, cring, pos = state
+        S, rk, rv, cring, pos, ema = state
+        m_new = ema   # carried unchanged by every mode except surprise_norm (which updates it)
         xin = self.norm1(h_t)                                    # [B,1,d]
         if self.kc > 0:
             buf = torch.cat([cring, xin], dim=1)                 # [B,kc,d]
@@ -469,8 +534,11 @@ class PrizmaSeqBlock(nn.Module):
         cos, sin = _rope_cache(1, self.dh, h_t.device, h_t.dtype, offset=pos) if self.cfg.rope else (None, None)
         q, k, v, beta, alpha, beta_e, eta = self._encode(x, cos, sin)  # [B,H,1,dh], beta [B,H,1]
         q1, k1, v1 = q[:, :, 0], k[:, :, 0], v[:, :, 0]          # [B,H,dh] (linear L2; window keys)
-        b1 = beta[:, :, 0]                                       # [B,H]  write gate beta_w
-        a1 = alpha[:, :, 0] if alpha is not None else torch.ones_like(b1)
+        # beta is None only under precision_gate='surprise_norm' (A4): the gate is computed inside
+        # the recurrence below from eps1 — b1/be1 are then unused (and None).
+        b1 = beta[:, :, 0] if beta is not None else None         # [B,H]  write gate beta_w
+        a1 = (alpha[:, :, 0] if alpha is not None
+              else torch.ones(B, self.H, device=h_t.device, dtype=h_t.dtype))
         # pre-write read (always uses state from end of previous token)
         if self.cfg.n_delta >= 2:
             o_delta = torch.einsum("bhij,bhj->bhi", S, q1)        # [B,H,d_h] (d_h state for n_delta>=2)
@@ -536,6 +604,19 @@ class PrizmaSeqBlock(nn.Module):
                 g1 = (1.0 + torch.tanh(eps1.norm(dim=-1)))[..., None]   # [B,H,1]
                 # Apply g to full write vector: u = g * (beta_w*v - beta_e*alpha*Sk)
                 u = g1 * (b1[..., None] * v1 - be1[..., None] * (a1[..., None] * Sk))
+            elif self.cfg.precision_gate == "surprise_norm":
+                # PR-2026-09-03-01 A4 (frozen formula; mirrors _delta_reference's erase branch
+                # EXACTLY via the shared helpers, so the G1 step()==forward() guard holds <1e-4):
+                #   s_t = ||eps_t||^2 ; m_1 = s_1 (pos==0), else causal EMA with lam=0.02 ;
+                #   beta_t = beta_cap * sigmoid(a * (s_t/max(m_t,1e-6) - 1)) — per head;
+                #   u_t = beta_t*v_t - beta_t*(alpha_t*S_{t-1}k_t)   (erase gate == write gate).
+                # The EMA lives in the streaming state's 6th slot (init zeros; carried below).
+                s1 = (eps1 * eps1).sum(dim=-1)                       # [B,H] write-error energy
+                m_t = _surprise_norm_update(s1, None if pos == 0 else ema,
+                                            self.cfg.surprise_ema_lambda)
+                b4 = _surprise_norm_gate(s1, m_t, self.cfg.surprise_gain, self.cfg.beta_cap)
+                u = b4[..., None] * v1 - b4[..., None] * (a1[..., None] * Sk)
+                m_new = m_t
             else:
                 # decoupled: u = beta_w * v  -  beta_e * (alpha * S k)
                 u = b1[..., None] * v1 - be1[..., None] * (a1[..., None] * Sk)   # [B,H,d_h]
@@ -559,7 +640,7 @@ class PrizmaSeqBlock(nn.Module):
         # mirror forward's residual dropout (at p=0/eval it is identity -> step()==forward() guard holds)
         h = h_t + self.drop(self.W_o(o))
         h = h + self.drop(self.mlp(self.norm2(h)))
-        return h, (S, rk, rv, cring, pos + 1)
+        return h, (S, rk, rv, cring, pos + 1, m_new)
 
 
 class PrizmaSeqLM(nn.Module):
@@ -605,7 +686,10 @@ class PrizmaSeqLM(nn.Module):
             rk = torch.zeros(batch, self.cfg.n_heads, 0, self.cfg.d_h, device=device)
             rv = torch.zeros(batch, self.cfg.n_heads, 0, self.cfg.d_h, device=device)
             cring = torch.zeros(batch, kc1, self.cfg.d_model, device=device)
-            st.append((S, rk, rv, cring, 0))
+            # 6th slot: per-head EMA m of the write-error energy (PR-2026-09-03-01 A4). Init zeros;
+            # the first streamed token (pos==0) sets m = s (== m_1 = s_1 in the batched forward).
+            ema = torch.zeros(batch, self.cfg.n_heads, device=device)
+            st.append((S, rk, rv, cring, 0, ema))
         return st
 
     @torch.no_grad()
@@ -688,3 +772,23 @@ if __name__ == "__main__":
     yo_g = torch.cat(outs_g, dim=1)
     d_g = (y_g - yo_g).abs().max().item()
     print(f"[inctx_lr=True quad2]    step-vs-forward max|d|={d_g:.2e} {'OK' if d_g < 1e-4 else 'MISMATCH'}")
+    # SURPRISE-NORM GATE O(1) guard (PR-2026-09-03-01 A4): step()==forward() < 1e-4. The EMA is
+    # state-carried in step() (init zeros; first token sets m = s) and reset per sequence in
+    # forward() — the two must agree token-by-token, EMA included.
+    cfg_a4 = PrizmaSeqConfig(vocab=64, d_model=64, n_layers=2, n_heads=2,
+                             feat_map='quad2_lowrank', precision_gate='surprise_norm',
+                             surprise_gain=2.0)
+    m_a4 = PrizmaSeqLM(cfg_a4).to(dev)
+    m_a4.train(False)
+    torch.manual_seed(13)
+    x_a4 = torch.randint(0, 64, (2, 48), device=dev)
+    y_a4 = m_a4(x_a4)
+    st_a4 = m_a4.init_state(2, dev)
+    outs_a4 = []
+    for t in range(x_a4.shape[1]):
+        lg_a4, st_a4 = m_a4.step(x_a4[:, t:t + 1], st_a4)
+        outs_a4.append(lg_a4)
+    yo_a4 = torch.cat(outs_a4, dim=1)
+    d_a4 = (y_a4 - yo_a4).abs().max().item()
+    print(f"[surprise_norm A4 quad2lr] step-vs-forward max|d|={d_a4:.2e} "
+          f"{'OK' if d_a4 < 1e-4 else 'MISMATCH'}")
