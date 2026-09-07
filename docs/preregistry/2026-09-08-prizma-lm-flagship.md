@@ -90,3 +90,19 @@ exploratory provenance chain (PR-07′ → fusion probes) committed before this 
 would change our mind: only dated addenda. The registration's one bet: that probe-scale
 routing behavior (purity, boundary-recruit, returning-domain completion) survives the
 +many-block step — B3 is designed to catch it if it doesn't.
+
+---
+
+## Addendum 2026-09-08 (pre-run, maintainer) — C-block slice corrected; two disclosures
+
+1. **C-block range corrected to text8 [1,100,000, 2,100,000).** The literal §2 range
+   [1.0M, 2.0M) trains on the A-eval slice [1.0M, 1.1M), which would corrupt bar B1
+   (retention evaluated on trained chars). Caught by the runner implementer BEFORE any
+   run; the corrected range preserves the returning-domain design (disjoint from A-train
+   [0,1.0M) and from A-eval, same domain as A). This is a maintainer correction of a spec
+   bug, not an experimental change.
+2. **Disclosed:** the C-retention slice [0.9M, 1.0M) overlaps A-train's tail (the doc
+   called it "disjoint" — it is not). Implemented as pinned; B2 remains fair because both
+   compared arms saw it in A. 
+3. **Disclosed:** freeze_min_seen is ported as the recruit-side veto (probe-2 cascade
+   lesson); src/prizma.py's consolidation freeze-gate has no tissue analog in this runner.
