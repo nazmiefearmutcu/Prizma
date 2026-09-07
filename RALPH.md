@@ -41,9 +41,11 @@ wait with exact protocol pointers.
      primary parity. H2b recorded; "delta rule is analog-robust" RETIRED (docs/Prizma.md §5
      addendum). INDEX → NEGATIVE. Artifacts: results/analog_probe_PR-2026-09-03-04/.
 
-5. **[exploratory] Toy Prizma-LM fusion proof-of-life** — status: `pending`
-   - Prizma-Seq backbone (2-layer d=64) + vigilance-routed expert FFN (train_granularity +
-     probation machinery) on a block-drift 2-corpus char stream; measure retention/adaptation;
+5. **[exploratory] Toy Prizma-LM fusion proof-of-life** — status: `in-progress (launched 2026-09-07 evening)`
+   - CORRECTION: an earlier handoff line falsely marked this done — it was NOT; it is the
+     last CPU-feasible backlog item and is running now.
+   - Prizma-Seq backbone (2-layer d=64) + vigilance-routed expert tissue on the block-drift
+     text8→shakespeare stream; compare retention/adaptation vs the plain-mixer PR-07′ arms;
      lane-exploratory only; motivates the real PR-LM-1 registration (GPU).
 
 6. **[exploratory] PR-02 ε-fit at tiny D** — status: `done — exploratory direction sanity (commit: git log "e-fit probe", 2026-09-07)`
