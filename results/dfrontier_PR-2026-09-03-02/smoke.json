@@ -1,0 +1,385 @@
+{
+  "meta": {
+    "registry": "PR-2026-09-03-02",
+    "smoke": true,
+    "scale": [
+      64,
+      2,
+      2
+    ],
+    "arms": [
+      "quad2",
+      "quad2_lowrank",
+      "none"
+    ],
+    "d_phi": {
+      "quad2": 256,
+      "quad2_lowrank": 137,
+      "none": 32
+    },
+    "primary": "quad2",
+    "fit_rungs": [
+      8
+    ],
+    "adj_rungs": [
+      12
+    ],
+    "grid": [
+      8,
+      12
+    ],
+    "claim_seeds": [
+      0
+    ],
+    "cap": 500,
+    "batch_size": 16,
+    "eval_every": 100,
+    "recipe": {
+      "warmup": 200,
+      "warmup_frac": 0.0,
+      "min_lr_frac": 0.1
+    },
+    "num_queries": 16,
+    "solve": [
+      0.9,
+      0.6666666666666666
+    ],
+    "sigma2_law": {
+      "quad2": 0.14591396590340336,
+      "quad2_lowrank": 0.15829095273167618,
+      "none": 0.17692044555481767
+    },
+    "lane": "SMOKE (plumbing only)",
+    "matched_params": {
+      "quad2": 102728,
+      "quad2_lowrank": 102728,
+      "none": 102728
+    },
+    "raw_archive": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\runs\\dfrontier-PR-2026-09-03-02-20260907T213946Z.json"
+  },
+  "fit.quad2.D8.s0": {
+    "best": 0.16259765625,
+    "plateau": 500,
+    "params": 102728,
+    "sec": 15.7,
+    "seed": 0,
+    "lr": 0.001,
+    "cap": 500,
+    "cfgsig": "44c4fe205e01d5b2"
+  },
+  "fit.quad2_lowrank.D8.s0": {
+    "best": 0.1611328125,
+    "plateau": 500,
+    "params": 102728,
+    "sec": 11.9,
+    "seed": 0,
+    "lr": 0.001,
+    "cap": 500,
+    "cfgsig": "b0ede441264e88fe"
+  },
+  "fit.none.D8.s0": {
+    "best": 0.1619873046875,
+    "plateau": 500,
+    "params": 102728,
+    "sec": 9.1,
+    "seed": 0,
+    "lr": 0.001,
+    "cap": 500,
+    "cfgsig": "6052df9cfc6387ec"
+  },
+  "frozen_predictions": {
+    "registry": "PR-2026-09-03-02",
+    "what": "Step-2 FREEZE (docs/crosstalk_capacity_law.md \u00a75): frozen BEFORE any adjudication rung ran. The doc's 'follow-up commit to this file' is implemented as this ledger record (the doc is a binding READ-ONLY protocol document); the runner refuses to launch adjudication cells without it and refuses to re-fit on resume.",
+    "frozen_at": "2026-09-07T21:05:07Z",
+    "smoke": true,
+    "fit_rungs": [
+      8
+    ],
+    "adj_rungs": [
+      12
+    ],
+    "sigma2_law": {
+      "quad2": 0.14591396590340336,
+      "quad2_lowrank": 0.15829095273167618,
+      "none": 0.17692044555481767
+    },
+    "fit_accs": {
+      "quad2.D8": [
+        0.16259765625
+      ],
+      "quad2_lowrank.D8": [
+        0.1611328125
+      ],
+      "none.D8": [
+        0.1619873046875
+      ]
+    },
+    "solved_fit": {
+      "quad2.D8": false,
+      "quad2_lowrank.D8": false,
+      "none.D8": false
+    },
+    "d_star_fit": {
+      "quad2": null,
+      "quad2_lowrank": null,
+      "none": null
+    },
+    "eps_hat": {
+      "quad2": null,
+      "quad2_lowrank": null,
+      "none": null
+    },
+    "n_star": {
+      "quad2": null,
+      "quad2_lowrank": null,
+      "none": null
+    },
+    "predicted_solved": {
+      "quad2": null,
+      "quad2_lowrank": null,
+      "none": null
+    },
+    "kill_evaluation": {
+      "k2_fired": true,
+      "k1_fired": false,
+      "outcome": "INCOMPLETE_K2",
+      "reason": "K2 (unidentifiable fit): the primary arm fails ALL of the fit rungs [8] \u2014 eps_hat is not identified. Outcome INCOMPLETE (doc \u00a75: never counted as PASS); no adjudication run is booked."
+    },
+    "eps_consistency": {
+      "ratio": null,
+      "abs_gap": null,
+      "demote_to_per_map": true,
+      "note": "eps_hat unidentifiable (or zero) for an arm \u2014 'single constant' reading not evaluable; treated as per-map"
+    },
+    "implied_eps_by_fit_rung": [
+      {
+        "D": 8,
+        "eps_if_transition": 0.38605206659156344
+      }
+    ]
+  },
+  "adj.quad2.D12.s0": {
+    "best": 0.1234130859375,
+    "plateau": 500,
+    "params": 102728,
+    "sec": 14.3,
+    "seed": 0,
+    "lr": 0.001,
+    "cap": 500,
+    "cfgsig": "f8325cb94fb1f3f7"
+  },
+  "adj.quad2_lowrank.D12.s0": {
+    "best": 0.1256103515625,
+    "plateau": 500,
+    "params": 102728,
+    "sec": 13.3,
+    "seed": 0,
+    "lr": 0.001,
+    "cap": 500,
+    "cfgsig": "2485571a976d1ebc"
+  },
+  "adj.none.D12.s0": {
+    "best": 0.124267578125,
+    "plateau": 500,
+    "params": 102728,
+    "sec": 10.1,
+    "seed": 0,
+    "lr": 0.001,
+    "cap": 500,
+    "cfgsig": "58c17f279b71de83"
+  },
+  "verdict": {
+    "outcome": "INCOMPLETE_K2",
+    "verdict": "INCOMPLETE \u2014 the primary arm's eps_hat was unidentifiable at the fit tier (K2); there is no frozen prediction to adjudicate. Never counted as PASS.",
+    "smoke": true,
+    "primary": "quad2",
+    "per_arm": {
+      "quad2": {
+        "identified": false,
+        "agreement": null,
+        "pass": null,
+        "note": "eps_hat unidentifiable for this arm \u2014 no frozen prediction to test"
+      },
+      "quad2_lowrank": {
+        "identified": false,
+        "agreement": null,
+        "pass": null,
+        "note": "eps_hat unidentifiable for this arm \u2014 no frozen prediction to test"
+      },
+      "none": {
+        "identified": false,
+        "agreement": null,
+        "pass": null,
+        "note": "eps_hat unidentifiable for this arm \u2014 no frozen prediction to test"
+      }
+    },
+    "none_sanity": {
+      "applicable": false,
+      "none_solved_rungs_ge_96": [],
+      "deeper_falsification_flag": false,
+      "note": "none failed every >=96 rung (or none applicable in smoke): sanity clean"
+    }
+  },
+  "report": {
+    "registry": "PR-2026-09-03-02",
+    "smoke": true,
+    "scale": [
+      64,
+      2,
+      2
+    ],
+    "grid": [
+      8,
+      12
+    ],
+    "claim_seeds": [
+      0
+    ],
+    "cap": 500,
+    "sigma2_law": {
+      "quad2": 0.14591396590340336,
+      "quad2_lowrank": 0.15829095273167618,
+      "none": 0.17692044555481767
+    },
+    "matched_params": {
+      "quad2": 102728,
+      "quad2_lowrank": 102728,
+      "none": 102728
+    },
+    "d_star_fit": {
+      "quad2": null,
+      "quad2_lowrank": null,
+      "none": null
+    },
+    "eps_hat": {
+      "quad2": null,
+      "quad2_lowrank": null,
+      "none": null
+    },
+    "kill_evaluation": {
+      "k2_fired": true,
+      "k1_fired": false,
+      "outcome": "INCOMPLETE_K2",
+      "reason": "K2 (unidentifiable fit): the primary arm fails ALL of the fit rungs [8] \u2014 eps_hat is not identified. Outcome INCOMPLETE (doc \u00a75: never counted as PASS); no adjudication run is booked."
+    },
+    "eps_consistency": {
+      "ratio": null,
+      "abs_gap": null,
+      "demote_to_per_map": true,
+      "note": "eps_hat unidentifiable (or zero) for an arm \u2014 'single constant' reading not evaluable; treated as per-map"
+    },
+    "frozen_predictions": {
+      "registry": "PR-2026-09-03-02",
+      "what": "Step-2 FREEZE (docs/crosstalk_capacity_law.md \u00a75): frozen BEFORE any adjudication rung ran. The doc's 'follow-up commit to this file' is implemented as this ledger record (the doc is a binding READ-ONLY protocol document); the runner refuses to launch adjudication cells without it and refuses to re-fit on resume.",
+      "frozen_at": "2026-09-07T21:05:07Z",
+      "smoke": true,
+      "fit_rungs": [
+        8
+      ],
+      "adj_rungs": [
+        12
+      ],
+      "sigma2_law": {
+        "quad2": 0.14591396590340336,
+        "quad2_lowrank": 0.15829095273167618,
+        "none": 0.17692044555481767
+      },
+      "fit_accs": {
+        "quad2.D8": [
+          0.16259765625
+        ],
+        "quad2_lowrank.D8": [
+          0.1611328125
+        ],
+        "none.D8": [
+          0.1619873046875
+        ]
+      },
+      "solved_fit": {
+        "quad2.D8": false,
+        "quad2_lowrank.D8": false,
+        "none.D8": false
+      },
+      "d_star_fit": {
+        "quad2": null,
+        "quad2_lowrank": null,
+        "none": null
+      },
+      "eps_hat": {
+        "quad2": null,
+        "quad2_lowrank": null,
+        "none": null
+      },
+      "n_star": {
+        "quad2": null,
+        "quad2_lowrank": null,
+        "none": null
+      },
+      "predicted_solved": {
+        "quad2": null,
+        "quad2_lowrank": null,
+        "none": null
+      },
+      "kill_evaluation": {
+        "k2_fired": true,
+        "k1_fired": false,
+        "outcome": "INCOMPLETE_K2",
+        "reason": "K2 (unidentifiable fit): the primary arm fails ALL of the fit rungs [8] \u2014 eps_hat is not identified. Outcome INCOMPLETE (doc \u00a75: never counted as PASS); no adjudication run is booked."
+      },
+      "eps_consistency": {
+        "ratio": null,
+        "abs_gap": null,
+        "demote_to_per_map": true,
+        "note": "eps_hat unidentifiable (or zero) for an arm \u2014 'single constant' reading not evaluable; treated as per-map"
+      },
+      "implied_eps_by_fit_rung": [
+        {
+          "D": 8,
+          "eps_if_transition": 0.38605206659156344
+        }
+      ]
+    },
+    "observed_solved": {
+      "quad2.D8": false,
+      "quad2_lowrank.D8": false,
+      "none.D8": false,
+      "quad2.D12": false,
+      "quad2_lowrank.D12": false,
+      "none.D12": false
+    },
+    "k3_persisted": false,
+    "raw_archive": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\runs\\dfrontier-PR-2026-09-03-02-20260907T213946Z.json",
+    "verdict": {
+      "outcome": "INCOMPLETE_K2",
+      "verdict": "INCOMPLETE \u2014 the primary arm's eps_hat was unidentifiable at the fit tier (K2); there is no frozen prediction to adjudicate. Never counted as PASS.",
+      "smoke": true,
+      "primary": "quad2",
+      "per_arm": {
+        "quad2": {
+          "identified": false,
+          "agreement": null,
+          "pass": null,
+          "note": "eps_hat unidentifiable for this arm \u2014 no frozen prediction to test"
+        },
+        "quad2_lowrank": {
+          "identified": false,
+          "agreement": null,
+          "pass": null,
+          "note": "eps_hat unidentifiable for this arm \u2014 no frozen prediction to test"
+        },
+        "none": {
+          "identified": false,
+          "agreement": null,
+          "pass": null,
+          "note": "eps_hat unidentifiable for this arm \u2014 no frozen prediction to test"
+        }
+      },
+      "none_sanity": {
+        "applicable": false,
+        "none_solved_rungs_ge_96": [],
+        "deeper_falsification_flag": false,
+        "note": "none failed every >=96 rung (or none applicable in smoke): sanity clean"
+      }
+    }
+  }
+}

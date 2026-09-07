@@ -1,0 +1,196 @@
+{
+  "meta": {
+    "registry": "PR-2026-09-03-02",
+    "smoke": true,
+    "scale": [
+      64,
+      2,
+      2
+    ],
+    "arms": [
+      "quad2",
+      "quad2_lowrank",
+      "none"
+    ],
+    "d_phi": {
+      "quad2": 256,
+      "quad2_lowrank": 137,
+      "none": 32
+    },
+    "primary": "quad2",
+    "fit_rungs": [
+      8
+    ],
+    "adj_rungs": [
+      12
+    ],
+    "grid": [
+      8,
+      12
+    ],
+    "claim_seeds": [
+      0
+    ],
+    "cap": 4000,
+    "batch_size": 16,
+    "eval_every": 100,
+    "recipe": {
+      "warmup": 200,
+      "warmup_frac": 0.0,
+      "min_lr_frac": 0.1
+    },
+    "num_queries": 16,
+    "solve": [
+      0.9,
+      0.6666666666666666
+    ],
+    "sigma2_law": {
+      "quad2": 0.14591396590340336,
+      "quad2_lowrank": 0.15829095273167618,
+      "none": 0.17692044555481767
+    },
+    "lane": "SMOKE (plumbing only)",
+    "matched_params": {
+      "quad2": 102728,
+      "quad2_lowrank": 102728,
+      "none": 102728
+    }
+  },
+  "fit.quad2.D8.s0": {
+    "best": 0.9964599609375,
+    "plateau": 4000,
+    "params": 102728,
+    "sec": 111.2,
+    "seed": 0,
+    "lr": 0.001,
+    "cap": 4000,
+    "cfgsig": "ba00d08ec6aae328"
+  },
+  "fit.quad2_lowrank.D8.s0": {
+    "best": 0.998291015625,
+    "plateau": 4000,
+    "params": 102728,
+    "sec": 97.4,
+    "seed": 0,
+    "lr": 0.001,
+    "cap": 4000,
+    "cfgsig": "a178ccb36d3c0b0c"
+  },
+  "fit.none.D8.s0": {
+    "best": 0.9638671875,
+    "plateau": 4000,
+    "params": 102728,
+    "sec": 77.9,
+    "seed": 0,
+    "lr": 0.001,
+    "cap": 4000,
+    "cfgsig": "ab8b1876fdc7fb89"
+  },
+  "frozen_predictions": {
+    "registry": "PR-2026-09-03-02",
+    "what": "Step-2 FREEZE (docs/crosstalk_capacity_law.md \u00a75): frozen BEFORE any adjudication rung ran. The doc's 'follow-up commit to this file' is implemented as this ledger record (the doc is a binding READ-ONLY protocol document); the runner refuses to launch adjudication cells without it and refuses to re-fit on resume.",
+    "frozen_at": "2026-09-07T21:11:30Z",
+    "smoke": true,
+    "fit_rungs": [
+      8
+    ],
+    "adj_rungs": [
+      12
+    ],
+    "sigma2_law": {
+      "quad2": 0.14591396590340336,
+      "quad2_lowrank": 0.15829095273167618,
+      "none": 0.17692044555481767
+    },
+    "fit_accs": {
+      "quad2.D8": [
+        0.9964599609375
+      ],
+      "quad2_lowrank.D8": [
+        0.998291015625
+      ],
+      "none.D8": [
+        0.9638671875
+      ]
+    },
+    "solved_fit": {
+      "quad2.D8": true,
+      "quad2_lowrank.D8": true,
+      "none.D8": true
+    },
+    "d_star_fit": {
+      "quad2": 8,
+      "quad2_lowrank": 8,
+      "none": 8
+    },
+    "eps_hat": {
+      "quad2": 0.38605206659156344,
+      "quad2_lowrank": 0.4187984957194954,
+      "none": 0.4680875007807904
+    },
+    "n_star": {
+      "quad2": 8.000000000000002,
+      "quad2_lowrank": 8.0,
+      "none": 8.0
+    },
+    "predicted_solved": {
+      "quad2": {
+        "12": false
+      },
+      "quad2_lowrank": {
+        "12": false
+      },
+      "none": {
+        "12": false
+      }
+    },
+    "kill_evaluation": {
+      "k2_fired": true,
+      "k1_fired": false,
+      "outcome": "INCOMPLETE_K2",
+      "reason": "K2 (unidentifiable fit): the primary arm solves ALL of the fit rungs [8] \u2014 eps_hat is not identified. Outcome INCOMPLETE (doc \u00a75: never counted as PASS); no adjudication run is booked."
+    },
+    "eps_consistency": {
+      "ratio": 0.9218086276272945,
+      "abs_gap": 0.07819137237270546,
+      "demote_to_per_map": false,
+      "note": "per-arm eps_hat within 2x \u2014 consistent with a single O(1) constant (doc \u00a75 reading)"
+    },
+    "implied_eps_by_fit_rung": [
+      {
+        "D": 8,
+        "eps_if_transition": 0.38605206659156344
+      }
+    ]
+  },
+  "adj.quad2.D12.s0": {
+    "best": 0.9862060546875,
+    "plateau": 4000,
+    "params": 102728,
+    "sec": 113.8,
+    "seed": 0,
+    "lr": 0.001,
+    "cap": 4000,
+    "cfgsig": "d36b05a65ebac32b"
+  },
+  "adj.quad2_lowrank.D12.s0": {
+    "best": 0.9918212890625,
+    "plateau": 4000,
+    "params": 102728,
+    "sec": 100.5,
+    "seed": 0,
+    "lr": 0.001,
+    "cap": 4000,
+    "cfgsig": "c71b54a862914bcb"
+  },
+  "adj.none.D12.s0": {
+    "best": 0.852783203125,
+    "plateau": 4000,
+    "params": 102728,
+    "sec": 77.8,
+    "seed": 0,
+    "lr": 0.001,
+    "cap": 4000,
+    "cfgsig": "736a9ac9b556b730"
+  }
+}

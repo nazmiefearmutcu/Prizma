@@ -70,10 +70,18 @@ wait with exact protocol pointers.
    - GPU SESSION RECIPE: `python seq/surprise_claim.py --powered` — executes PR-01 VERBATIM
      and computes the Welch+Holm verdict incl. the pre-committed RETIRED branch. One
      disclosed operational deviation (ledger filenames) noted in the module docstring.
-8. **[blocked: needs GPU] Tier-0 repairs** — clean n=10 recall gate (~28h), init-fix reruns
-   (~18h), B4 closure (~8h), GLA/Mamba-2 landscape (~60h). Order per synthesis §6.
-9. **[blocked: needs GPU] Kernel decision session** — report 08-P1, bar ≤1.5× TF step time.
-10. **[blocked: needs GPU] PR-LM-1** — gated by PR-07′ outcome.
+8. **[GPU-plug-and-play] Tier-0 repairs** — clean n=10 recall gate (~28h, RESUMABLE — Colab 24h limit ok), B4 closure (~8h), GLA/Mamba-2 landscape (~60h multi-session). WIRED: PRIZMA_GPU_CAMPAIGN.ipynb stage 1-3 (init-fix reruns ride along inside the recall-gate/B4 runs).
+9. **[GPU-plug-and-play] Kernel decision session** — report 08-P1, bar ≤1.5× TF step time (same A100 session; runners ready).
+10. **[GPU-plug-and-play] PR-LM-1** — unblocked by PR-07′; design consequences in item 5 (routing ledger as the claim, shared-extra-head control, many-block stream). Registration to be written when GPU budget is scheduled.
+
+## GPU SESSION (ONE Colab A100 notebook does everything)
+
+PRIZMA_GPU_CAMPAIGN.ipynb (repo root): stage 0 setup+pytest sanity (expect 374 passed) →
+stage 1 recall gate --full (resumable) → stage 2 B4 both corpora n≥5 → stage 3 landscape
+--full → stage 4 PR-01 --powered → stage 5 PR-02 --powered → per-stage archives + Drive zip.
+All runners refuse to start the powered tiers without CUDA and execute frozen protocols
+VERBATIM (smoke/powered ledger separation everywhere; verdicts computed in-run per each
+doc's statistics incl. pre-committed negative branches).
 
 ## LOG
 
