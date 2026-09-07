@@ -72,7 +72,9 @@ wait with exact protocol pointers.
      disclosed operational deviation (ledger filenames) noted in the module docstring.
 8. **[GPU-plug-and-play] Tier-0 repairs** — clean n=10 recall gate (~28h, RESUMABLE — Colab 24h limit ok), B4 closure (~8h), GLA/Mamba-2 landscape (~60h multi-session). WIRED: PRIZMA_GPU_CAMPAIGN.ipynb stage 1-3 (init-fix reruns ride along inside the recall-gate/B4 runs).
 9. **[GPU-plug-and-play] Kernel decision session** — report 08-P1, bar ≤1.5× TF step time (same A100 session; runners ready).
-10. **[GPU-plug-and-play] PR-LM-1** — unblocked by PR-07′; design consequences in item 5 (routing ledger as the claim, shared-extra-head control, many-block stream). Registration to be written when GPU budget is scheduled.
+10. **[GPU-plug-and-play] PR-LM-1 = PR-2026-09-03-08 REGISTERED** — docs/preregistry/2026-09-08-prizma-lm-flagship.md (frozen 2026-09-08, before any run): many-block text8→shakespeare→text8-returning, 5 arms (PRIM-LM fusion / FROZEN-TRUNK / SHARED-HEAD capacity control / FROZEN-CHECKPOINT / FORCED-RECRUIT), bars B1 retention ≤0.05, B2 adaptation ≥0.10, B3 ledger-primary pattern completion (the probe-2 lessons baked in: capacity confound refuted, trunk drift = binding forgetting term, floor-maturity veto on). Runner seq/prizma_lm_claim.py to be implemented on CPU (mirrors surprise_claim.py) — the LAST remaining local task; notebook gains a stage when it exists. Est. 45-90 min A100.
+
+11. **[CPU, LAST LOCAL TASK] seq/prizma_lm_claim.py implementation** — mirror surprise_claim.py (smoke/powered separation, CUDA refusal, fingerprint resume, archive-before-verdict, VERBATIM bars B1-B4 per PR-08 doc, t_isf upper-tail); add the PR-08 stage to PRIZMA_GPU_CAMPAIGN.ipynb; smoke on CPU.
 
 ## GPU SESSION (ONE Colab A100 notebook does everything)
 
