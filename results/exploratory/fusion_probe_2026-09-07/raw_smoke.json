@@ -1,0 +1,387 @@
+{
+ "meta": {
+  "protocol": "fusion_probe (LANE-EXPLORATORY \u2014 design-informing, never a claim)",
+  "question": "does vigilance-routed expert tissue change retention/adaptation vs the plain mixer on the PR-07' block-drift stream?",
+  "stream": "text8[0:1.0M) -> tiny-shakespeare, one pass, char-level (PR-07' verbatim)",
+  "backbone": "PrizmaSeqLM 2-layer d_model=64 H=4 chunk=64 window=16 (PR-07' pinned)",
+  "variant": "PREFERRED: backbone TRAINS on all segments (shared LM loss); expert heads local (private AdamW, detached base+hidden, no router gradient)",
+  "routing": "per-segment vigilance: z=(segCE-mu)/sigma <= 5.0 (shipped z_novel); mu/sigma EMAs rate 0.05 over OWN trained segments (src/prizma.py mirror); recruit next slot; at cap m_max=E -> argmin-surprise fallback (PR-05 Policy A relationship documented)",
+  "expert_head": "PCExpertHead Wenc 64->64 tanh, Wdec 64->65; residual corrector on detached base logits",
+  "smoke": true,
+  "vocab": 65,
+  "seg": 256,
+  "batch_segs": 32,
+  "seeds": [
+   0,
+   1
+  ],
+  "segments": {
+   "A_train": 64,
+   "B_train": 64,
+   "A_eval": 390,
+   "B_eval": 435
+  },
+  "params": {
+   "backbone": 103056,
+   "per_expert": 8385,
+   "pool_e4": 33540,
+   "pool_e8": 67080
+  },
+  "threads": 8,
+  "lrs_rule": "per arm-family, seed-0 first-200-A-segment loss, then frozen"
+ },
+ "lr_selection": {
+  "plain": {
+   "lr": 0.003,
+   "grid": {}
+  },
+  "fusion_e4": {
+   "lr": 0.003,
+   "grid": {}
+  },
+  "fusion_e8": {
+   "lr": 0.003,
+   "grid": {}
+  }
+ },
+ "cells": [
+  {
+   "config": "plain",
+   "E": 0,
+   "seed": 0,
+   "lr": 0.003,
+   "bpc_A_pre": 5.283897801084931,
+   "bpc_A_post": 4.8932365814023715,
+   "bpc_B": 5.154528323279006,
+   "fgt_A": 0.39066121968255985,
+   "wall_s": 5.0,
+   "first_cell_note": "first cell (plain seed 0) wall 5.0s \u2014 budget extrapolates to 0.5 min for all 6 cells"
+  },
+  {
+   "config": "plain",
+   "E": 0,
+   "seed": 1,
+   "lr": 0.003,
+   "bpc_A_pre": 5.302663320255542,
+   "bpc_A_post": 4.939786890909432,
+   "bpc_B": 5.180097732799195,
+   "fgt_A": 0.36287642934610975,
+   "wall_s": 2.7,
+   "first_cell_note": "first cell (plain seed 0) wall 5.0s \u2014 budget extrapolates to 0.5 min for all 6 cells"
+  },
+  {
+   "config": "fusion_e4",
+   "E": 4,
+   "seed": 0,
+   "lr": 0.003,
+   "bpc_A_pre": 4.941736105231895,
+   "bpc_A_post": 4.497363641802256,
+   "bpc_B": 5.00345357560622,
+   "ledger": {
+    "n_committed": 1,
+    "recruits": [
+     {
+      "slot": 0,
+      "at_batch": 0,
+      "corpus": "A",
+      "n_novel_segs": 32,
+      "trigger_z": null,
+      "reason": "empty_pool"
+     }
+    ],
+    "cap_fallback_batches": 0,
+    "cap_fallback_segments": 0,
+    "cap_events": [],
+    "per_expert": [
+     {
+      "slot": 0,
+      "committed": true,
+      "train_A": 64,
+      "train_B": 64,
+      "train_total": 128,
+      "expert_majority_corpus_share": 0.5,
+      "mu": 4.0506,
+      "sigma": 0.4487,
+      "mean_calib_ce": 3.6669,
+      "n_batches": 4,
+      "n_segments": 128,
+      "eval_A": 390,
+      "eval_B": 435
+     },
+     {
+      "slot": 1,
+      "committed": false
+     },
+     {
+      "slot": 2,
+      "committed": false
+     },
+     {
+      "slot": 3,
+      "committed": false
+     }
+    ],
+    "purity": {
+     "A_majority_expert_share": 1.0,
+     "B_majority_expert_share": 1.0,
+     "mean_expert_majority_corpus_share": 0.5
+    }
+   },
+   "fgt_A": 0.4443724634296391,
+   "wall_s": 3.8,
+   "first_cell_note": "first cell (plain seed 0) wall 5.0s \u2014 budget extrapolates to 0.5 min for all 6 cells"
+  },
+  {
+   "config": "fusion_e4",
+   "E": 4,
+   "seed": 1,
+   "lr": 0.003,
+   "bpc_A_pre": 4.940498112373622,
+   "bpc_A_post": 4.500356055258887,
+   "bpc_B": 5.003704406174386,
+   "ledger": {
+    "n_committed": 1,
+    "recruits": [
+     {
+      "slot": 0,
+      "at_batch": 0,
+      "corpus": "A",
+      "n_novel_segs": 32,
+      "trigger_z": null,
+      "reason": "empty_pool"
+     }
+    ],
+    "cap_fallback_batches": 0,
+    "cap_fallback_segments": 0,
+    "cap_events": [],
+    "per_expert": [
+     {
+      "slot": 0,
+      "committed": true,
+      "train_A": 64,
+      "train_B": 64,
+      "train_total": 128,
+      "expert_majority_corpus_share": 0.5,
+      "mu": 4.0324,
+      "sigma": 0.4456,
+      "mean_calib_ce": 3.6456,
+      "n_batches": 4,
+      "n_segments": 128,
+      "eval_A": 390,
+      "eval_B": 435
+     },
+     {
+      "slot": 1,
+      "committed": false
+     },
+     {
+      "slot": 2,
+      "committed": false
+     },
+     {
+      "slot": 3,
+      "committed": false
+     }
+    ],
+    "purity": {
+     "A_majority_expert_share": 1.0,
+     "B_majority_expert_share": 1.0,
+     "mean_expert_majority_corpus_share": 0.5
+    }
+   },
+   "fgt_A": 0.440142057114735,
+   "wall_s": 4.2,
+   "first_cell_note": "first cell (plain seed 0) wall 5.0s \u2014 budget extrapolates to 0.5 min for all 6 cells"
+  },
+  {
+   "config": "fusion_e8",
+   "E": 8,
+   "seed": 0,
+   "lr": 0.003,
+   "bpc_A_pre": 4.941736105231895,
+   "bpc_A_post": 4.497363641802256,
+   "bpc_B": 5.00345357560622,
+   "ledger": {
+    "n_committed": 1,
+    "recruits": [
+     {
+      "slot": 0,
+      "at_batch": 0,
+      "corpus": "A",
+      "n_novel_segs": 32,
+      "trigger_z": null,
+      "reason": "empty_pool"
+     }
+    ],
+    "cap_fallback_batches": 0,
+    "cap_fallback_segments": 0,
+    "cap_events": [],
+    "per_expert": [
+     {
+      "slot": 0,
+      "committed": true,
+      "train_A": 64,
+      "train_B": 64,
+      "train_total": 128,
+      "expert_majority_corpus_share": 0.5,
+      "mu": 4.0506,
+      "sigma": 0.4487,
+      "mean_calib_ce": 3.6669,
+      "n_batches": 4,
+      "n_segments": 128,
+      "eval_A": 390,
+      "eval_B": 435
+     },
+     {
+      "slot": 1,
+      "committed": false
+     },
+     {
+      "slot": 2,
+      "committed": false
+     },
+     {
+      "slot": 3,
+      "committed": false
+     },
+     {
+      "slot": 4,
+      "committed": false
+     },
+     {
+      "slot": 5,
+      "committed": false
+     },
+     {
+      "slot": 6,
+      "committed": false
+     },
+     {
+      "slot": 7,
+      "committed": false
+     }
+    ],
+    "purity": {
+     "A_majority_expert_share": 1.0,
+     "B_majority_expert_share": 1.0,
+     "mean_expert_majority_corpus_share": 0.5
+    }
+   },
+   "fgt_A": 0.4443724634296391,
+   "wall_s": 4.3,
+   "first_cell_note": "first cell (plain seed 0) wall 5.0s \u2014 budget extrapolates to 0.5 min for all 6 cells"
+  },
+  {
+   "config": "fusion_e8",
+   "E": 8,
+   "seed": 1,
+   "lr": 0.003,
+   "bpc_A_pre": 4.940498112373622,
+   "bpc_A_post": 4.500356055258887,
+   "bpc_B": 5.003704406174386,
+   "ledger": {
+    "n_committed": 1,
+    "recruits": [
+     {
+      "slot": 0,
+      "at_batch": 0,
+      "corpus": "A",
+      "n_novel_segs": 32,
+      "trigger_z": null,
+      "reason": "empty_pool"
+     }
+    ],
+    "cap_fallback_batches": 0,
+    "cap_fallback_segments": 0,
+    "cap_events": [],
+    "per_expert": [
+     {
+      "slot": 0,
+      "committed": true,
+      "train_A": 64,
+      "train_B": 64,
+      "train_total": 128,
+      "expert_majority_corpus_share": 0.5,
+      "mu": 4.0324,
+      "sigma": 0.4456,
+      "mean_calib_ce": 3.6456,
+      "n_batches": 4,
+      "n_segments": 128,
+      "eval_A": 390,
+      "eval_B": 435
+     },
+     {
+      "slot": 1,
+      "committed": false
+     },
+     {
+      "slot": 2,
+      "committed": false
+     },
+     {
+      "slot": 3,
+      "committed": false
+     },
+     {
+      "slot": 4,
+      "committed": false
+     },
+     {
+      "slot": 5,
+      "committed": false
+     },
+     {
+      "slot": 6,
+      "committed": false
+     },
+     {
+      "slot": 7,
+      "committed": false
+     }
+    ],
+    "purity": {
+     "A_majority_expert_share": 1.0,
+     "B_majority_expert_share": 1.0,
+     "mean_expert_majority_corpus_share": 0.5
+    }
+   },
+   "fgt_A": 0.440142057114735,
+   "wall_s": 4.2,
+   "first_cell_note": "first cell (plain seed 0) wall 5.0s \u2014 budget extrapolates to 0.5 min for all 6 cells"
+  }
+ ],
+ "summary": {
+  "plain": {
+   "E": 0,
+   "n_seeds": 2,
+   "bpc_A_pre": 5.2933,
+   "bpc_A_post": 4.9165,
+   "fgt_A": 0.3768,
+   "bpc_B": 5.1673,
+   "wall_s": 7.7
+  },
+  "fusion_e4": {
+   "E": 4,
+   "n_seeds": 2,
+   "bpc_A_pre": 4.9411,
+   "bpc_A_post": 4.4989,
+   "fgt_A": 0.4423,
+   "bpc_B": 5.0036,
+   "wall_s": 8.0
+  },
+  "fusion_e8": {
+   "E": 8,
+   "n_seeds": 2,
+   "bpc_A_pre": 4.9411,
+   "bpc_A_post": 4.4989,
+   "fgt_A": 0.4423,
+   "bpc_B": 5.0036,
+   "wall_s": 8.5
+  }
+ },
+ "reference_pr07": {
+  "stream_bpc_B_2.954": 2.954,
+  "stream_fgt_A": -0.189,
+  "note": "plain-mixer n=5 registered reference (results/blockdrift_PR-2026-09-03-07/RESULTS.md)"
+ }
+}

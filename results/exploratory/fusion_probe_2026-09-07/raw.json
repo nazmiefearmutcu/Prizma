@@ -1,0 +1,475 @@
+{
+ "meta": {
+  "protocol": "fusion_probe (LANE-EXPLORATORY \u2014 design-informing, never a claim)",
+  "question": "does vigilance-routed expert tissue change retention/adaptation vs the plain mixer on the PR-07' block-drift stream?",
+  "stream": "text8[0:1.0M) -> tiny-shakespeare, one pass, char-level (PR-07' verbatim)",
+  "backbone": "PrizmaSeqLM 2-layer d_model=64 H=4 chunk=64 window=16 (PR-07' pinned)",
+  "variant": "PREFERRED: backbone TRAINS on all segments (shared LM loss); expert heads local (private AdamW, detached base+hidden, no router gradient)",
+  "routing": "per-segment vigilance: z=(segCE-mu)/sigma <= 5.0 (shipped z_novel); mu/sigma EMAs rate 0.05 over OWN trained segments (src/prizma.py mirror); recruit next slot; at cap m_max=E -> argmin-surprise fallback (PR-05 Policy A relationship documented)",
+  "expert_head": "PCExpertHead Wenc 64->64 tanh, Wdec 64->65; residual corrector on detached base logits",
+  "smoke": false,
+  "vocab": 65,
+  "seg": 256,
+  "batch_segs": 32,
+  "seeds": [
+   0,
+   1
+  ],
+  "segments": {
+   "A_train": 3906,
+   "B_train": 3921,
+   "A_eval": 390,
+   "B_eval": 435
+  },
+  "params": {
+   "backbone": 103056,
+   "per_expert": 8385,
+   "pool_e4": 33540,
+   "pool_e8": 67080
+  },
+  "threads": 8,
+  "lrs_rule": "per arm-family, seed-0 first-200-A-segment loss, then frozen"
+ },
+ "lr_selection": {
+  "plain": {
+   "lr": 0.01,
+   "grid": {
+    "0.001": 5.143213668179284,
+    "0.003": 4.458794193735004,
+    "0.01": 4.19657656616867
+   }
+  },
+  "fusion_e4": {
+   "lr": 0.003,
+   "grid": {
+    "0.001": 4.707164135977779,
+    "0.003": 4.216777524511507,
+    "0.01": 4.3203619596783485
+   }
+  },
+  "fusion_e8": {
+   "lr": 0.003,
+   "grid": {
+    "0.001": 4.707164135977779,
+    "0.003": 4.216777524511507,
+    "0.01": 4.3203619596783485
+   }
+  }
+ },
+ "cells": [
+  {
+   "config": "plain",
+   "E": 0,
+   "seed": 0,
+   "lr": 0.01,
+   "bpc_A_pre": 3.149696928480859,
+   "bpc_A_post": 3.32783616312544,
+   "bpc_B": 2.9312313354336377,
+   "fgt_A": -0.17813923464458092,
+   "wall_s": 44.3,
+   "first_cell_note": "first cell (plain seed 0) wall 44.3s \u2014 budget extrapolates to 4.4 min for all 6 cells"
+  },
+  {
+   "config": "plain",
+   "E": 0,
+   "seed": 1,
+   "lr": 0.01,
+   "bpc_A_pre": 3.057325152537921,
+   "bpc_A_post": 3.297021225456797,
+   "bpc_B": 2.898833150358571,
+   "fgt_A": -0.23969607291887618,
+   "wall_s": 41.8,
+   "first_cell_note": "first cell (plain seed 0) wall 44.3s \u2014 budget extrapolates to 4.4 min for all 6 cells"
+  },
+  {
+   "config": "fusion_e4",
+   "E": 4,
+   "seed": 0,
+   "lr": 0.003,
+   "bpc_A_pre": 3.0297276592459217,
+   "bpc_A_post": 3.2404801174350597,
+   "bpc_B": 2.8934403310977945,
+   "ledger": {
+    "n_committed": 2,
+    "recruits": [
+     {
+      "slot": 0,
+      "at_batch": 0,
+      "corpus": "A",
+      "n_novel_segs": 32,
+      "trigger_z": null,
+      "reason": "empty_pool"
+     },
+     {
+      "slot": 1,
+      "at_batch": 0,
+      "corpus": "B",
+      "n_novel_segs": 32,
+      "trigger_z_max": 25.098,
+      "reason": "novel"
+     }
+    ],
+    "cap_fallback_batches": 0,
+    "cap_fallback_segments": 0,
+    "cap_events": [],
+    "per_expert": [
+     {
+      "slot": 0,
+      "committed": true,
+      "train_A": 3906,
+      "train_B": 26,
+      "train_total": 3932,
+      "expert_majority_corpus_share": 0.9933875890132248,
+      "mu": 2.0461,
+      "sigma": 0.1559,
+      "mean_calib_ce": 2.3556,
+      "n_batches": 144,
+      "n_segments": 3932,
+      "eval_A": 360,
+      "eval_B": 6
+     },
+     {
+      "slot": 1,
+      "committed": true,
+      "train_A": 0,
+      "train_B": 3895,
+      "train_total": 3895,
+      "expert_majority_corpus_share": 1.0,
+      "mu": 1.9928,
+      "sigma": 0.0979,
+      "mean_calib_ce": 2.1671,
+      "n_batches": 123,
+      "n_segments": 3895,
+      "eval_A": 30,
+      "eval_B": 429
+     },
+     {
+      "slot": 2,
+      "committed": false
+     },
+     {
+      "slot": 3,
+      "committed": false
+     }
+    ],
+    "purity": {
+     "A_majority_expert_share": 1.0,
+     "B_majority_expert_share": 0.993369038510584,
+     "mean_expert_majority_corpus_share": 0.9966937945066123
+    }
+   },
+   "fgt_A": -0.21075245818913801,
+   "wall_s": 43.5,
+   "first_cell_note": "first cell (plain seed 0) wall 44.3s \u2014 budget extrapolates to 4.4 min for all 6 cells"
+  },
+  {
+   "config": "fusion_e4",
+   "E": 4,
+   "seed": 1,
+   "lr": 0.003,
+   "bpc_A_pre": 3.0466566153762726,
+   "bpc_A_post": 3.2226585554714084,
+   "bpc_B": 2.894042597735895,
+   "ledger": {
+    "n_committed": 2,
+    "recruits": [
+     {
+      "slot": 0,
+      "at_batch": 0,
+      "corpus": "A",
+      "n_novel_segs": 32,
+      "trigger_z": null,
+      "reason": "empty_pool"
+     },
+     {
+      "slot": 1,
+      "at_batch": 0,
+      "corpus": "B",
+      "n_novel_segs": 32,
+      "trigger_z_max": 26.253,
+      "reason": "novel"
+     }
+    ],
+    "cap_fallback_batches": 0,
+    "cap_fallback_segments": 0,
+    "cap_events": [],
+    "per_expert": [
+     {
+      "slot": 0,
+      "committed": true,
+      "train_A": 3906,
+      "train_B": 0,
+      "train_total": 3906,
+      "expert_majority_corpus_share": 1.0,
+      "mu": 2.1152,
+      "sigma": 0.1331,
+      "mean_calib_ce": 2.3486,
+      "n_batches": 123,
+      "n_segments": 3906,
+      "eval_A": 381,
+      "eval_B": 0
+     },
+     {
+      "slot": 1,
+      "committed": true,
+      "train_A": 0,
+      "train_B": 3921,
+      "train_total": 3921,
+      "expert_majority_corpus_share": 1.0,
+      "mu": 1.9828,
+      "sigma": 0.096,
+      "mean_calib_ce": 2.1534,
+      "n_batches": 123,
+      "n_segments": 3921,
+      "eval_A": 9,
+      "eval_B": 435
+     },
+     {
+      "slot": 2,
+      "committed": false
+     },
+     {
+      "slot": 3,
+      "committed": false
+     }
+    ],
+    "purity": {
+     "A_majority_expert_share": 1.0,
+     "B_majority_expert_share": 1.0,
+     "mean_expert_majority_corpus_share": 1.0
+    }
+   },
+   "fgt_A": -0.1760019400951358,
+   "wall_s": 43.4,
+   "first_cell_note": "first cell (plain seed 0) wall 44.3s \u2014 budget extrapolates to 4.4 min for all 6 cells"
+  },
+  {
+   "config": "fusion_e8",
+   "E": 8,
+   "seed": 0,
+   "lr": 0.003,
+   "bpc_A_pre": 3.0297276592459217,
+   "bpc_A_post": 3.2404801174350597,
+   "bpc_B": 2.8934403310977945,
+   "ledger": {
+    "n_committed": 2,
+    "recruits": [
+     {
+      "slot": 0,
+      "at_batch": 0,
+      "corpus": "A",
+      "n_novel_segs": 32,
+      "trigger_z": null,
+      "reason": "empty_pool"
+     },
+     {
+      "slot": 1,
+      "at_batch": 0,
+      "corpus": "B",
+      "n_novel_segs": 32,
+      "trigger_z_max": 25.098,
+      "reason": "novel"
+     }
+    ],
+    "cap_fallback_batches": 0,
+    "cap_fallback_segments": 0,
+    "cap_events": [],
+    "per_expert": [
+     {
+      "slot": 0,
+      "committed": true,
+      "train_A": 3906,
+      "train_B": 26,
+      "train_total": 3932,
+      "expert_majority_corpus_share": 0.9933875890132248,
+      "mu": 2.0461,
+      "sigma": 0.1559,
+      "mean_calib_ce": 2.3556,
+      "n_batches": 144,
+      "n_segments": 3932,
+      "eval_A": 360,
+      "eval_B": 6
+     },
+     {
+      "slot": 1,
+      "committed": true,
+      "train_A": 0,
+      "train_B": 3895,
+      "train_total": 3895,
+      "expert_majority_corpus_share": 1.0,
+      "mu": 1.9928,
+      "sigma": 0.0979,
+      "mean_calib_ce": 2.1671,
+      "n_batches": 123,
+      "n_segments": 3895,
+      "eval_A": 30,
+      "eval_B": 429
+     },
+     {
+      "slot": 2,
+      "committed": false
+     },
+     {
+      "slot": 3,
+      "committed": false
+     },
+     {
+      "slot": 4,
+      "committed": false
+     },
+     {
+      "slot": 5,
+      "committed": false
+     },
+     {
+      "slot": 6,
+      "committed": false
+     },
+     {
+      "slot": 7,
+      "committed": false
+     }
+    ],
+    "purity": {
+     "A_majority_expert_share": 1.0,
+     "B_majority_expert_share": 0.993369038510584,
+     "mean_expert_majority_corpus_share": 0.9966937945066123
+    }
+   },
+   "fgt_A": -0.21075245818913801,
+   "wall_s": 44.7,
+   "first_cell_note": "first cell (plain seed 0) wall 44.3s \u2014 budget extrapolates to 4.4 min for all 6 cells"
+  },
+  {
+   "config": "fusion_e8",
+   "E": 8,
+   "seed": 1,
+   "lr": 0.003,
+   "bpc_A_pre": 3.0466566153762726,
+   "bpc_A_post": 3.2226585554714084,
+   "bpc_B": 2.894042597735895,
+   "ledger": {
+    "n_committed": 2,
+    "recruits": [
+     {
+      "slot": 0,
+      "at_batch": 0,
+      "corpus": "A",
+      "n_novel_segs": 32,
+      "trigger_z": null,
+      "reason": "empty_pool"
+     },
+     {
+      "slot": 1,
+      "at_batch": 0,
+      "corpus": "B",
+      "n_novel_segs": 32,
+      "trigger_z_max": 26.253,
+      "reason": "novel"
+     }
+    ],
+    "cap_fallback_batches": 0,
+    "cap_fallback_segments": 0,
+    "cap_events": [],
+    "per_expert": [
+     {
+      "slot": 0,
+      "committed": true,
+      "train_A": 3906,
+      "train_B": 0,
+      "train_total": 3906,
+      "expert_majority_corpus_share": 1.0,
+      "mu": 2.1152,
+      "sigma": 0.1331,
+      "mean_calib_ce": 2.3486,
+      "n_batches": 123,
+      "n_segments": 3906,
+      "eval_A": 381,
+      "eval_B": 0
+     },
+     {
+      "slot": 1,
+      "committed": true,
+      "train_A": 0,
+      "train_B": 3921,
+      "train_total": 3921,
+      "expert_majority_corpus_share": 1.0,
+      "mu": 1.9828,
+      "sigma": 0.096,
+      "mean_calib_ce": 2.1534,
+      "n_batches": 123,
+      "n_segments": 3921,
+      "eval_A": 9,
+      "eval_B": 435
+     },
+     {
+      "slot": 2,
+      "committed": false
+     },
+     {
+      "slot": 3,
+      "committed": false
+     },
+     {
+      "slot": 4,
+      "committed": false
+     },
+     {
+      "slot": 5,
+      "committed": false
+     },
+     {
+      "slot": 6,
+      "committed": false
+     },
+     {
+      "slot": 7,
+      "committed": false
+     }
+    ],
+    "purity": {
+     "A_majority_expert_share": 1.0,
+     "B_majority_expert_share": 1.0,
+     "mean_expert_majority_corpus_share": 1.0
+    }
+   },
+   "fgt_A": -0.1760019400951358,
+   "wall_s": 44.6,
+   "first_cell_note": "first cell (plain seed 0) wall 44.3s \u2014 budget extrapolates to 4.4 min for all 6 cells"
+  }
+ ],
+ "summary": {
+  "plain": {
+   "E": 0,
+   "n_seeds": 2,
+   "bpc_A_pre": 3.1035,
+   "bpc_A_post": 3.3124,
+   "fgt_A": -0.2089,
+   "bpc_B": 2.915,
+   "wall_s": 86.1
+  },
+  "fusion_e4": {
+   "E": 4,
+   "n_seeds": 2,
+   "bpc_A_pre": 3.0382,
+   "bpc_A_post": 3.2316,
+   "fgt_A": -0.1934,
+   "bpc_B": 2.8937,
+   "wall_s": 86.9
+  },
+  "fusion_e8": {
+   "E": 8,
+   "n_seeds": 2,
+   "bpc_A_pre": 3.0382,
+   "bpc_A_post": 3.2316,
+   "fgt_A": -0.1934,
+   "bpc_B": 2.8937,
+   "wall_s": 89.3
+  }
+ },
+ "reference_pr07": {
+  "stream_bpc_B_2.954": 2.954,
+  "stream_fgt_A": -0.189,
+  "note": "plain-mixer n=5 registered reference (results/blockdrift_PR-2026-09-03-07/RESULTS.md)"
+ }
+}

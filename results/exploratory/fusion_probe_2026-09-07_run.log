@@ -1,0 +1,22 @@
+[fusion] corpora loaded: A=3906 B=3921 evalA=390 evalB=435 vocab=65 smoke=False
+[fusion] lr-select plain: lr=0.001 A-loss=5.1432
+[fusion] lr-select plain: lr=0.003 A-loss=4.4588
+[fusion] lr-select plain: lr=0.01 A-loss=4.1966
+[fusion] lr-select fusion_e4: lr=0.001 A-loss=4.7072
+[fusion] lr-select fusion_e4: lr=0.003 A-loss=4.2168
+[fusion] lr-select fusion_e4: lr=0.01 A-loss=4.3204
+[fusion] lr-select fusion_e8: lr=0.001 A-loss=4.7072
+[fusion] lr-select fusion_e8: lr=0.003 A-loss=4.2168
+[fusion] lr-select fusion_e8: lr=0.01 A-loss=4.3204
+[fusion] plain seed 0: A_pre=3.150 A_post=3.328 FGT=-0.178 B=2.931 wall=44.3s
+[fusion] plain seed 1: A_pre=3.057 A_post=3.297 FGT=-0.240 B=2.899 wall=41.8s
+[fusion] fusion_e4 seed 0: A_pre=3.030 A_post=3.240 FGT=-0.211 B=2.893 wall=43.5s
+[fusion] fusion_e4 seed 1: A_pre=3.047 A_post=3.223 FGT=-0.176 B=2.894 wall=43.4s
+[fusion] fusion_e8 seed 0: A_pre=3.030 A_post=3.240 FGT=-0.211 B=2.893 wall=44.7s
+[fusion] fusion_e8 seed 1: A_pre=3.047 A_post=3.223 FGT=-0.176 B=2.894 wall=44.6s
+
+[fusion] SUMMARY (n=2 seeds, descriptive):
+  plain: A_pre=3.1035 A_post=3.3124 FGT_A=-0.2089 B=2.915
+  fusion_e4: A_pre=3.0382 A_post=3.2316 FGT_A=-0.1934 B=2.8937
+  fusion_e8: A_pre=3.0382 A_post=3.2316 FGT_A=-0.1934 B=2.8937
+[fusion] wrote C:\Users\Kullanıcı\Prizma\results\exploratory\fusion_probe_2026-09-07\raw.json

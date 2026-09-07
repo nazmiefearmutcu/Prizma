@@ -41,12 +41,17 @@ wait with exact protocol pointers.
      primary parity. H2b recorded; "delta rule is analog-robust" RETIRED (docs/Prizma.md §5
      addendum). INDEX → NEGATIVE. Artifacts: results/analog_probe_PR-2026-09-03-04/.
 
-5. **[exploratory] Toy Prizma-LM fusion proof-of-life** — status: `in-progress (launched 2026-09-07 evening)`
-   - CORRECTION: an earlier handoff line falsely marked this done — it was NOT; it is the
-     last CPU-feasible backlog item and is running now.
-   - Prizma-Seq backbone (2-layer d=64) + vigilance-routed expert tissue on the block-drift
-     text8→shakespeare stream; compare retention/adaptation vs the plain-mixer PR-07′ arms;
-     lane-exploratory only; motivates the real PR-LM-1 registration (GPU).
+5. **[exploratory] Toy Prizma-LM fusion proof-of-life** — status: `done — exploratory-complete (2026-09-07 evening)`
+   - seq/fusion_probe.py + results/exploratory/fusion_probe_2026-09-07/ (LANE-EXPLORATORY, n=2,
+     ~13 min). Gains small (~0.02-0.08 bpc, within seed spread; E=4≡E=8 — pool inert at home,
+     PR-05-at-home reproduced). **Specialization PASSES in the block regime**: expert corpus
+     purity 0.997-1.0 (e0 = 100% text8, e1 = ~99.5% shakespeare; recruitment fires at the
+     drift boundary) — the terminal probe's ≳10²-contiguous-samples condition VALIDATED:
+     vigilance experts are domain-coherent when floors calibrate on blocks.
+   - PR-LM-1 design consequence (for the GPU tier): wire experts in; stake the claim on the
+     ROUTING LEDGER + minus-routing ablation (plain mixer already clears block-drift bars;
+     small bpc gain may be mere capacity — add a shared-extra-head control); segment-level
+     routing + local per-expert optimizers + bounded-M; make the stream many-block.
 
 6. **[exploratory] PR-02 ε-fit at tiny D** — status: `done — exploratory direction sanity (commit: git log "e-fit probe", 2026-09-07)`
    - Results (n=2, 8000 steps): D=16 solves 0.995/0.996; D=32 solves 0.954/0.990 → transition
