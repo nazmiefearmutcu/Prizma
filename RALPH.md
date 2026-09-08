@@ -9,6 +9,34 @@ Standing rules: claims execute frozen protocols VERBATIM; registration precedes 
 exploratory stays lane-exploratory; suite must end green every iteration; GPU-blocked tasks
 wait with exact protocol pointers.
 
+## PR-08 EXECUTED (2026-09-08 evening — the §6 CPU fallback, owner order "çok çok daha iyi noktaya taşı")
+
+The flagship bar ran WITHOUT waiting for Colab: doc addendum #2 authorized the registered
+§6 CPU fallback, `--powered-cpu` shipped (guard untouched for `--powered`), and the full
+5-arm × n=5 campaign executed on this box in ~35 min (the 6-8 h estimate was ~10×
+conservative; 25 cells crash-safe, archived before any verdict).
+
+**VERDICT: FAIL (B3 ledger) — the pre-committed §5 branch fired.**
+- B1 PASS — retention-A mean −0.2729, CI [−0.3055, −0.2403] (negative forgetting at
+  many-block scale; the PR-07′ result GENERALIZES to 3 blocks + returning domain).
+- B2 PASS — adaptation +0.2981, CI [0.1030, 0.4931] vs FROZEN-CHECKPOINT (Holm p 0.0239).
+- B3 FAIL clause (a) — frac to the A-expert in the first 20 C-batches: mean 0.428 < 0.5
+  (per-seed 0.325/0.470/0.294/0.291/0.761); clause (b) PASS (forced cost −0.156).
+  "Lifelong routing" wording RETIRED regardless of accuracy.
+- B4 (reported) — trunk drift: PRIM +1.20 < FROZEN-TRUNK +1.87 < SHARED-HEAD +2.78; the
+  tissue BOUNDS trunk drift, and FROZEN-TRUNK's routing stays domain-clean (0.96–0.99)
+  while PRIM's trained trunk scatters it. THE MECHANISM LEAD for the next registration:
+  keep the trunk's plasticity from re-calibrating the tissue's floors (e.g. trunk-EMA
+  floors, slower trunk lr on returning blocks, or floor re-anchoring) — B1/B2/B4 say the
+  column works; only the routing ledger is noisy, and FROZEN-TRUNK shows the noise source.
+
+Events, all disclosed in the doc addenda (#2, #3): the pre-disclosed M-1 pool-full crash
+FIRED once (FORCED s2) → Policy A eviction placement, inertness PROVEN on seeds 0–1
+(committee/review_2026-09-08/forced_poolfull_inertness_output.txt); a verdict-path bug
+(claim_verdict read the bare `boundary_window` key — smoke never reaches the verdict) was
+caught by the crash and fixed against the real cell schema. Raw records archived before any
+verdict (results/runs/, two snapshots: 22-cell partial + final 25-cell). INDEX → NEGATIVE.
+
 ## BACKLOG
 
 1. **[PR-03 claim] Single-pass citation bar** — status: `done (commit: see git log "PR-03 CLAIMED", 2026-09-05)`

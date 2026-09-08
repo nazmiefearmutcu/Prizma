@@ -1,0 +1,41 @@
+[pr08] corpora: A=3906 B=3921 C=3906 segs; eval A=390 B=435 Cret=390; vocab=65; smoke=False; results=C:\Users\Kullanıcı\Prizma\results\prizma_lm_PR-2026-09-03-08\powered.json
+[pr08] PRIM-LM seed 0: resumed from ledger (bpc_A_postC=2.765)
+[pr08] PRIM-LM seed 1: resumed from ledger (bpc_A_postC=2.747)
+[pr08] PRIM-LM seed 2: resumed from ledger (bpc_A_postC=2.752)
+[pr08] PRIM-LM seed 3: resumed from ledger (bpc_A_postC=2.769)
+[pr08] PRIM-LM seed 4: resumed from ledger (bpc_A_postC=2.748)
+[pr08] FROZEN-TRUNK seed 0: resumed from ledger (bpc_A_postC=2.832)
+[pr08] FROZEN-TRUNK seed 1: resumed from ledger (bpc_A_postC=2.816)
+[pr08] FROZEN-TRUNK seed 2: resumed from ledger (bpc_A_postC=2.814)
+[pr08] FROZEN-TRUNK seed 3: resumed from ledger (bpc_A_postC=2.857)
+[pr08] FROZEN-TRUNK seed 4: resumed from ledger (bpc_A_postC=2.828)
+[pr08] SHARED-HEAD seed 0: resumed from ledger (bpc_A_postC=2.843)
+[pr08] SHARED-HEAD seed 1: resumed from ledger (bpc_A_postC=2.816)
+[pr08] SHARED-HEAD seed 2: resumed from ledger (bpc_A_postC=2.811)
+[pr08] SHARED-HEAD seed 3: resumed from ledger (bpc_A_postC=2.816)
+[pr08] SHARED-HEAD seed 4: resumed from ledger (bpc_A_postC=2.805)
+[pr08] FROZEN-CHECKPOINT seed 0: resumed from ledger (bpc_A_postC=3.150)
+[pr08] FROZEN-CHECKPOINT seed 1: resumed from ledger (bpc_A_postC=3.057)
+[pr08] FROZEN-CHECKPOINT seed 2: resumed from ledger (bpc_A_postC=3.112)
+[pr08] FROZEN-CHECKPOINT seed 3: resumed from ledger (bpc_A_postC=3.413)
+[pr08] FROZEN-CHECKPOINT seed 4: resumed from ledger (bpc_A_postC=3.072)
+[pr08] FORCED-RECRUIT seed 0: resumed from ledger (bpc_A_postC=2.790)
+[pr08] FORCED-RECRUIT seed 1: resumed from ledger (bpc_A_postC=2.769)
+[pr08] budget projection from first cell: 35.1 min for 25 cells
+[pr08] FORCED-RECRUIT seed 2: A_preB=3.038 A_postC=2.773 B_postB=2.889 B_postC=3.939 Cret_postC=2.815 wall=84.2s
+[pr08] FORCED-RECRUIT seed 3: A_preB=3.053 A_postC=2.789 B_postB=2.897 B_postC=3.862 Cret_postC=2.832 wall=75.8s
+[pr08] FORCED-RECRUIT seed 4: A_preB=2.979 A_postC=2.752 B_postB=2.882 B_postC=4.048 Cret_postC=2.812 wall=80.9s
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\Kullanıcı\Prizma\seq\prizma_lm_claim.py", line 1128, in <module>
+    main()
+  File "C:\Users\Kullanıcı\Prizma\seq\prizma_lm_claim.py", line 1123, in main
+    run(smoke=args.smoke, results_path=args.out, force_smoke_path=args.force_smoke_path,
+  File "C:\Users\Kullanıcı\Prizma\seq\prizma_lm_claim.py", line 1037, in run
+    verdict = claim_verdict(prim, frozen_ck, forced, extra_b4=extra_b4, alpha=ALPHA)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Kullanıcı\Prizma\seq\prizma_lm_claim.py", line 318, in claim_verdict
+    fracs = [float(r["boundary_window"]["frac_to_A_expert"]) for r in prim]
+                   ~^^^^^^^^^^^^^^^^^^^
+KeyError: 'boundary_window'

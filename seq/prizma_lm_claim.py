@@ -315,7 +315,10 @@ def claim_verdict(prim, frozen_ck, forced, *, extra_b4=None, alpha=ALPHA):
     b1["status"] = _bar_status(b1["ci"], B1_MARGIN, b1["p_holm"], "below", alpha)
     b2["status"] = _bar_status(b2["ci"], B2_MARGIN, b2["p_holm"], "above", alpha)
 
-    fracs = [float(r["boundary_window"]["frac_to_A_expert"]) for r in prim]
+    # Real cell schema: the routing snapshot lives under rec["ledger"] (the smoke report reads
+    # the same path). The first powered-cpu execution crashed here because the verdict read the
+    # bare key — a path that never executes in smoke (smoke never reaches the verdict).
+    fracs = [float(r["ledger"]["boundary_window"]["frac_to_A_expert"]) for r in prim]
     frac_mean = sum(fracs) / len(fracs)
     prim_b = [r["bpc_B_postC"] for r in prim]
     forced_b = [r["bpc_B_postC"] for r in forced]

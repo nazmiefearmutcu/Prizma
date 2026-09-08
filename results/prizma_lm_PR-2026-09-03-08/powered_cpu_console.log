@@ -1,0 +1,49 @@
+[pr08] corpora: A=3906 B=3921 C=3906 segs; eval A=390 B=435 Cret=390; vocab=65; smoke=False; results=C:\Users\Kullanıcı\Prizma\results\prizma_lm_PR-2026-09-03-08\powered.json
+[pr08]   fusion lr=0.001 A-loss=4.7072
+[pr08]   fusion lr=0.003 A-loss=4.2168
+[pr08]   fusion lr=0.01 A-loss=4.3204
+[pr08] lr-select fusion: lr=0.003 grid={0.001: np.float64(4.707164135977779), 0.003: np.float64(4.216777524511507), 0.01: np.float64(4.3203619596783485)}
+[pr08]   shared lr=0.001 A-loss=4.3175
+[pr08]   shared lr=0.003 A-loss=4.2584
+[pr08]   shared lr=0.01 A-loss=4.8852
+[pr08] lr-select shared: lr=0.003 grid={0.001: np.float64(4.317458369704526), 0.003: np.float64(4.258375614930461), 0.01: np.float64(4.885180928852924)}
+[pr08]   frozen-checkpoint lr=0.001 A-loss=5.1432
+[pr08]   frozen-checkpoint lr=0.003 A-loss=4.4588
+[pr08]   frozen-checkpoint lr=0.01 A-loss=4.1966
+[pr08] lr-select frozen-checkpoint: lr=0.01 grid={0.001: np.float64(5.143213668179284), 0.003: np.float64(4.458794193735004), 0.01: np.float64(4.19657656616867)}
+[pr08] budget projection from first cell: 32.6 min for 25 cells
+[pr08] PRIM-LM seed 0: A_preB=3.030 A_postC=2.765 B_postB=2.893 B_postC=4.028 Cret_postC=2.822 wall=77.6s
+[pr08] PRIM-LM seed 1: A_preB=3.047 A_postC=2.747 B_postB=2.894 B_postC=4.098 Cret_postC=2.817 wall=78.8s
+[pr08] PRIM-LM seed 2: A_preB=3.038 A_postC=2.752 B_postB=2.889 B_postC=4.042 Cret_postC=2.799 wall=81.4s
+[pr08] PRIM-LM seed 3: A_preB=3.053 A_postC=2.769 B_postB=2.897 B_postC=4.031 Cret_postC=2.819 wall=82.5s
+[pr08] PRIM-LM seed 4: A_preB=2.979 A_postC=2.748 B_postB=2.882 B_postC=4.267 Cret_postC=2.814 wall=77.7s
+[pr08] FROZEN-TRUNK seed 0: A_preB=3.030 A_postC=2.832 B_postB=3.544 B_postC=5.656 Cret_postC=2.886 wall=65.0s
+[pr08] FROZEN-TRUNK seed 1: A_preB=3.047 A_postC=2.816 B_postB=3.495 B_postC=5.136 Cret_postC=2.867 wall=61.4s
+[pr08] FROZEN-TRUNK seed 2: A_preB=3.038 A_postC=2.814 B_postB=3.542 B_postC=5.733 Cret_postC=2.840 wall=63.7s
+[pr08] FROZEN-TRUNK seed 3: A_preB=3.053 A_postC=2.857 B_postB=3.605 B_postC=5.105 Cret_postC=2.897 wall=65.4s
+[pr08] FROZEN-TRUNK seed 4: A_preB=2.979 A_postC=2.828 B_postB=3.533 B_postC=5.446 Cret_postC=2.867 wall=60.2s
+[pr08] SHARED-HEAD seed 0: A_preB=3.057 A_postC=2.843 B_postB=2.929 B_postC=5.370 Cret_postC=2.892 wall=77.4s
+[pr08] SHARED-HEAD seed 1: A_preB=3.076 A_postC=2.816 B_postB=2.920 B_postC=5.694 Cret_postC=2.867 wall=84.6s
+[pr08] SHARED-HEAD seed 2: A_preB=3.086 A_postC=2.811 B_postB=2.904 B_postC=5.516 Cret_postC=2.860 wall=79.0s
+[pr08] SHARED-HEAD seed 3: A_preB=3.118 A_postC=2.816 B_postB=2.926 B_postC=5.806 Cret_postC=2.858 wall=87.2s
+[pr08] SHARED-HEAD seed 4: A_preB=3.035 A_postC=2.805 B_postB=2.903 B_postC=6.072 Cret_postC=2.871 wall=77.3s
+[pr08] FROZEN-CHECKPOINT seed 0: A_preB=3.150 A_postC=3.150 B_postB=6.206 B_postC=6.206 Cret_postC=3.093 wall=23.4s
+[pr08] FROZEN-CHECKPOINT seed 1: A_preB=3.057 A_postC=3.057 B_postB=5.822 B_postC=5.822 Cret_postC=3.008 wall=24.4s
+[pr08] FROZEN-CHECKPOINT seed 2: A_preB=3.112 A_postC=3.112 B_postB=6.350 B_postC=6.350 Cret_postC=3.059 wall=23.6s
+[pr08] FROZEN-CHECKPOINT seed 3: A_preB=3.413 A_postC=3.413 B_postB=6.199 B_postC=6.199 Cret_postC=3.387 wall=26.1s
+[pr08] FROZEN-CHECKPOINT seed 4: A_preB=3.072 A_postC=3.072 B_postB=6.083 B_postC=6.083 Cret_postC=3.015 wall=23.3s
+[pr08] FORCED-RECRUIT seed 0: A_preB=3.030 A_postC=2.790 B_postB=2.893 B_postC=3.896 Cret_postC=2.842 wall=75.0s
+[pr08] FORCED-RECRUIT seed 1: A_preB=3.047 A_postC=2.769 B_postB=2.894 B_postC=3.944 Cret_postC=2.825 wall=75.5s
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\Kullanıcı\Prizma\seq\prizma_lm_claim.py", line 1084, in <module>
+    main()
+  File "C:\Users\Kullanıcı\Prizma\seq\prizma_lm_claim.py", line 1079, in main
+    run(smoke=args.smoke, results_path=args.out, force_smoke_path=args.force_smoke_path,
+  File "C:\Users\Kullanıcı\Prizma\seq\prizma_lm_claim.py", line 953, in run
+    rec = run_routed(V, seed, data, lr,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Kullanıcı\Prizma\seq\prizma_lm_claim.py", line 666, in run_routed
+    raise RuntimeError("FORCED-RECRUIT needs a free slot at C start; pool full — the "
+RuntimeError: FORCED-RECRUIT needs a free slot at C start; pool full — the registered forced-recruit semantics assume room

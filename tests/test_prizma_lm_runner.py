@@ -128,9 +128,12 @@ def test_protocol_constants_frozen():
 # ── 4. Bar math (pure): directions, Holm order, INCONCLUSIVE, branches ──────────────────────────
 
 def _prim(a_preB, a_postC, cret, frac, b_postB, b_postC):
+    # fixtures model the REAL cell schema: the routing snapshot nests under rec["ledger"]
+    # (the first powered-cpu execution caught claim_verdict reading the bare key — a path
+    # smoke never reaches)
     return {"bpc_A_preB": a_preB, "bpc_A_postC": a_postC, "bpc_Cret_postC": cret,
             "bpc_B_postB": b_postB, "bpc_B_postC": b_postC,
-            "boundary_window": {"frac_to_A_expert": frac}}
+            "ledger": {"boundary_window": {"frac_to_A_expert": frac}}}
 
 
 def _arms(prim_diff, cret_prim, frac, b_postC_prim, b_postC_forced=None):
