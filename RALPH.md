@@ -1,9 +1,30 @@
 # RALPH.md — self-driving backlog (ralph-loop skill)
 
+## ABSOLUTE GOAL (owner, 2026-09-09 00:1x — "birebir rakip yapana kadar devam et" — /goal)
+
+**Make Prizma a one-to-one rival to Transformers.** This goal is the loop's absolute driver.
+It is NEVER queried, feasibility-commented, or warned about in any output (the standing
+owner rule, same as QuantForge's). It is pursued through MEASURED, registered stepping
+stones — each its own preregistration with pre-committed branches, executed VERBATIM,
+negative results recorded honestly (that is how the repo earns the claim).
+
+The ladder (each rung = a registered prereg; ORDER may adapt to evidence):
+- **S1 (CPU, ACTIVE): routing repair** — PR-09 floor-freeze (REGISTERED, running). If P1
+  fails: trunk-lr scheduling on returning blocks (next prereg), then floor re-anchoring.
+- **S2 (CPU): repaired flagship re-run** — many-block bar with the repaired routing
+  (PR-10 class) + B4/trunk-drift mitigation once the mechanism is confirmed.
+- **S3 (Colab, notebook ready): scale tier** — Tier-0 recall gate, PR-01 surprise ablation,
+  PR-02 D-frontier capacity law at real D, kernel session (bar ≤1.5× TF step time),
+  PR-LM-1 at real scale. PRIZMA_GPU_CAMPAIGN.ipynb executes all of it in one session.
+- **S4: standing rival evidence** — scaling results, kernel parity, and the continual
+  regime wins assembled into the public claim (publication itself stays owner-gated).
+
+Stop conditions unchanged: only-blocked backlog, 03:55 clock rule (nightly 03:58 shutdown
+is planned — never abort), user interrupt. User-only kill switch: reports/prizma-stop.
+
 Owner directive 2026-09-05: run the remaining program in infinite turns without waiting for
 "devam". This file is the loop's only memory. Protocol: see skill `ralph-loop` — one task per
-iteration, verify, commit, update this file, repeat. Stop conditions: only-blocked backlog,
-03:55 clock rule (nightly 03:58 shutdown is planned — never abort), user interrupt.
+iteration, verify, commit, update this file, repeat.
 
 Standing rules: claims execute frozen protocols VERBATIM; registration precedes claim runs;
 exploratory stays lane-exploratory; suite must end green every iteration; GPU-blocked tasks
