@@ -499,6 +499,14 @@ def route_pr08(model, h, y, corpus, ledger, stream_pos, *, boundary=None, force_
             torch.manual_seed(FRESH_HEAD_SEED_BASE + 17 * victim + len(ledger["evictions"]))
             model.experts[victim] = fp.PCExpertHead(64, H_SMALL, vocab_size)
             model.mu[victim], model.var[victim] = 1e9, 1.0
+            # PR-2026-09-03-09 floor-freeze lever (guarded, DEFAULT-OFF; frozen protocol
+            # docs/preregistry/2026-09-09-floorfreeze-routing-repair.md §2): a re-initialized
+            # slot LEAVES any floor-freeze set — it must recalibrate freely on its new domain.
+            # discard = remove-if-present (the freeze is a plain Python set of slot ints).
+            # Attribute absent -> fz is None -> no-op (off-identity).
+            fz = getattr(model, "floor_freeze", None)
+            if fz is not None:
+                fz.discard(int(victim))
             model.n_batches[victim] = 0
             model.n_segments[victim] = 0
             model.ce_sum[victim] = 0.0

@@ -249,13 +249,22 @@ def _expert_train(model, slot, h, y, ids, lr):
     with torch.no_grad():
         r = float(F.cross_entropy(base + model.experts[slot](hs), ys, reduction="mean").detach())
     model.ce_sum[slot] += r * len(ids)
-    if model.mu[slot] > 1e8:                       # first calibration seeds the floor
-        model.mu[slot] = r
-        model.var[slot] = max(1e-4, (0.1 * r) ** 2)
-    else:                                          # EMA, mirrored verbatim rates
-        d = r - model.mu[slot]
-        model.mu[slot] += FLOOR_EMA * d
-        model.var[slot] = (1 - FLOOR_EMA) * model.var[slot] + FLOOR_EMA * d * d
+    # PR-2026-09-03-09 floor-freeze lever (guarded, DEFAULT-OFF; frozen protocol
+    # docs/preregistry/2026-09-09-floorfreeze-routing-repair.md §2): when the model carries a
+    # `floor_freeze` set of slot indices, precision-floor updates for THOSE slots are SKIPPED
+    # (mu/var stay pinned at their block-A calibration; the expert optimizer step and the
+    # n_batches/n_segments/ce_sum bookkeeping above are NOT frozen). Attribute absent ->
+    # freeze is None -> the exact PR-08 operations below, unchanged in order (off-identity
+    # pinned behaviorally by tests/test_floorfreeze_runner.py).
+    freeze = getattr(model, "floor_freeze", None)
+    if not (freeze is not None and slot in freeze):
+        if model.mu[slot] > 1e8:                   # first calibration seeds the floor
+            model.mu[slot] = r
+            model.var[slot] = max(1e-4, (0.1 * r) ** 2)
+        else:                                      # EMA, mirrored verbatim rates
+            d = r - model.mu[slot]
+            model.mu[slot] += FLOOR_EMA * d
+            model.var[slot] = (1 - FLOOR_EMA) * model.var[slot] + FLOOR_EMA * d * d
     return float(loss.detach())
 
 
