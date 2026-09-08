@@ -2,7 +2,7 @@
 
 MINIMAL pure-layer coverage only (the surprise_claim/dfrontier_claim suite pattern): this file
 pins
-  (a) the slice-pinning helpers EXACTLY (doc §2) incl. the owner-approved C-range repair and
+  (a) the slice-pinning helpers EXACTLY (doc §2) incl. the maintainer-addendum C-range repair and
       the A-eval/C-train disjointness invariant that protects bar B1,
   (b) the smoke/powered ledger separation + refusal and the CUDA guard (shared pattern, new
       module),
@@ -19,7 +19,7 @@ from seq import prizma_lm_claim as plc
 from seq.stats import t_isf
 
 
-# ── 1. Slice pinning (doc §2 + the owner-approved C-range repair) ───────────────────────────────
+# ── 1. Slice pinning (doc §2 + the maintainer-addendum C-range repair) ─────────────────────────
 
 def test_pinned_slices_exact():
     sl = plc.pin_slices()
@@ -27,7 +27,7 @@ def test_pinned_slices_exact():
     assert sl["A_eval"] == ("text8", 1_000_000, 1_100_000), "A-eval stays PR-07' pinned"
     assert sl["C_retention"] == ("text8", 900_000, 1_000_000), "B2's C-eval slice"
     assert sl["C_train"] == ("text8", 1_100_000, 2_100_000), \
-        "owner-approved repair: C skips the A-eval slice, still 1.0M chars"
+        "maintainer-addendum repair: C skips the A-eval slice, still 1.0M chars"
     assert sl["B_train"] == ("shakespeare", 0.0, 0.9)
     assert sl["B_eval"] == ("shakespeare", 0.9, 1.0), "B-eval = shakespeare last 10%"
 
@@ -57,7 +57,9 @@ def test_c_retention_slice_disjoint_from_c_train_and_a_eval():
 
 
 def test_doc_deviation_notes_are_carried():
-    assert "owner-approved" in plc.C_RANGE_REPAIR_NOTE and "addendum" in plc.C_RANGE_REPAIR_NOTE
+    # wording corrected 2026-09-08: the C-range repair is a MAINTAINER addendum (no owner
+    # decision occurred) — see the doc's dated addendum and the pre-GPU review (H-1).
+    assert "maintainer addendum" in plc.C_RANGE_REPAIR_NOTE
     assert "A-train's tail" in plc.C_RET_PROSE_NOTE
 
 
