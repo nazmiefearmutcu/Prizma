@@ -105,3 +105,28 @@ diff −3.18, CI [−3.420, −2.936] vs bar ≤ −0.10) Holm adjustment is ari
 of flipping either verdict (each primary clears its bar at p ≪ 0.025). The CLAIMED status
 stands; the runner's verdict text was corrected to describe this honestly. Recorded by the
 2026-09-08 pre-GPU review (committee/review_2026-09-08/PRE_GPU_REVIEW.md, H-2).
+
+## Addendum 2026-09-08 (post-hoc, maintainer) — registered Holm implemented post-hoc; disclosure (review H-2)
+
+1. **Disclosure.** The §4 statistics registered "Holm over the two primaries", but the
+   shipped runner (seq/blockdrift_claim.py) implemented only the CI rules and never called
+   Holm. The CI rules are themselves conservative (they are the same one-sided tests
+   displayed as 95% CIs), but the registered statistic was not the computed statistic.
+   Disclosed by the 2026-09-08 pre-GPU review (H-2); this addendum closes the finding
+   post-hoc, from the raw records, with no re-run.
+2. **Recomputation** (committee/review_2026-09-08/h2_holm_recompute.py, output
+   h2_holm_recompute_OUTPUT.txt; loads results/blockdrift_PR-2026-09-03-07/raw.json and uses
+   the seq.stats t_sf upper-tail convention; every intermediate value printed): Bar 1
+   (FGT_A, one-sample, n=5, df=4, mean −0.189010, se 0.025374): p_raw = 3.540489e-04.
+   Bar 2 (adaptation, Welch, delta = mean(FROZEN) − mean(STREAM) = +3.177780 vs required
+   +0.10, se 0.097402, df 5.660): p_raw = 6.944012e-08. Holm(2) step-down at alpha = 0.05:
+   sorted ascending [6.944012e-08, 3.540489e-04], multipliers 2 then 1 → Holm-adjusted p =
+   1.388802e-07 (bar 2) and 3.540489e-04 (bar 1); both hypotheses rejected. Both RAW
+   p-values are far below the binding first threshold alpha/2 = 0.025, so the
+   registered-but-unimplemented Holm is a no-op that cannot flip the CLAIMED outcome.
+3. **Artifacts.** Script + full console output: committee/review_2026-09-08/h2_holm_recompute.py
+   and committee/review_2026-09-08/h2_holm_recompute_OUTPUT.txt (read-only recompute; the
+   recomputed mean and CIs reproduce the ledger's stored fgt_mean / fgt_ci_hi / adapt_ci
+   exactly, difference 0.00e+00).
+4. **No side effects.** No re-run was performed; nothing under results/ was modified or
+   created by this closure.

@@ -457,3 +457,15 @@ On SURVIVAL, dependent proposals may cite the result only with the §4 scope wor
 **FROZEN — this protocol is frozen as of 2026-09-03, owner decision recorded** (committee
 synthesis §6.4; registry id PR-2026-09-03-01, lane CLAIM, status REGISTERED-FROZEN). It
 executes verbatim when GPU budget exists, or not at all.
+
+---
+
+## Addendum 2026-09-08 (pre-run, maintainer) — canary cost disclosure (review M-9)
+
+The §5 table budgets the integrity canary as "2 runs ~0.2 h", but the named implementation
+(`seq/gpu_harness.negative_control`, which §5 itself names) calls `sweep_then_seeds` for BOTH
+arms (negctrl.A and negctrl.B): 2 x (5-cell LR sweep + 2 seeds) = 14 cells, not 2. The
+realistic canary cost is therefore ~+1 h on top of the 10-15 h §5 estimate. This is a cost
+disclosure only — no protocol change (arms, seeds, statistics, and bars are untouched). The
+PR-01 campaign ledger will note the actual canary wall time at run time. (Review:
+committee/review_2026-09-08/PRE_GPU_REVIEW.md, M-9.)
