@@ -1,0 +1,56 @@
+[pr09] corpora: A=3906 B=3921 C=3906 segs; eval A=390 B=435 Cret=390; vocab=65; smoke=False; lr=0.003 (frozen, inherited); results=C:\Users\Kullanıcı\Prizma\results\floorfreeze_PR-2026-09-03-09\powered.json
+[pr09] budget projection from first cell: 20.0 min for 10 cells
+[pr09] OFF seed 0: A_preB=3.030 A_postC=2.765 B_postB=2.893 B_postC=4.028 Cret_postC=2.822 frac_C(1-20)to_A=0.325 wall=119.8s
+[pr09] OFF seed 1: A_preB=3.047 A_postC=2.747 B_postB=2.894 B_postC=4.098 Cret_postC=2.817 frac_C(1-20)to_A=0.4703 wall=115.3s
+[pr09] OFF seed 2: A_preB=3.038 A_postC=2.752 B_postB=2.889 B_postC=4.042 Cret_postC=2.799 frac_C(1-20)to_A=0.2938 wall=80.7s
+[pr09] OFF seed 3: A_preB=3.053 A_postC=2.769 B_postB=2.897 B_postC=4.031 Cret_postC=2.819 frac_C(1-20)to_A=0.2906 wall=85.1s
+[pr09] OFF seed 4: A_preB=2.979 A_postC=2.748 B_postB=2.882 B_postC=4.267 Cret_postC=2.814 frac_C(1-20)to_A=0.7609 wall=78.9s
+[pr09] CANARY PASS: 5 OFF cells bit-identical to PR-08 claim.PRIM-LM (C:\Users\Kullanıcı\Prizma\results\prizma_lm_PR-2026-09-03-08\powered.json)
+[pr09] FROZEN-FLOORS seed 0: A_preB=3.030 A_postC=2.767 B_postB=2.893 B_postC=4.041 Cret_postC=2.821 frac_C(1-20)to_A=0.325 frozen_slots=[0]->at_end=[0] wall=93.8s
+[pr09] FROZEN-FLOORS seed 1: A_preB=3.047 A_postC=2.746 B_postB=2.894 B_postC=4.065 Cret_postC=2.811 frac_C(1-20)to_A=0.4703 frozen_slots=[0]->at_end=[0] wall=188.5s
+[pr09] FROZEN-FLOORS seed 2: A_preB=3.038 A_postC=2.756 B_postB=2.892 B_postC=4.599 Cret_postC=2.795 frac_C(1-20)to_A=0.1672 frozen_slots=[0, 1]->at_end=[0, 1] wall=327.7s
+[pr09] FROZEN-FLOORS seed 3: A_preB=3.053 A_postC=2.778 B_postB=2.897 B_postC=4.039 Cret_postC=2.823 frac_C(1-20)to_A=0.2906 frozen_slots=[0]->at_end=[0] wall=223.0s
+[pr09] FROZEN-FLOORS seed 4: A_preB=2.979 A_postC=2.750 B_postB=2.882 B_postC=4.242 Cret_postC=2.816 frac_C(1-20)to_A=0.7719 frozen_slots=[0, 1]->at_end=[0, 1] wall=86.6s
+
+==============================================================================
+  PR-2026-09-03-09 — POWERED CLAIM CAMPAIGN
+==============================================================================
+    claim.FROZEN-FLOORS.s0             lr=3e-03 A_preB=3.030 A_postC=2.767 B_postB=2.893 B_postC=4.041 Cret=2.821 wall=93.8s
+      ledger: committed=4 a_expert=0 recruits=22 evictions=18 vetoed_segs=0 frac_C(1-20)to_A=0.325
+      floor_freeze: slots@A_end=[0] slots@end=[0] pinned_mu={'0': 2.117}
+    claim.FROZEN-FLOORS.s1             lr=3e-03 A_preB=3.047 A_postC=2.746 B_postB=2.894 B_postC=4.065 Cret=2.811 wall=188.5s
+      ledger: committed=4 a_expert=0 recruits=37 evictions=33 vetoed_segs=0 frac_C(1-20)to_A=0.4703
+      floor_freeze: slots@A_end=[0] slots@end=[0] pinned_mu={'0': 2.115}
+    claim.FROZEN-FLOORS.s2             lr=3e-03 A_preB=3.038 A_postC=2.756 B_postB=2.892 B_postC=4.599 Cret=2.795 wall=327.7s
+      ledger: committed=4 a_expert=0 recruits=4 evictions=0 vetoed_segs=3 frac_C(1-20)to_A=0.1672
+      floor_freeze: slots@A_end=[0, 1] slots@end=[0, 1] pinned_mu={'0': 2.11, '1': 2.667}
+    claim.FROZEN-FLOORS.s3             lr=3e-03 A_preB=3.053 A_postC=2.778 B_postB=2.897 B_postC=4.039 Cret=2.823 wall=223.0s
+      ledger: committed=4 a_expert=0 recruits=37 evictions=33 vetoed_segs=0 frac_C(1-20)to_A=0.2906
+      floor_freeze: slots@A_end=[0] slots@end=[0] pinned_mu={'0': 2.125}
+    claim.FROZEN-FLOORS.s4             lr=3e-03 A_preB=2.979 A_postC=2.750 B_postB=2.882 B_postC=4.242 Cret=2.816 wall=86.6s
+      ledger: committed=4 a_expert=0 recruits=4 evictions=0 vetoed_segs=0 frac_C(1-20)to_A=0.7719
+      floor_freeze: slots@A_end=[0, 1] slots@end=[0, 1] pinned_mu={'0': 2.087, '1': 2.797}
+    claim.OFF.s0                       lr=3e-03 A_preB=3.030 A_postC=2.765 B_postB=2.893 B_postC=4.028 Cret=2.822 wall=119.8s
+      ledger: committed=4 a_expert=0 recruits=35 evictions=31 vetoed_segs=0 frac_C(1-20)to_A=0.325
+    claim.OFF.s1                       lr=3e-03 A_preB=3.047 A_postC=2.747 B_postB=2.894 B_postC=4.098 Cret=2.817 wall=115.3s
+      ledger: committed=4 a_expert=0 recruits=43 evictions=39 vetoed_segs=0 frac_C(1-20)to_A=0.4703
+    claim.OFF.s2                       lr=3e-03 A_preB=3.038 A_postC=2.752 B_postB=2.889 B_postC=4.042 Cret=2.799 wall=80.7s
+      ledger: committed=4 a_expert=0 recruits=27 evictions=23 vetoed_segs=2 frac_C(1-20)to_A=0.2938
+    claim.OFF.s3                       lr=3e-03 A_preB=3.053 A_postC=2.769 B_postB=2.897 B_postC=4.031 Cret=2.819 wall=85.1s
+      ledger: committed=4 a_expert=0 recruits=41 evictions=37 vetoed_segs=0 frac_C(1-20)to_A=0.2906
+    claim.OFF.s4                       lr=3e-03 A_preB=2.979 A_postC=2.748 B_postB=2.882 B_postC=4.267 Cret=2.814 wall=78.9s
+      ledger: committed=4 a_expert=0 recruits=33 evictions=29 vetoed_segs=0 frac_C(1-20)to_A=0.7609
+    P1: ff_frac_mean=0.405 (bar >= 0.5) [off control mean=0.428] -> FAIL
+    G1: mean=-0.2699 CI=[-0.3030, -0.2368] p_raw=0.0000 p_holm=0.0000 -> PASS
+    G2: mean=0.2994 CI=[0.1044, 0.4943] p_raw=0.0234 p_holm=0.0234 -> PASS
+    B4 OFF: B-eval degradation post-C mean +1.2021 (reported, not gated)
+    B4 FROZEN-FLOORS: B-eval degradation post-C mean +1.3057 (reported, not gated)
+    churn OFF: recruits=179 evictions=159 vetoed_segs=2 (per-seed: {'s0': {'recruits': 35, 'evictions': 31, 'vetoed_novel_segments': 0}, 's1': {'recruits': 43, 'evictions': 39, 'vetoed_novel_segments': 0}, 's2': {'recruits': 27, 'evictions': 23, 'vetoed_novel_segments': 2}, 's3': {'recruits': 41, 'evictions': 37, 'vetoed_novel_segments': 0}, 's4': {'recruits': 33, 'evictions': 29, 'vetoed_novel_segments': 0}})
+    churn FROZEN-FLOORS: recruits=104 evictions=84 vetoed_segs=3 (per-seed: {'s0': {'recruits': 22, 'evictions': 18, 'vetoed_novel_segments': 0}, 's1': {'recruits': 37, 'evictions': 33, 'vetoed_novel_segments': 0}, 's2': {'recruits': 4, 'evictions': 0, 'vetoed_novel_segments': 3}, 's3': {'recruits': 37, 'evictions': 33, 'vetoed_novel_segments': 0}, 's4': {'recruits': 4, 'evictions': 0, 'vetoed_novel_segments': 0}})
+    per-seed fracs: OFF=[0.325, 0.4703, 0.2938, 0.2906, 0.7609] FROZEN-FLOORS=[0.325, 0.4703, 0.1672, 0.2906, 0.7719]
+  OUTCOME: NEGATIVE
+  NEGATIVE — P1 FAIL: floor freeze insufficient to repair the returning-domain boundary routing. The next ladder candidate (trunk-lr scheduling on returning blocks) gets its own prereg; no re-tuning of this lever without a new registration (doc §5).
+  branch: §5 (P1 FAIL): floor freeze insufficient; the next ladder candidate (trunk-lr scheduling on returning blocks) gets its own prereg. No re-tuning of this lever without a new registration.
+  ledger: C:\Users\Kullanıcı\Prizma\results\floorfreeze_PR-2026-09-03-09\powered.json
+  raw archive: C:\Users\Kullanıcı\Prizma\results\runs\floorfreeze-PR-2026-09-03-09-20260908T221111Z.json
+==============================================================================
