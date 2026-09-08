@@ -228,11 +228,13 @@ def main():
     adapt_ci = (md - tc * se_d, md + tc * se_d)
 
     bar1 = fgt_ci_hi <= 0.05
-    bar2 = (adapt_ci[0] <= -0.10)
     # ---------------- WINDOW-TF (descriptive only, may be cut by PR07_SKIP_WINDOW) -------
     if not os.environ.get("PR07_SKIP_WINDOW"):
-        from transformer import Transformer as _TF
-        tf = _TF(TFConfig(vocab=VOCAB_SIZE, d_model=64, n_layers=2, n_heads=4, max_len=SEG))
+        # Transformer is imported at module level from seq.transformer (the sys.path bootstrap at
+        # the top of this file covers the bare-script case too). The old local bare import
+        # `from transformer import Transformer` only resolved as a bare script and crashed
+        # `python -m seq.blockdrift_claim` at this leg (review 2026-09-08 M-11).
+        tf = Transformer(TFConfig(vocab=VOCAB_SIZE, d_model=64, n_layers=2, n_heads=4, max_len=SEG))
         tf_lr = LR_GRID[1]
         Ax, Ay = make_segments(A_train, vocab)
         train_stream(tf, Ax, Ay, tf_lr, SEEDS[0])

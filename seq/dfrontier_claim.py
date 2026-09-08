@@ -571,14 +571,14 @@ def verify_frozen_against_ledger(res, frozen: dict, sigma2_law: dict, seeds, fit
         raise SystemExit("refusing: frozen predictions target a different adjudication grid — "
                          "the protocol changed after the freeze; open a new pre-registration.")
     for arm in ARMS:
-        accs = []
         for D in fit_rungs:
             for seed in seeds:
                 rec = res.get(f"fit.{arm}.D{D}.s{seed}")
                 if not isinstance(rec, dict) or "best" not in rec:
                     raise SystemExit(f"refusing: frozen predictions reference fit cell "
                                      f"fit.{arm}.D{D}.s{seed} which is not in this ledger.")
-                accs.append(rec["best"])
+        # (dead `accs` collection removed — review 2026-09-08 M-16; the eps recomputation below
+        # re-reads these same cells and is the real check)
     # recompute eps_hat per arm from the ledger's fit cells and require EXACT equality with the
     # frozen values (same records, same arithmetic -> bit-identical; anything else = tampering)
     for arm in ARMS:

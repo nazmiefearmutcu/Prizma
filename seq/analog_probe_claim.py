@@ -370,7 +370,19 @@ if __name__ == "__main__":
     ap.add_argument("--eval-batches", type=int, default=None)
     ap.add_argument("--grid", type=float, nargs="*", default=None)
     ap.add_argument("--difficulties", type=int, nargs="*", default=None)
+    ap.add_argument("--force", action="store_true",
+                    help="allow --seeds/--grid/--difficulties to override the frozen protocol "
+                         "(default: REFUSED — resume caches by filename only, so a re-run with "
+                         "changed knobs would silently adopt stale cells; review 2026-09-08 M-12)")
     args = ap.parse_args()
+    overridden = [n for n, v in (("seeds", args.seeds), ("grid", args.grid),
+                                 ("difficulties", args.difficulties)) if v is not None]
+    if overridden and not args.force:
+        raise SystemExit(
+            f"refusing: --{', --'.join(overridden)} override the registered protocol and this "
+            "runner's resume cache is keyed on the output FILENAME only — a re-run with changed "
+            "knobs would silently adopt stale cells. Re-run with the registered defaults, or pass "
+            "--force to accept the override deliberately (before any training).")
     out = args.out or (os.path.join(RESULTS_DIR, "_smoke") if args.smoke else RESULTS_DIR)
     kw = dict(out_dir=out)
     if args.smoke:

@@ -420,7 +420,7 @@ NEGCTRL_SEED_OFFSET = 100
 
 
 def negative_control(res, scale, task_fac, base_cfg: TrainConfig, device, seeds, out_path,
-                     seed_offset=NEGCTRL_SEED_OFFSET, grid=DEFAULT_GRID):
+                     seed_offset=NEGCTRL_SEED_OFFSET, grid=DEFAULT_GRID, cfgsig=None):
     """The INTEGRITY CANARY. Build TWO arms with the SAME (byte-identical) Prizma config but draw
     DIFFERENT per-seed seeds for arm B (seeds vs seeds+offset), run sweep_then_seeds for each, and
     assert via superiority_test that they are NOT significantly different (p should sit comfortably
@@ -443,6 +443,10 @@ def negative_control(res, scale, task_fac, base_cfg: TrainConfig, device, seeds,
     control sweeps over the SAME grid as the campaign (instead of silently falling back to
     DEFAULT_GRID). The smoke passes its short grid; the full run passes the campaign grid.
 
+    `cfgsig` (from config_fingerprint) is THREADED into both arms' sweep_then_seeds so the negctrl
+    cells are fingerprint-guarded exactly like the campaign arm cells; without it the legacy
+    key-only reuse applies (callers should always pass a fingerprint — review 2026-09-08 M-6).
+
     Returns {p_value, significant, pass, accs_a, accs_b, delta, seeds_a, seeds_b}.
     """
     d, L, H = scale
@@ -450,9 +454,9 @@ def negative_control(res, scale, task_fac, base_cfg: TrainConfig, device, seeds,
     seeds_a = tuple(seeds)
     seeds_b = tuple(s + seed_offset for s in seeds)   # SAME arch, DIFFERENT seeds (the real canary)
     ra = sweep_then_seeds(res, "negctrl.A", fac, task_fac, base_cfg, device, seeds_a,
-                          grid=grid, out_path=out_path)
+                          grid=grid, out_path=out_path, cfgsig=cfgsig)
     rb = sweep_then_seeds(res, "negctrl.B", fac, task_fac, base_cfg, device, seeds_b,
-                          grid=grid, out_path=out_path)
+                          grid=grid, out_path=out_path, cfgsig=cfgsig)
     st = superiority_test(ra["accs"], rb["accs"])
     return {
         "p_value": st["p_value"],

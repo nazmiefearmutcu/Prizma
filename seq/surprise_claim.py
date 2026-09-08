@@ -213,8 +213,11 @@ def surprise_verdict(accs: dict, *, alpha: float = ALPHA) -> dict:
         h, st = holm[i], raw[(t, ctrl)]
         sn_mean = float(sum(accs[("surprise_norm", t)]) / len(accs[("surprise_norm", t)]))
         c_mean = float(sum(accs[(ctrl, t)]) / len(accs[(ctrl, t)]))
-        # "win" ≡ Holm-adjusted p < 0.05 AND point estimate mean(surprise_norm) > mean(control)
-        wins[(t, ctrl)] = bool(h["p_adj"] < alpha) and (sn_mean > c_mean)
+        # "win" is the Holm step-down rejection (seq.stats.holm_correction's `reject`) AND the
+        # point estimate mean(surprise_norm) > mean(control). Using `reject` (not `p_adj < alpha`)
+        # keeps the decision correct by construction; after the monotone-p_adj fix to
+        # holm_correction the two are equivalent anyway (review 2026-09-08 M-5).
+        wins[(t, ctrl)] = bool(h["reject"]) and (sn_mean > c_mean)
 
     # Reverse guard (§4 rule 2): surprise_norm is never RAW one-sided-significantly WORSE than
     # either control on any task. On a won task the guard is implied by the win (a significant
@@ -301,7 +304,7 @@ def _fingerprint(payload: dict) -> str:
 
 
 def _train_gain_selection(gain_res, gain_path, task_fac, base_cfg, device, *, cap, batch_size,
-                          eval_every, smoke, grid_tag):
+                          eval_every, smoke, grid_tag, recipe):
     """The four LANE-EXPLORATORY runs behind the NO-TUNING rule: seed 900, MQAR-D64 only, lr=1e-3,
     candidates {0.5, 1.0, 2.0, 4.0}; returns ({a: best_acc}, frozen_a, meta). Crash-safe +
     fingerprint-guarded resume (each candidate is a run_cell under its own cfgsig).
@@ -319,6 +322,7 @@ def _train_gain_selection(gain_res, gain_path, task_fac, base_cfg, device, *, ca
         cfgsig = _fingerprint({"leg": "gain-selection", "gain": a, "task": GAIN_TASK,
                                "cap": cap, "lr": GAIN_SELECTION_LR, "seed": EXPLORATORY_SEED,
                                "scale": list(SCALE), "batch": batch_size,
+                               "recipe": recipe,   # the training recipe make_cfg consumes (M-7)
                                "prizma_kw": arm_prizma_kw("surprise_norm", frozen_gain=a),
                                "grid_tag": grid_tag})
         t0 = time.time()
@@ -351,7 +355,7 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False):
 
     import torch
     from seq.gpu_harness import (make_cfg, sweep_then_seeds, powered_summary, load_results, _save,
-                                 get_device, negative_control)
+                                 get_device, negative_control, NEGCTRL_SEED_OFFSET)
     from seq.lrsweep import DEFAULT_GRID
     from seq.recall_gate import archive_run
 
@@ -396,7 +400,8 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False):
     _, frozen_a, gain_meta = _train_gain_selection(gain_res, gain_path, gain_task_fac,
                                                    gain_base_cfg, device, cap=cap,
                                                    batch_size=batch_size, eval_every=eval_every,
-                                                   smoke=smoke, grid_tag="smoke" if smoke else "claim")
+                                                   smoke=smoke, grid_tag="smoke" if smoke else "claim",
+                                                   recipe=recipe)
     if not smoke:
         _save(gain_res, gain_path)
         print(f"[gain-selection] frozen a = {frozen_a} (exploratory ledger: {gain_path})", flush=True)
@@ -442,22 +447,34 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False):
     if not smoke:
         print("\n-- integrity canary: two byte-identical arms (MQAR-D64, seeds 0-1) must NOT "
               "differ --", flush=True)
+        # Fingerprinted like every other cell family (review 2026-09-08 M-6): the payload carries
+        # the canary's distinguishing constants (default-config arm, task, scale, cap/batch,
+        # recipe, sweep grid, seed pair, arm-B seed offset). Without it the negctrl cells reused
+        # at cfgsig=None (legacy key-only resume).
+        canary_cfgsig = _fingerprint({
+            "leg": "integrity-canary", "task": "MQAR-D64", "scale": list(SCALE),
+            "cap": cap, "batch": batch_size, "recipe": recipe, "grid": list(grid),
+            "seeds": [0, 1], "seed_offset": NEGCTRL_SEED_OFFSET, "prizma_kw": {},
+        })
         nc = negative_control(res, SCALE, _task_fac("MQAR-D64", smoke=False), base_cfg, device,
-                              seeds=(0, 1), out_path=path, grid=grid)
+                              seeds=(0, 1), out_path=path, grid=grid, cfgsig=canary_cfgsig)
         print(f"   p={nc['p_value']:.3f}  significant={nc['significant']}  PASS={nc['pass']}",
               flush=True)
-        if not nc["pass"]:
-            res["negative_control"] = nc
-            res["verdict"] = {"survives": None, "verdict": "INCONCLUSIVE",
-                              "reason": "integrity canary FAILED — campaign numbers invalidated; "
-                                        "find the harness bug and re-run (pre-reg §3). No claim."}
-            _save(res, path)
-            raise SystemExit("CANARY FAIL: identical-arm control differs significantly — campaign "
-                             "INCONCLUSIVE per PR-2026-09-03-01 §3. No claim until re-run.")
 
     # ---- RETENTION (docs/RETENTION.md): archive raw records BEFORE any verdict; verdict cites it --
+    # Kept ABOVE the canary-exit branch (review 2026-09-08 M-8) so "raw records archived before
+    # any verdict" holds on every path, including a canary FAIL.
     raw_archive = archive_run(res, label=f"surprise-ablation-{REGISTRY_ID}")
     res.setdefault("meta", {})["raw_archive"] = raw_archive
+
+    if nc is not None and not nc["pass"]:
+        res["negative_control"] = nc
+        res["verdict"] = {"survives": None, "verdict": "INCONCLUSIVE",
+                          "reason": "integrity canary FAILED — campaign numbers invalidated; "
+                                    "find the harness bug and re-run (pre-reg §3). No claim."}
+        _save(res, path)
+        raise SystemExit("CANARY FAIL: identical-arm control differs significantly — campaign "
+                         "INCONCLUSIVE per PR-2026-09-03-01 §3. No claim until re-run.")
 
     # ---- the frozen §4 verdict (claim mode) / plumbing report (smoke mode) ------------------------
     report = {"registry": REGISTRY_ID, "smoke": bool(smoke), "scale": list(SCALE),

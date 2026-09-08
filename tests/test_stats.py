@@ -250,3 +250,46 @@ def test_holm_none_significant():
     from seq.stats import holm_correction
     results = holm_correction([0.1, 0.2, 0.3], alpha=0.05)
     assert not any(r["reject"] for r in results)
+
+
+def test_holm_p_adj_monotone_in_sorted_order():
+    """M-5 (review 2026-09-08): p_adj must be the standard Holm running max, i.e. monotone
+    non-decreasing in ascending-p order (the old code emitted the raw step-down multipliers,
+    which can dip below alpha after an earlier failure)."""
+    from seq.stats import holm_correction
+    pvals = [0.04, 0.01, 0.03, 0.2, 0.9]
+    results = holm_correction(pvals, alpha=0.05)
+    adj = [r["p_adj"] for r in sorted(results, key=lambda r: r["p"])]
+    assert all(adj[i] <= adj[i + 1] + 1e-12 for i in range(len(adj) - 1)), adj
+
+
+def test_holm_p_adj_agrees_with_reject_knife_edge():
+    """M-5 demonstrated case: p=[0.0084, 0.0095, ...] at alpha=0.05. The OLD non-monotone p_adj
+    said reject for p=0.0095 (0.0095*5 = 0.0475 < 0.05) while step-down said no rejections
+    (p=0.0084 already fails at 0.0084*6 = 0.0504). After the running-max fix the two decisions
+    must AGREE for every hypothesis."""
+    from seq.stats import holm_correction
+    pvals = [0.0084, 0.0095, 0.02, 0.5, 0.7, 0.9]
+    results = holm_correction(pvals, alpha=0.05)
+    assert not any(r["reject"] for r in results), \
+        "step-down: the smallest p already fails at 0.0084*6 = 0.0504 >= alpha"
+    for r in results:
+        assert (r["p_adj"] < 0.05) == r["reject"], r
+    # the second-ranked p_adj is the running max (0.0504), not the raw multiplier (0.0475)
+    second = next(r for r in results if r["p"] == 0.0095)
+    assert abs(second["p_adj"] - 0.0504) < 1e-9, second
+
+
+def test_holm_p_adj_agrees_with_reject_sweep():
+    """Property pin: (p_adj < alpha) == reject for every entry across several families."""
+    from seq.stats import holm_correction
+    families = [
+        [0.001, 0.002, 0.003, 0.004],
+        [0.01, 0.011, 0.012, 0.013, 0.014, 0.015],
+        [0.02, 0.049, 0.0495],
+        [0.3, 0.7],
+        [0.0084, 0.0095, 0.02, 0.5, 0.7, 0.9],
+    ]
+    for pvals in families:
+        for r in holm_correction(pvals, alpha=0.05):
+            assert (r["p_adj"] < 0.05) == r["reject"], (pvals, r)

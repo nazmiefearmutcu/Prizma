@@ -221,6 +221,9 @@ def holm_correction(pvals, alpha=0.05):
 
     Returns:
         List of dicts {p, p_adj, reject} in the ORIGINAL input order.
+        p_adj is the standard Holm adjusted p (running max of the step-down multipliers,
+        capped at 1), so it is monotone non-decreasing in the sorted-p order and
+        `p_adj < alpha` agrees with `reject` for every hypothesis.
         Rejection is sequential: once we encounter a non-rejection in ascending p order,
         all subsequent hypotheses are also not rejected.
     """
@@ -229,11 +232,13 @@ def holm_correction(pvals, alpha=0.05):
     indexed = sorted(enumerate(pvals), key=lambda x: x[1])
     rejected = [False] * n
     p_adj = [0.0] * n
+    running_max = 0.0
     stop = False
     for rank, (orig_idx, p) in enumerate(indexed):
         k = n - rank            # number of remaining tests (Holm step)
         adj = min(p * k, 1.0)
-        p_adj[orig_idx] = adj
+        running_max = max(running_max, adj)   # monotone Holm adjusted p (standard)
+        p_adj[orig_idx] = running_max
         if not stop and adj < alpha:
             rejected[orig_idx] = True
         else:
