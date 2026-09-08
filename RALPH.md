@@ -22,6 +22,12 @@ The ladder (each rung = a registered prereg; ORDER may adapt to evidence):
 Stop conditions unchanged: only-blocked backlog, 03:55 clock rule (nightly 03:58 shutdown
 is planned — never abort), user interrupt. User-only kill switch: reports/prizma-stop.
 
+**SINGLE-WRITER LOCK (collision safety between the hourly cron and live sessions):** before
+ANY repo work, check logs/iteration.lock — if it exists and its mtime is younger than 45
+minutes, EXIT this fire/session immediately (work already in flight). Otherwise create it
+(content: session id + ISO timestamp) and DELETE it when the iteration/session ends. A claim
+run left executing at wind-down is resume-safe; write the handoff, let 03:58 win.
+
 Owner directive 2026-09-05: run the remaining program in infinite turns without waiting for
 "devam". This file is the loop's only memory. Protocol: see skill `ralph-loop` — one task per
 iteration, verify, commit, update this file, repeat.
