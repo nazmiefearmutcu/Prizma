@@ -131,3 +131,33 @@ routing behavior (purity, boundary-recruit, returning-domain completion) survive
 4. **Fingerprint note (review M-2, landed pre-run):** the claim-cell fingerprint now
    includes the bars constants; the pre-existing smoke ledger at the old fingerprint is
    superseded (fresh path), never silently reused.
+
+---
+
+## Addendum 2026-09-08 (post-M-1-fire, pre-adjudication, maintainer #3) — FORCED-RECRUIT pool-full contingency defined
+
+1. **Event.** During the first powered-cpu execution (2026-09-08 evening), FORCED-RECRUIT
+   seed 2 raised the pre-disclosed fail-loud RuntimeError (addendum #2 point 2): after
+   A+B the E=4 pool was fully committed, leaving no free slot for the forced fresh
+   recruit. 22/25 cells completed and are crash-safe in the ledger; FORCED seeds 2–4 are
+   missing; no verdict and no archive were written (the run exited inside the cell loop,
+   so the archive-before-verdict ordering was never reached).
+2. **Contingency (registered before B3b adjudication).** When the pool has no free slot
+   at C start, the forced fresh recruit is placed by the PRIM arm's own registered
+   Policy A eviction: lowest lifetime routing share, tie → highest slot; the pinned
+   fresh-head re-init formula and the eviction ledger record are reused verbatim. When a
+   free slot exists, behavior is byte-identical to the registered semantics (the
+   `forced_placement` provenance key records `"free_slot"` and nothing else changes).
+3. **Inertness proof (required, executed).** FORCED seeds 0 and 1 (which had a free slot)
+   were re-run under the amended code with `run_routed` directly and compared against the
+   original ledger cells: every science-carrying field (bpc_*, ledger, a_expert, fgt,
+   b_degradation, config, lr) must be EXACTLY equal; only `wall_s` (timing) and the new
+   `forced_placement` provenance key may differ. Output:
+   committee/review_2026-09-08/forced_poolfull_inertness_output.txt.
+4. **Disclosure.** This amendment post-dates the observation of the PRIM-LM,
+   FROZEN-TRUNK, SHARED-HEAD and FROZEN-CHECKPOINT cells and of FORCED seeds 0–1.
+   Mitigations: the resolution class was pre-named in addendum #2 ("a dated addendum
+   would decide the path") and Policy A is PRIM's own registered rule, not a new
+   choice; the amendment activates only on the previously-fatal path; the forced arm's
+   claim role (B3b: pattern completion must not cost B) is unchanged; per-cell eviction
+   ledgers record the full victim selection.

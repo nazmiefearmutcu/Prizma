@@ -279,3 +279,52 @@ def test_needs_cuda_only_for_the_powered_mode():
     assert plc.needs_cuda("powered") is True
     assert plc.needs_cuda("powered-cpu") is False
     assert plc.needs_cuda("smoke") is False
+
+
+# ── 7. FORCED-RECRUIT pool-full contingency (2026-09-08 doc addendum #3; review M-1 fired) ───────
+
+class _StubModel:
+    """Just the committed/n_segments surface _forced_placement reads."""
+
+    def __init__(self, committed, n_segments):
+        self.committed = committed
+        self.n_segments = n_segments
+
+
+def test_forced_placement_free_slot_is_the_registered_semantics():
+    model = _StubModel([True, True, False, False], [500, 300, 0, 0])
+    slot, placement = plc._forced_placement(model, E=4, stream_pos=7800)
+    assert slot == 2, "the FIRST free slot (left-to-right fill) — byte-identical to the " \
+                      "registered free[0] rule"
+    assert placement == {"mode": "free_slot"}
+
+
+def test_forced_placement_pool_full_evicts_lowest_share():
+    # e0 carries 60% of the stream, e1 30%, e2 10%, e3 0%+1 -> the lowest share (e3) is the
+    # victim, mirroring route_pr08's Policy A exactly.
+    model = _StubModel([True, True, True, True], [6000, 3000, 1000, 0])
+    slot, placement = plc._forced_placement(model, E=4, stream_pos=10000)
+    assert slot == 3
+    assert placement["mode"] == "policy_a_eviction"
+    assert placement["victim"] == 3
+    assert placement["victim_n_segments"] == 0
+    assert placement["m_max"] == plc.M_MAX
+    assert placement["train_shares_at_fire"]["e0"] == 0.6
+    assert placement["at_batch"] == 10000
+
+
+def test_forced_placement_tie_goes_to_the_highest_slot():
+    # Equal shares -> the tie-break picks the HIGHEST slot index (the probe's recency proxy),
+    # the same key route_pr08 uses: min by (share, -slot).
+    model = _StubModel([True, True, True, True], [2500, 2500, 2500, 2500])
+    slot, placement = plc._forced_placement(model, E=4, stream_pos=0)
+    assert slot == 3 and placement["victim"] == 3
+
+
+def test_forced_placement_respects_the_m_max_cap():
+    # Committed slots beyond M_MAX are not eviction candidates (cap = min(M_MAX, E) window).
+    model = _StubModel([True] * 6, [100, 100, 1, 100, 100, 100])
+    slot, placement = plc._forced_placement(model, E=6, stream_pos=0)
+    assert slot == 2, "the near-empty slot INSIDE the M_MAX=4 window is the victim; slots " \
+                      "4-5 are outside the cap and never selected"
+    assert placement["victim"] == 2

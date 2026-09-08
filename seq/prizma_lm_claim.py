@@ -55,9 +55,11 @@ TWO DISCLOSED DOC-VS-CODE NOTES (no silent deviation — both recorded in the le
       slice in A-training equally, so the B2 comparison remains apples-to-apples (it measures
       C-training's in-domain benefit over the frozen floor, not unseen-text retention).
 
-DISCLOSURE (review M-1, pre-disclosed in the doc's 2026-09-08 maintainer addendum #2):
-  FORCED-RECRUIT raises a fail-loud RuntimeError if the pool has no free slot at C start
-  (deterministic, resume-safe).
+DISCLOSURE (review M-1; addendum #2 pre-disclosed the crash, addendum #3 defines the
+  contingency that FIRED on the first powered-cpu execution): if the pool has no free slot
+  at C start, the forced fresh recruit is placed by Policy A eviction (PRIM's own registered
+  victim rule + pinned fresh-head formula); with a free slot the behavior is byte-identical
+  to the registered semantics (see _forced_placement and the forced_placement provenance key).
 
 TISSUE PROVENANCE: the fused column is REUSED verbatim from seq/fusion_probe.py + its probe-2
 extensions (PCExpertHead, FusionLM/build_model, _segment_surprise, _expert_train local
@@ -615,6 +617,29 @@ def ledger_snapshot_pr08(model, ledger, tr, ev_routes, expected, boundary, a_exp
             }}
 
 
+def _forced_placement(model, *, E, stream_pos):
+    """Registered forced-recruit slot placement (doc addendum #3, 2026-09-08). A free slot when
+    one exists (the registered semantics, byte-identical); otherwise the PRIM arm's own Policy A
+    eviction (lowest lifetime routing share, tie -> HIGHEST slot) makes room — the
+    previously-fatal pool-full path (review M-1, fired on the first powered-cpu execution at
+    FORCED seed 2). Pure decision over the model's committed/n_segments state; the caller
+    applies the torch-side re-init from the returned record. Returns (slot, placement_record)."""
+    free = [s for s in range(E) if not model.committed[s]]
+    if free:
+        return free[0], {"mode": "free_slot"}
+    cap = min(M_MAX, E)
+    cands = [s for s in range(cap) if model.committed[s]]
+    tot = max(float(sum(model.n_segments[s] for s in cands)), 1.0)
+    victim = min(cands, key=lambda s: (model.n_segments[s] / tot, -s))
+    return victim, {"mode": "policy_a_eviction", "victim": int(victim),
+                    "victim_n_segments": int(model.n_segments[victim]),
+                    "train_shares_at_fire": {f"e{s}": round(model.n_segments[s] / tot, 4)
+                                             for s in cands},
+                    "m_max": M_MAX,
+                    "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+                    "at_batch": int(stream_pos)}
+
+
 def run_routed(vocab_size, seed, data, lr, *, frozen_after_A=False, forced_c=False):
     """PRIM-LM / FROZEN-TRUNK / FORCED-RECRUIT cell. A and B phases are identical across
     PRIM-LM and FORCED-RECRUIT (FROZEN-TRUNK shares phase A only; its B-phase backbone is
@@ -661,12 +686,31 @@ def run_routed(vocab_size, seed, data, lr, *, frozen_after_A=False, forced_c=Fal
     rec["a_expert"] = int(a_expert)
     force_slot = None
     if forced_c:
-        free = [s for s in range(E) if not model.committed[s]]
-        if not free:
-            raise RuntimeError("FORCED-RECRUIT needs a free slot at C start; pool full — the "
-                               "registered forced-recruit semantics assume room")
-        force_slot = free[0]
+        force_slot, placement = _forced_placement(model, E=E,
+                                                  stream_pos=Ax.shape[0] + Bx.shape[0])
         rec["forced_slot"] = int(force_slot)
+        rec["forced_placement"] = placement
+        if placement["mode"] == "policy_a_eviction":
+            # The pool-full contingency (doc addendum #3): re-init the victim exactly like
+            # route_pr08's Policy A eviction (pinned fresh-head seed formula + ledger record),
+            # then hand the slot to the forced-C path below.
+            victim = force_slot
+            vocab_size_victim = model.experts[victim].Wdec.out_features
+            torch.manual_seed(FRESH_HEAD_SEED_BASE + 17 * victim + len(ledger["evictions"]))
+            model.experts[victim] = fp.PCExpertHead(64, H_SMALL, vocab_size_victim)
+            model.mu[victim], model.var[victim] = 1e9, 1.0
+            model.n_batches[victim] = 0
+            model.n_segments[victim] = 0
+            model.ce_sum[victim] = 0.0
+            ledger["evictions"].append({
+                "victim": int(victim), "at_batch": int(Ax.shape[0] + Bx.shape[0]),
+                "corpus": "C", "victim_n_segments": placement["victim_n_segments"],
+                "train_shares_at_fire": placement["train_shares_at_fire"],
+                "m_max": M_MAX,
+                "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+                "fresh_head_seed": FRESH_HEAD_SEED_BASE + 17 * victim
+                                   + len(ledger["evictions"]) - 1,
+                "reason": "forced_recruit_pool_full (doc addendum #3)"})
     boundary = {"segments_total": 0, "to_A_expert": 0, "a_expert": int(a_expert)}
     before = model.n_segments[:]
     train_pr08(model, Cx, Cy, lr, "C", ledger, seed=seed, boundary=boundary,
