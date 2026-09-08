@@ -10,7 +10,16 @@ access the tool prints the three remediation options and exits 3:
   (c) create nazmiefearmutcu0/Prizma and ship there (--repo nazmiefearmutcu0/Prizma).
 
 Usage:
-    python tools/ship_prizma.py "commit message" [--repo OWNER/NAME] [--force]
+    python tools/ship_prizma.py "commit message" [--repo OWNER/NAME] [--force] [--allow-dirty]
+
+Guards (fail closed, exit non-zero):
+  - must run from the repo toplevel: from a subdir `git ls-tree -r HEAD` lists only that
+    subtree and --force would replace the whole remote tree with it (review M-14);
+  - with --force, refuses a dirty working tree unless --allow-dirty is passed —
+    uncommitted edits are NOT shipped, the script ships `git ls-tree -r HEAD` (M-13).
+After a --force PATCH, the remote tree is re-fetched (GET /trees/<sha>?recursive=1) and
+its blob-sha set compared against local HEAD: prints TREE EQUAL or TREE MISMATCH plus a
+short diff summary, and exits non-zero on mismatch (M-15).
 
 Without --force: dry run (builds everything, touches no ref). With --force: PATCHes the
 branch. Token: GH_TOKEN env or C:/Users/Kullanıcı/gh.token (never printed).
@@ -58,13 +67,105 @@ def api(token: str, method: str, url: str, payload=None, tries: int = 5):
             raise
 
 
-def main() -> int:
+def _norm_path(path: str) -> str:
+    """Normalize for comparison (Windows: case, separators, 8.3 short names)."""
+    try:
+        return os.path.normcase(os.path.realpath(path))
+    except OSError:
+        return os.path.normcase(os.path.abspath(path))
+
+
+def _assert_repo_root() -> None:
+    """M-14: refuse to run from a subdirectory.
+
+    From a subdir `git ls-tree -r HEAD` lists only that subtree and --force would
+    replace the whole remote tree with it.
+    """
+    try:
+        toplevel = subprocess.check_output(
+            ["git", "rev-parse", "--show-toplevel"]).decode().strip()
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+        raise SystemExit("error: not inside a git repository "
+                         "(git rev-parse --show-toplevel failed) — run from the repo root")
+    if _norm_path(os.getcwd()) != _norm_path(toplevel):
+        raise SystemExit(f"error: cwd {os.getcwd()} is not the repo toplevel ({toplevel}) — "
+                         "from a subdir the tree listing would cover only that subtree and "
+                         "--force would replace the whole remote tree with it. "
+                         "Run from the repo root.")
+
+
+def _assert_clean_tree(allow_dirty: bool) -> None:
+    """M-13: refuse to ship with uncommitted working-tree edits.
+
+    The script ships `git ls-tree -r HEAD`, so dirty edits silently do not ship.
+    Enforced on the --force path only (a dry run ships nothing).
+    """
+    status = subprocess.check_output(["git", "status", "--porcelain"]).decode()
+    dirty = [ln for ln in status.splitlines() if ln.strip()]
+    if dirty and not allow_dirty:
+        preview = "\n".join("  " + ln for ln in dirty[:5])
+        more = f"\n  ... and {len(dirty) - 5} more" if len(dirty) > 5 else ""
+        raise SystemExit(f"error: working tree is dirty ({len(dirty)} path(s)); uncommitted "
+                         "edits do NOT ship (the script ships `git ls-tree -r HEAD`). "
+                         "Commit or stash first, or pass --allow-dirty to ship anyway.\n"
+                         + preview + more)
+
+
+def _compare_tree_sets(local_blobs, remote_blobs) -> list:
+    """Pure compare: sorted symmetric difference of the two blob-sha sets ([] == equal)."""
+    return sorted(set(local_blobs) ^ set(remote_blobs))
+
+
+def _verify_remote_tree(token: str, api_url: str, tree_sha: str, local_blobs,
+                        fetch=None) -> list:
+    """M-15: after the ref PATCH, re-fetch the remote tree and compare blob shas.
+
+    Prints TREE EQUAL, or TREE MISMATCH plus a short diff summary, and raises
+    SystemExit (non-zero) on mismatch. `fetch` is injectable for tests; defaults
+    to the module's api().
+    """
+    if fetch is None:
+        def fetch(method: str, url: str):
+            return api(token, method, url)
+    remote = fetch("GET", f"{api_url}/trees/{tree_sha}?recursive=1")
+    if remote.get("truncated"):
+        raise SystemExit("error: remote tree listing was truncated — tree-equality "
+                         "verification cannot complete; investigate before trusting the ship")
+    remote_blobs = [e["sha"] for e in remote.get("tree", []) if e.get("type") == "blob"]
+    diff = _compare_tree_sets(local_blobs, remote_blobs)
+    if diff:
+        only_local = sorted(set(local_blobs) - set(remote_blobs))
+        only_remote = sorted(set(remote_blobs) - set(local_blobs))
+        print("TREE MISMATCH")
+        print(f"  blob sha(s) in local HEAD but not in remote tree: {len(only_local)}")
+        for sha in only_local[:5]:
+            print(f"    - {sha}")
+        print(f"  blob sha(s) in remote tree but not in local HEAD: {len(only_remote)}")
+        for sha in only_remote[:5]:
+            print(f"    - {sha}")
+        raise SystemExit("error: remote tree does NOT match the local HEAD blob set "
+                         "(the ref WAS patched — fix and re-ship; do not assume success)")
+    print(f"TREE EQUAL ({len(set(local_blobs))} blobs)")
+    return diff
+
+
+def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Ship Prizma HEAD to GitHub via REST API.")
     parser.add_argument("message")
     parser.add_argument("--repo", default=os.environ.get("GH_REPO", DEFAULT_REPO))
     parser.add_argument("--force", action="store_true",
                         help="REQUIRED to actually PATCH the branch ref; without it: dry run")
-    args = parser.parse_args()
+    parser.add_argument("--allow-dirty", action="store_true",
+                        help="with --force: permit shipping despite a dirty working tree "
+                             "(uncommitted edits are NOT shipped)")
+    return parser
+
+
+def main() -> int:
+    _assert_repo_root()  # M-14: before anything else
+    args = _build_parser().parse_args()
+    if args.force:
+        _assert_clean_tree(args.allow_dirty)  # M-13: only the real ship needs a clean tree
 
     token = _read_token()
     who = api(token, "GET", "https://api.github.com/user")["login"]
@@ -86,12 +187,13 @@ def main() -> int:
     print("remote base:", parent)
 
     files = subprocess.check_output(["git", "ls-tree", "-r", "HEAD"]).decode().strip().splitlines()
-    tree_entries, n = [], 0
+    tree_entries, local_blob_shas, n = [], set(), 0
     for line in files:
         meta, path = line.split("\t", 1)
         mode, typ, sha = meta.split(" ")
         if typ != "blob":
             continue
+        local_blob_shas.add(sha)
         raw = subprocess.check_output(["git", "cat-file", "blob", sha])  # committed bytes (no CRLF drift)
         r = api(token, "POST", f"{api_url}/blobs",
                 {"content": base64.b64encode(raw).decode(), "encoding": "base64"})
@@ -110,6 +212,7 @@ def main() -> int:
         print("SHIPPED commit:", commit["sha"])
         print("NOTE: this rebuilds remote history (tree contents match local HEAD; commit "
               "SHAs differ from local by design).")
+        _verify_remote_tree(token, api_url, tree["sha"], local_blob_shas)  # M-15
     else:
         print("DRY RUN — ref NOT updated. Built commit:", commit["sha"])
         print(f"re-run with --force to PATCH {args.repo} -> {commit['sha']}")
