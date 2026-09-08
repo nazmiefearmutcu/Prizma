@@ -1,0 +1,534 @@
+{
+  "meta": {
+    "registry": "PR-2026-09-03-08",
+    "smoke": true,
+    "lane": "SMOKE (plumbing only)",
+    "doc": "docs/preregistry/2026-09-08-prizma-lm-flagship.md",
+    "arms": [
+      "PRIM-LM",
+      "FROZEN-TRUNK",
+      "SHARED-HEAD",
+      "FROZEN-CHECKPOINT",
+      "FORCED-RECRUIT"
+    ],
+    "arm_family": {
+      "PRIM-LM": "fusion",
+      "FORCED-RECRUIT": "fusion",
+      "FROZEN-TRUNK": "fusion",
+      "SHARED-HEAD": "shared",
+      "FROZEN-CHECKPOINT": "frozen-checkpoint"
+    },
+    "claim_seeds": [
+      0
+    ],
+    "seg": 256,
+    "batch_segs": 32,
+    "lr_grid": [
+      0.001,
+      0.003,
+      0.01
+    ],
+    "lr_select_segs": 200,
+    "lr_rule": "one per arm-family, seed-0 first-200-A-segment loss, then frozen (PR-07' addendum); smoke fixes 3e-3 (probe-2 precedent)",
+    "tissue": {
+      "E_pool": 4,
+      "m_max": 4,
+      "freeze_min_seen": 300,
+      "z_novel": 5.0,
+      "h_small": 64,
+      "h_shared": 256,
+      "floor_ema": 0.05,
+      "fresh_head_seed_formula": "20260908 + 17*slot + n_evictions",
+      "params_backbone": 103056,
+      "params_per_expert": 8385,
+      "params_pool_e4": 33540,
+      "params_shared_h256": 33345,
+      "shared_parity_note": "shared head 33345 vs pool 33540 params (probe-2 P2 budget)"
+    },
+    "pinned_slices": {
+      "A_train": [
+        "text8",
+        0,
+        1000000
+      ],
+      "A_eval": [
+        "text8",
+        1000000,
+        1100000
+      ],
+      "C_retention": [
+        "text8",
+        900000,
+        1000000
+      ],
+      "C_train": [
+        "text8",
+        1100000,
+        2100000
+      ],
+      "B_train": [
+        "shakespeare",
+        0.0,
+        0.9
+      ],
+      "B_eval": [
+        "shakespeare",
+        0.9,
+        1.0
+      ]
+    },
+    "stream_lengths": {
+      "A_train": 1000000,
+      "B_train": 1003854,
+      "C_train": 1000000,
+      "A_eval": 100000,
+      "B_eval": 111540,
+      "C_retention": 100000
+    },
+    "vocab": 65,
+    "threads": 8,
+    "c_range_repair": "DOC-VS-CODE REPAIR (owner-approved, 2026-09-07 session, needs a dated maintainer addendum): pre-reg section 2 pins Block C = text8[1.0M, 2.0M) while A-eval = text8[1.0M, 1.1M) \u2014 literal C training would consume the A-eval slice and bar B1 would measure training, not retention. The doc's own cited provenance (fusion_probe2 P3) skipped [1.0M, 1.1M) for exactly this reason. Pinned here: C = text8[1.1M, 2.1M) (1.0M chars, the doc's block size, A-eval clean).",
+    "c_retention_prose_note": "DOC PROSE BUG (disclosed, slice implemented as pinned): section 2 calls text8[0.9M, 1.0M) 'held-out ... disjoint from A-train's tail', but that slice IS A-train's tail ([0.9M, 1.0M) is inside [0, 1.0M)). Both B2 arms saw it equally in A-training, so B2 stays a fair adaptation comparison (C-training's in-domain benefit over the frozen floor).",
+    "bars": {
+      "B1_margin": 0.05,
+      "B2_margin": 0.1,
+      "B3_frac": 0.5,
+      "B3_window_batches": 20,
+      "B3_forced_cost": 0.1,
+      "alpha": 0.05,
+      "holm_family": [
+        "B1",
+        "B2"
+      ],
+      "t_isf_convention": "UPPER-TAIL p in (0, 0.5] (the PR-03 lesson)"
+    },
+    "boundary_note": "A-expert := the committed slot with max train_A at C start (B3's 'A-recruited expert'); frac = TRAINING-ledger fraction of C segments in the first 20 C-batches assigned to it",
+    "budget_projection": {
+      "projected_min": 0.5,
+      "warn": false,
+      "warn_threshold_min": 120.0,
+      "note": "within budget"
+    }
+  },
+  "lr_selection": {
+    "smoke_note": "LR selection skipped (fixed 3e-3, probe-2 smoke precedent); the numbers are plumbing-only"
+  },
+  "claim.PRIM-LM.s0": {
+    "config": "PRIM-LM",
+    "E": 4,
+    "seed": 0,
+    "lr": 0.003,
+    "bpc_A_preB": 4.941736105231895,
+    "bpc_A_postB": 4.497363641802256,
+    "bpc_B_postB": 5.00345357560622,
+    "bpc_Cret_postB": 4.517602207370866,
+    "a_expert": 0,
+    "bpc_A_postC": 4.247703910112973,
+    "bpc_B_postC": 5.041127577970187,
+    "bpc_Cret_postC": 4.249264426005238,
+    "fgt_A_full": 0.6940321951189219,
+    "b_degradation_B_postC": 0.037674002363966785,
+    "ledger": {
+      "n_committed": 1,
+      "a_expert": 0,
+      "recruits": [
+        {
+          "slot": 0,
+          "at_batch": 0,
+          "corpus": "A",
+          "n_novel_segs": 32,
+          "trigger_z": null,
+          "reason": "empty_pool"
+        }
+      ],
+      "evictions": [],
+      "veto_events": [],
+      "vetoed_novel_segments": 0,
+      "cap_fallback_batches": 0,
+      "cap_fallback_segments": 0,
+      "cap_events": [],
+      "per_expert": [
+        {
+          "slot": 0,
+          "committed": true,
+          "train_A": 64,
+          "train_B": 64,
+          "train_C": 64,
+          "train_total": 192,
+          "mu": 3.9472,
+          "sigma": 0.5348,
+          "n_batches": 6,
+          "n_segments": 192,
+          "is_A_expert": true
+        },
+        {
+          "slot": 1,
+          "committed": false
+        },
+        {
+          "slot": 2,
+          "committed": false
+        },
+        {
+          "slot": 3,
+          "committed": false
+        }
+      ],
+      "block_majority_share": {
+        "A": 1.0,
+        "B": 1.0,
+        "C": 1.0
+      },
+      "train_sums_balance": {
+        "A": {
+          "sum": 64,
+          "expected": 64,
+          "ok": true
+        },
+        "B": {
+          "sum": 64,
+          "expected": 64,
+          "ok": true
+        },
+        "C": {
+          "sum": 64,
+          "expected": 64,
+          "ok": true
+        }
+      },
+      "eval_routes": {
+        "A_eval": [
+          390,
+          0,
+          0,
+          0
+        ],
+        "B_eval": [
+          435,
+          0,
+          0,
+          0
+        ],
+        "C_retention": [
+          390,
+          0,
+          0,
+          0
+        ]
+      },
+      "boundary_window": {
+        "c_batches_1_to": 20,
+        "segments_total": 64,
+        "to_A_expert": 64,
+        "frac_to_A_expert": 1.0,
+        "recruit_events_c_batches_1_to_20": []
+      }
+    },
+    "wall_s": 6.5,
+    "arm": "PRIM-LM",
+    "cellkey": "claim.PRIM-LM.s0",
+    "cfgsig": "40ec60d20456e558",
+    "complete": true
+  },
+  "claim.FROZEN-TRUNK.s0": {
+    "config": "FROZEN-TRUNK",
+    "E": 4,
+    "seed": 0,
+    "lr": 0.003,
+    "bpc_A_preB": 4.941736105231895,
+    "backbone_frozen_check": true,
+    "bpc_A_postB": 4.596626912498859,
+    "bpc_B_postB": 5.0566717858764285,
+    "bpc_Cret_postB": 4.609355942931813,
+    "a_expert": 0,
+    "bpc_A_postC": 4.355935432219583,
+    "bpc_B_postC": 5.148383315952067,
+    "bpc_Cret_postC": 4.367913898613529,
+    "fgt_A_full": 0.5858006730123115,
+    "b_degradation_B_postC": 0.09171153007563859,
+    "ledger": {
+      "n_committed": 1,
+      "a_expert": 0,
+      "recruits": [
+        {
+          "slot": 0,
+          "at_batch": 0,
+          "corpus": "A",
+          "n_novel_segs": 32,
+          "trigger_z": null,
+          "reason": "empty_pool"
+        }
+      ],
+      "evictions": [],
+      "veto_events": [],
+      "vetoed_novel_segments": 0,
+      "cap_fallback_batches": 0,
+      "cap_fallback_segments": 0,
+      "cap_events": [],
+      "per_expert": [
+        {
+          "slot": 0,
+          "committed": true,
+          "train_A": 64,
+          "train_B": 64,
+          "train_C": 64,
+          "train_total": 192,
+          "mu": 3.9585,
+          "sigma": 0.5172,
+          "n_batches": 6,
+          "n_segments": 192,
+          "is_A_expert": true
+        },
+        {
+          "slot": 1,
+          "committed": false
+        },
+        {
+          "slot": 2,
+          "committed": false
+        },
+        {
+          "slot": 3,
+          "committed": false
+        }
+      ],
+      "block_majority_share": {
+        "A": 1.0,
+        "B": 1.0,
+        "C": 1.0
+      },
+      "train_sums_balance": {
+        "A": {
+          "sum": 64,
+          "expected": 64,
+          "ok": true
+        },
+        "B": {
+          "sum": 64,
+          "expected": 64,
+          "ok": true
+        },
+        "C": {
+          "sum": 64,
+          "expected": 64,
+          "ok": true
+        }
+      },
+      "eval_routes": {
+        "A_eval": [
+          390,
+          0,
+          0,
+          0
+        ],
+        "B_eval": [
+          435,
+          0,
+          0,
+          0
+        ],
+        "C_retention": [
+          390,
+          0,
+          0,
+          0
+        ]
+      },
+      "boundary_window": {
+        "c_batches_1_to": 20,
+        "segments_total": 64,
+        "to_A_expert": 64,
+        "frac_to_A_expert": 1.0,
+        "recruit_events_c_batches_1_to_20": []
+      }
+    },
+    "wall_s": 5.2,
+    "arm": "FROZEN-TRUNK",
+    "cellkey": "claim.FROZEN-TRUNK.s0",
+    "cfgsig": "673370da8b742e60",
+    "complete": true
+  },
+  "claim.SHARED-HEAD.s0": {
+    "config": "SHARED-HEAD",
+    "h_small": 256,
+    "seed": 0,
+    "lr": 0.003,
+    "routing": "none (single shared head, trained on ALL segments)",
+    "bpc_A_preB": 4.628746067811866,
+    "bpc_A_postB": 4.376955486953714,
+    "bpc_B_postB": 4.925680209068557,
+    "bpc_Cret_postB": 4.384694981414782,
+    "bpc_A_postC": 4.267989897031181,
+    "bpc_B_postC": 5.409479769719104,
+    "bpc_Cret_postC": 4.286341662986233,
+    "fgt_A_full": 0.360756170780685,
+    "b_degradation_B_postC": 0.48379956065054674,
+    "wall_s": 5.5,
+    "arm": "SHARED-HEAD",
+    "cellkey": "claim.SHARED-HEAD.s0",
+    "cfgsig": "20f9ff219dbac689",
+    "complete": true
+  },
+  "claim.FROZEN-CHECKPOINT.s0": {
+    "config": "FROZEN-CHECKPOINT",
+    "seed": 0,
+    "lr": 0.003,
+    "routing": "none (plain backbone, frozen after A)",
+    "bpc_A_preB": 5.283897801084931,
+    "bpc_A_postB": 5.283897801084931,
+    "bpc_A_postC": 5.283897801084931,
+    "bpc_B_postB": 5.503944287368277,
+    "bpc_B_postC": 5.503944287368277,
+    "bpc_Cret_postB": 5.286113043463521,
+    "bpc_Cret_postC": 5.286113043463521,
+    "frozen_note": "weights unchanged after A; postB==postC by construction (single evaluation, honestly aliased)",
+    "fgt_A_full": 0.0,
+    "b_degradation_B_postC": 0.0,
+    "wall_s": 2.1,
+    "arm": "FROZEN-CHECKPOINT",
+    "cellkey": "claim.FROZEN-CHECKPOINT.s0",
+    "cfgsig": "e40b7bec882dbbce",
+    "complete": true
+  },
+  "claim.FORCED-RECRUIT.s0": {
+    "config": "FORCED-RECRUIT",
+    "E": 4,
+    "seed": 0,
+    "lr": 0.003,
+    "bpc_A_preB": 4.941736105231895,
+    "bpc_A_postB": 4.497363641802256,
+    "bpc_B_postB": 5.00345357560622,
+    "bpc_Cret_postB": 4.517602207370866,
+    "a_expert": 0,
+    "forced_slot": 1,
+    "bpc_A_postC": 4.361887386633548,
+    "bpc_B_postC": 5.062080900394534,
+    "bpc_Cret_postC": 4.369132142571709,
+    "fgt_A_full": 0.5798487185983472,
+    "b_degradation_B_postC": 0.058627324788314006,
+    "ledger": {
+      "n_committed": 2,
+      "a_expert": 0,
+      "recruits": [
+        {
+          "slot": 0,
+          "at_batch": 0,
+          "corpus": "A",
+          "n_novel_segs": 32,
+          "trigger_z": null,
+          "reason": "empty_pool"
+        },
+        {
+          "slot": 1,
+          "at_batch": 0,
+          "corpus": "C",
+          "n_novel_segs": 32,
+          "trigger_z_max": null,
+          "reason": "forced_novel_C"
+        }
+      ],
+      "evictions": [],
+      "veto_events": [],
+      "vetoed_novel_segments": 0,
+      "cap_fallback_batches": 0,
+      "cap_fallback_segments": 0,
+      "cap_events": [],
+      "per_expert": [
+        {
+          "slot": 0,
+          "committed": true,
+          "train_A": 64,
+          "train_B": 64,
+          "train_C": 0,
+          "train_total": 128,
+          "mu": 4.0506,
+          "sigma": 0.4487,
+          "n_batches": 4,
+          "n_segments": 128,
+          "is_A_expert": true
+        },
+        {
+          "slot": 1,
+          "committed": true,
+          "train_A": 0,
+          "train_B": 0,
+          "train_C": 64,
+          "train_total": 64,
+          "mu": 3.45,
+          "sigma": 0.3378,
+          "n_batches": 2,
+          "n_segments": 64,
+          "is_A_expert": false
+        },
+        {
+          "slot": 2,
+          "committed": false
+        },
+        {
+          "slot": 3,
+          "committed": false
+        }
+      ],
+      "block_majority_share": {
+        "A": 1.0,
+        "B": 1.0,
+        "C": 1.0
+      },
+      "train_sums_balance": {
+        "A": {
+          "sum": 64,
+          "expected": 64,
+          "ok": true
+        },
+        "B": {
+          "sum": 64,
+          "expected": 64,
+          "ok": true
+        },
+        "C": {
+          "sum": 64,
+          "expected": 64,
+          "ok": true
+        }
+      },
+      "eval_routes": {
+        "A_eval": [
+          390,
+          0,
+          0,
+          0
+        ],
+        "B_eval": [
+          414,
+          21,
+          0,
+          0
+        ],
+        "C_retention": [
+          390,
+          0,
+          0,
+          0
+        ]
+      },
+      "boundary_window": {
+        "c_batches_1_to": 20,
+        "segments_total": 64,
+        "to_A_expert": 0,
+        "frac_to_A_expert": 0.0,
+        "recruit_events_c_batches_1_to_20": [
+          {
+            "slot": 1,
+            "c_batch_1based": 1,
+            "reason": "forced_novel_C"
+          }
+        ]
+      }
+    },
+    "wall_s": 5.4,
+    "arm": "FORCED-RECRUIT",
+    "cellkey": "claim.FORCED-RECRUIT.s0",
+    "cfgsig": "e650cc0a5cb58b1f",
+    "complete": true
+  }
+}

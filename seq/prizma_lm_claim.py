@@ -38,11 +38,11 @@ WHAT IS FROZEN (pre-reg §2-§5 — the constants below ARE that text, not choic
            or the leg is honestly abandoned. All echoed verbatim in the verdict dict.
 
 TWO DISCLOSED DOC-VS-CODE NOTES (no silent deviation — both recorded in the ledger meta):
-  (1) C-RANGE REPAIR (owner-approved, 2026-09-07 session): pre-reg §2 pins Block C =
+  (1) C-RANGE REPAIR (maintainer addendum, 2026-09-08): pre-reg §2 pins Block C =
       text8[1.0M, 2.0M) AND A-eval = text8[1.0M, 1.1M). Taken literally, C-training would
       train on exactly the A-eval chars and bar B1 would measure TRAINING, not retention.
       The doc's own cited provenance (fusion_probe2 P3) skipped [1.0M, 1.1M) for exactly this
-      reason. Per the owner's decision the runner pins C = text8[1.1M, 2.1M) (1.0M chars, the
+      reason. Per the maintainer's pre-run addendum the runner pins C = text8[1.1M, 2.1M) (1.0M chars, the
       doc's size, A-eval protected). This needs a dated maintainer addendum to formalize.
   (2) C-RETENTION SLICE PROSE BUG: §2 calls text8[0.9M, 1.0M) "held-out ... disjoint from
       A-train's tail", but text8[0.9M, 1.0M) IS A-train's tail ([0.9M, 1.0M) ⊂ [0, 1.0M) =
@@ -139,7 +139,7 @@ ALPHA = 0.05
 BUDGET_WARN_MIN = 120.0     # powered wall-time projection warning threshold (2 h, A100-equiv)
 
 C_RANGE_REPAIR_NOTE = (
-    "DOC-VS-CODE REPAIR (owner-approved, 2026-09-07 session, needs a dated maintainer addendum): "
+    "DOC-VS-CODE REPAIR (maintainer addendum 2026-09-08 — see the doc's dated addendum section): "
     "pre-reg section 2 pins Block C = text8[1.0M, 2.0M) while A-eval = text8[1.0M, 1.1M) — "
     "literal C training would consume the A-eval slice and bar B1 would measure training, not "
     "retention. The doc's own cited provenance (fusion_probe2 P3) skipped [1.0M, 1.1M) for "

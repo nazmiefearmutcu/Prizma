@@ -95,3 +95,13 @@ this protocol uses default-off knobs, so no limitation bites.
 3. **Partial order.** Primaries first (STREAM, FROZEN, all seeds), then RESET canary, then
    WINDOW-TF (descriptive; may be cut by the 03:55 clock rule with disclosure — it gates
    nothing).
+
+## Addendum 2026-09-08 (post-run disclosure) — Holm correction documented but not implemented in the runner
+
+The §4 statistics specified Holm over the two primaries; the runner computed the two
+primaries with plain Welch comparisons and no multiplicity adjustment. Pre-registered
+disclosure: with the observed margins (retention CI upper −0.119 vs bar ≤ 0.05; adaptation
+diff −3.18, CI [−3.420, −2.936] vs bar ≤ −0.10) Holm adjustment is arithmetically incapable
+of flipping either verdict (each primary clears its bar at p ≪ 0.025). The CLAIMED status
+stands; the runner's verdict text was corrected to describe this honestly. Recorded by the
+2026-09-08 pre-GPU review (committee/review_2026-09-08/PRE_GPU_REVIEW.md, H-2).
