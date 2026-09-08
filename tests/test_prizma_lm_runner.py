@@ -9,7 +9,9 @@ pins
   (c) the bar math as PURE functions: B1 (one-sample, direction 'below'), B2 (Welch advantage,
       direction 'above'), the Holm family order over B1-B2, the INCONCLUSIVE straddle rule
       (never PASS), the B3 clauses, the B4 report, and the pre-committed §5 branch echoes,
-  (d) the budget-projection guard (warn > 2 h) and the frozen protocol constants.
+  (d) the budget-projection guard (warn > 2 h) and the frozen protocol constants,
+  (e) the 2026-09-08 pre-GPU-review additions: the --powered-cpu mode's parser contract
+      (third exclusive mode; doc addendum 2026-09-08 #2) and the needs_cuda pure guard.
 No training, no torch: everything here runs on the pure layer in <1s.
 """
 import os
@@ -251,3 +253,29 @@ def test_budget_projection_warns_above_two_hours():
     assert "WARNING" in slow["note"]
     none = plc.budget_projection(first_cell_s=0, n_cells_total=25)
     assert none["projected_min"] is None and none["warn"] is False
+
+
+# ── 6. Pre-GPU-review additions (2026-09-08): the --powered-cpu mode + needs_cuda ────────────────
+
+def test_powered_cpu_alone_accepted_and_combinations_rejected():
+    # The doc section-6 CPU-feasible fallback (doc addendum 2026-09-08 #2) ships as a THIRD,
+    # mutually exclusive mode: alone it parses; combined with --smoke or --powered it must be
+    # rejected before anything runs (the parser-guard contract).
+    p = plc._build_parser()
+    args = p.parse_args(["--powered-cpu"])
+    assert args.powered_cpu is True and args.smoke is False and args.powered is False
+    with pytest.raises(SystemExit):
+        p.parse_args(["--powered-cpu", "--smoke"])
+    with pytest.raises(SystemExit):
+        p.parse_args(["--powered-cpu", "--powered"])
+    with pytest.raises(SystemExit):
+        p.parse_args(["--powered-cpu", "--smoke", "--powered"])
+
+
+def test_needs_cuda_only_for_the_powered_mode():
+    # The pure mode->CUDA decision (unit-testable without torch): --powered keeps its CUDA
+    # refusal byte-identical; --powered-cpu (the doc section-6 fallback) and --smoke are
+    # CPU-side by design.
+    assert plc.needs_cuda("powered") is True
+    assert plc.needs_cuda("powered-cpu") is False
+    assert plc.needs_cuda("smoke") is False

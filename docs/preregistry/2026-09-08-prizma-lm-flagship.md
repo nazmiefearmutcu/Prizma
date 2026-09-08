@@ -106,3 +106,28 @@ routing behavior (purity, boundary-recruit, returning-domain completion) survive
    compared arms saw it in A. 
 3. **Disclosed:** freeze_min_seen is ported as the recruit-side veto (probe-2 cascade
    lesson); src/prizma.py's consolidation freeze-gate has no tissue analog in this runner.
+
+---
+
+## Addendum 2026-09-08 (pre-run, maintainer #2) — §6 CPU-feasible fallback authorized for tonight; operational disclosures
+
+1. **Authorization: the §6 CPU-feasible fallback (≈6–8 h, "acceptable") is authorized for
+   execution on the local CPU box (Ryzen 7 PRO 5750G, 8 torch threads, torch CPU build),
+   2026-09-08 evening.** The runner's `--powered` CUDA refusal stands unchanged; execution
+   uses the new explicit `--powered-cpu` mode, which is protocol-identical (same corpora
+   slices, arms, seeds, bars, statistics, ledger schema) and records `powered_cpu: true`
+   plus a pointer to this addendum in the ledger meta. The A100 notebook stage remains
+   available; per docs/RETENTION.md the first completed powered ledger is the claim record
+   and any later different-compute re-run writes its own artifacts, never an overwrite.
+2. **Pre-disclosed (review M-1):** FORCED-RECRUIT raises a fail-loud RuntimeError if the
+   pool has no free slot at C start. PRIM/FORCED share the deterministic A/B trajectory,
+   so the cell would fail identically on every resume; ledger stays valid; a dated
+   addendum would decide the path. Judged low-probability.
+3. **Pre-committed §5 decision (made before unblinding):** if any bar is INCONCLUSIVE at
+   n=5, seed extension to n=10 (seeds 5–9, protocol otherwise untouched) is AUTHORIZED and
+   runs immediately after the n=5 ledger completes — time permitting tonight; the 03:55
+   wind-down rule always wins, in which case the extension is the next session's first
+   action.
+4. **Fingerprint note (review M-2, landed pre-run):** the claim-cell fingerprint now
+   includes the bars constants; the pre-existing smoke ledger at the old fingerprint is
+   superseded (fresh path), never silently reused.

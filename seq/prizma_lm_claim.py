@@ -2,11 +2,15 @@
 PR-2026-09-03-08 CLAIM RUNNER — the Prizma-LM flagship bar (many-block continual char-LM,
 fused column). Executes the FROZEN pre-registration
 `docs/preregistry/2026-09-08-prizma-lm-flagship.md` VERBATIM when a GPU session runs it.
-One script, two modes (the surprise_claim pattern, mirrored):
+One script, three modes (the surprise_claim pattern, mirrored):
 
   python seq/prizma_lm_claim.py --smoke      # tiny CPU plumbing run -> the SMOKE ledger
   python seq/prizma_lm_claim.py --powered    # the A100 claim campaign -> the POWERED ledger
                                              # (refuses to start without a CUDA device)
+  python seq/prizma_lm_claim.py --powered-cpu
+                                             # the doc section-6 CPU-feasible fallback -> the
+                                             # POWERED ledger on the local CPU box (protocol-
+                                             # identical; doc addendum 2026-09-08 #2, point 1)
 
 WHAT IS FROZEN (pre-reg §2-§5 — the constants below ARE that text, not choices):
   stream = 3 blocks, one pass, char-level: A = text8[0, 1.0M) -> B = tiny-shakespeare (full;
@@ -50,6 +54,10 @@ TWO DISCLOSED DOC-VS-CODE NOTES (no silent deviation — both recorded in the le
       is implemented as pinned; the honesty consequence is disclosed: both B2 arms saw this
       slice in A-training equally, so the B2 comparison remains apples-to-apples (it measures
       C-training's in-domain benefit over the frozen floor, not unseen-text retention).
+
+DISCLOSURE (review M-1, pre-disclosed in the doc's 2026-09-08 maintainer addendum #2):
+  FORCED-RECRUIT raises a fail-loud RuntimeError if the pool has no free slot at C start
+  (deterministic, resume-safe).
 
 TISSUE PROVENANCE: the fused column is REUSED verbatim from seq/fusion_probe.py + its probe-2
 extensions (PCExpertHead, FusionLM/build_model, _segment_surprise, _expert_train local
@@ -150,6 +158,10 @@ C_RET_PROSE_NOTE = (
     "'held-out ... disjoint from A-train's tail', but that slice IS A-train's tail "
     "([0.9M, 1.0M) is inside [0, 1.0M)). Both B2 arms saw it equally in A-training, so B2 stays "
     "a fair adaptation comparison (C-training's in-domain benefit over the frozen floor).")
+POWERED_CPU_FALLBACK_NOTE = (
+    "POWERED VIA THE DOC SECTION-6 CPU-FEASIBLE FALLBACK (maintainer addendum 2026-09-08 #2, "
+    "point 1): protocol-identical to the A100 tier; --powered (CUDA-refusing) remains "
+    "available for the GPU session.")
 
 
 # ==================================================================== paths + BAR-0 refusal ======
@@ -188,6 +200,13 @@ def require_cuda(has_cuda: bool) -> None:
             "refusing: --powered executes the PR-2026-09-03-08 claim campaign and requires a CUDA "
             "device (the A100 Colab session). No CUDA device is visible here. "
             "Use --smoke for the CPU plumbing run.")
+
+
+def needs_cuda(mode: str) -> bool:
+    """Pure mode->CUDA-requirement guard (unit-testable without torch): only the --powered A100
+    claim campaign demands a CUDA device. --powered-cpu (the doc section-6 CPU-feasible
+    fallback, doc addendum 2026-09-08 #2) and --smoke run CPU-side by design."""
+    return mode == "powered"
 
 
 # ================================================================ PURE: slice pinning ===========
@@ -597,10 +616,12 @@ def ledger_snapshot_pr08(model, ledger, tr, ev_routes, expected, boundary, a_exp
 
 
 def run_routed(vocab_size, seed, data, lr, *, frozen_after_A=False, forced_c=False):
-    """PRIM-LM / FROZEN-TRUNK / FORCED-RECRUIT cell. A and B phases are identical across the
-    three (same seed stream -> identical init and trajectory — the probe-2 determinism
-    property); FROZEN-TRUNK freezes the backbone after A (parameter-identity proven);
-    FORCED-RECRUIT replaces C routing with a forced fresh recruit (probe-2 override)."""
+    """PRIM-LM / FROZEN-TRUNK / FORCED-RECRUIT cell. A and B phases are identical across
+    PRIM-LM and FORCED-RECRUIT (FROZEN-TRUNK shares phase A only; its B-phase backbone is
+    frozen by design) (same seed stream -> identical init and trajectory — the probe-2
+    determinism property); FROZEN-TRUNK freezes the backbone after A (parameter-identity
+    proven); FORCED-RECRUIT replaces C routing with a forced fresh recruit (probe-2
+    override)."""
     import time
     import torch
     from seq import fusion_probe as fp
@@ -727,8 +748,11 @@ def _fp(payload: dict) -> str:
     return config_fingerprint({"registry": REGISTRY_ID, **payload})
 
 
-def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False):
-    """Execute the protocol: --smoke (CPU plumbing) or --powered (the A100 claim campaign)."""
+def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
+        powered_cpu: bool = False):
+    """Execute the protocol: --smoke (CPU plumbing), --powered (the A100 claim campaign), or
+    --powered-cpu (the doc section-6 CPU-feasible fallback: identical to --powered except the
+    CUDA guard is skipped and the ledger meta records powered_cpu + the fallback note)."""
     # BAR-0 FIRST: resolve + guard the results path before any heavy import or write.
     path = resolve_results_path(results_path, smoke=smoke, force_smoke_path=force_smoke_path)
 
@@ -748,7 +772,10 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False):
                                                # held-out eval slices stay FULL)
         seeds = (0,)
     else:
-        require_cuda(torch.cuda.is_available())  # refuse BEFORE anything else on a CPU-only box
+        if needs_cuda("powered-cpu" if powered_cpu else "powered"):
+            require_cuda(torch.cuda.is_available())  # refuse BEFORE anything else on a CPU-only box
+        # (--powered-cpu skips that guard by design: the doc section-6 CPU-feasible fallback,
+        # doc addendum 2026-09-08 #2 — protocol-identical to powered in every other respect)
         smoke_segs = None
         seeds = CLAIM_SEEDS
 
@@ -817,6 +844,9 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False):
                          "'A-recruited expert'); frac = TRAINING-ledger fraction of C segments "
                          "in the first 20 C-batches assigned to it",
     }
+    if powered_cpu:
+        res["meta"]["powered_cpu"] = True
+        res["meta"]["compute_fallback_note"] = POWERED_CPU_FALLBACK_NOTE
     _save(res, path)
     print(f"[pr08] corpora: A={Ax.shape[0]} B={Bx.shape[0]} C={Cx.shape[0]} segs; "
           f"eval A={Aex.shape[0]} B={Bex.shape[0]} Cret={Crx.shape[0]}; vocab={V}; "
@@ -902,7 +932,10 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False):
                           "smoke_segs": smoke_segs, "seg": SEG, "batch_segs": BATCH_SEGS,
                           "slices": res["meta"]["pinned_slices"],
                           "stream_lengths": res["meta"]["stream_lengths"],
-                          "tissue": res["meta"]["tissue"]})
+                          "tissue": res["meta"]["tissue"],
+                          "bars": res["meta"]["bars"]})   # review M-2: the bars constants (B3's
+                                                          # window applies at train time) must
+                                                          # invalidate stale resume cells
             prior = res.get(cellkey)
             if isinstance(prior, dict) and prior.get("cfgsig") == cfgsig and prior.get("complete"):
                 print(f"[pr08] {arm} seed {seed}: resumed from ledger "
@@ -949,6 +982,8 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False):
               "c_range_repair": C_RANGE_REPAIR_NOTE,
               "c_retention_prose_note": C_RET_PROSE_NOTE, "raw_archive": raw_archive,
               "cells": {k: res[k] for k in sorted(res) if k.startswith("claim.")}}
+    if powered_cpu:
+        report["powered_cpu"] = True
     if not smoke:
         prim = [res[f"claim.PRIM-LM.s{s}"] for s in seeds]
         frozen_ck = [res[f"claim.FROZEN-CHECKPOINT.s{s}"] for s in seeds]
@@ -1019,11 +1054,17 @@ def _build_parser():
         prog="prizma_lm_claim",
         description="PR-2026-09-03-08 claim runner (the Prizma-LM flagship bar). --smoke = tiny "
                     "CPU plumbing run; --powered = the frozen A100 claim campaign (requires "
-                    "CUDA). An unknown flag is rejected without launching anything.")
+                    "CUDA); --powered-cpu = the doc section-6 CPU-feasible fallback "
+                    "(protocol-identical claim campaign on an explicitly authorized CPU box). "
+                    "An unknown flag is rejected without launching anything.")
     mode = p.add_mutually_exclusive_group(required=True)
     mode.add_argument("--smoke", action="store_true", help="tiny plumbing-only run (CPU, minutes)")
     mode.add_argument("--powered", action="store_true",
                       help="the claim campaign (refuses to start without a CUDA device)")
+    mode.add_argument("--powered-cpu", action="store_true",
+                      help="the claim campaign via the doc section-6 CPU-feasible fallback "
+                           "(identical protocol and ledger; runs WITHOUT a CUDA device; doc "
+                           "addendum 2026-09-08 #2)")
     p.add_argument("--out", default=None,
                    help="explicit results JSON path (overrides the default)")
     p.add_argument("--force-smoke-path", action="store_true",
@@ -1035,7 +1076,8 @@ def _build_parser():
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     args = _build_parser().parse_args(argv)   # SystemExit non-zero on unknown args: nothing runs
-    run(smoke=args.smoke, results_path=args.out, force_smoke_path=args.force_smoke_path)
+    run(smoke=args.smoke, results_path=args.out, force_smoke_path=args.force_smoke_path,
+        powered_cpu=args.powered_cpu)
 
 
 if __name__ == "__main__":
