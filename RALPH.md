@@ -116,3 +116,16 @@ owner picks (a) transfer the repo to nazmiefearmutcu0, (b) add nazmiefearmutcu0 
 or (c) mirror under nazmiefearmutcu0, the ship is ONE command:
   python tools/ship_prizma.py "Prizma campaign 2026-09" [--force]
 Loop is TERMINAL on all axes: CPU work done, GPU work notebook-gated, push decision-gated.
+
+
+## PRE-GPU REVIEW (2026-09-08 02:4x-03:1x — independent read-only referee)
+
+committee/review_2026-09-08/PRE_GPU_REVIEW.md — verdict **SHIP** (conditional, condition met
+same night): 0 Critical / 2 High / 16 Medium across the five claim runners, the levers, and
+the ship script. H-1 (ledger-facing "owner-approved" strings — no owner decision occurred)
+FIXED + the one test that pinned the old wording re-aligned. H-2 (PR-07' Holm documented but
+not implemented) disclosed as a dated addendum — arithmetically incapable of flipping the
+verdict. Q1-Q5 targeted questions answered (no wrong Holm family/tail; frozen eval sets
+sound; fingerprints cover doc-driven changes; FORCED-RECRUIT blocks re-routing for ALL of C;
+surprise lambda frozen). Suite verified 392P/10S post-fix. Remaining M's live in the review
+file as follow-ups — none blocks the campaign.
