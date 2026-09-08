@@ -58,6 +58,22 @@ FIRED once (FORCED s2) → Policy A eviction placement, inertness PROVEN on seed
 caught by the crash and fixed against the real cell schema. Raw records archived before any
 verdict (results/runs/, two snapshots: 22-cell partial + final 25-cell). INDEX → NEGATIVE.
 
+## PR-09 EXECUTED (2026-09-09 01:0x — S1 rung, powered-cpu, ~28 min)
+
+**VERDICT: NEGATIVE (P1 FAIL) — mechanistically decisive.** Floor freeze left boundary
+routing near-identical to OFF (frac mean 0.405 vs 0.428; per-seed 0.325/0.470/0.167/0.291/
+0.772 vs OFF 0.325/0.470/0.294/0.291/0.761) — the PR-08 scatter is NOT floor
+re-calibration; it is the trunk's SHARED-WEIGHT drift (FROZEN-TRUNK's clean 0.96-0.99
+routing = frozen weights). Guards held (G1 -0.2699 CI [-0.3030,-0.2368]; G2 +0.2994 CI
+[0.1044,0.4943]); churn FELL (104 vs 179 recruits) without moving fracs. **CANARY PASS:
+5 OFF cells bit-identical to PR-08 PRIM** (cross-process determinism re-proven). The
+pre-committed branch fired: **S1b = PR-2026-09-03-10 trunk-lr scheduling REGISTERED**
+(docs/preregistry/2026-09-09-trunklr-routing-repair.md — backbone lr x0.25 on C only;
+OFF canary + TRUNK-LR-0.25C; same P1/G1/G2 bars). NEXT SESSION: implement
+seq/trunklr_claim.py (mirror floorfreeze_claim.py; fingerprints include the C-lr) and
+execute --powered-cpu, then INDEX + README + this file. Artifacts:
+results/floorfreeze_PR-2026-09-03-09/ + official console log + archive under results/runs/.
+
 ## BACKLOG
 
 1. **[PR-03 claim] Single-pass citation bar** — status: `done (commit: see git log "PR-03 CLAIMED", 2026-09-05)`
