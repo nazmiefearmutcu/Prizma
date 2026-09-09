@@ -80,6 +80,21 @@ seq/trunklr_claim.py (mirror floorfreeze_claim.py; fingerprints include the C-lr
 execute --powered-cpu, then INDEX + README + this file. Artifacts:
 results/floorfreeze_PR-2026-09-03-09/ + official console log + archive under results/runs/.
 
+## PR-10 EXECUTED (2026-09-09 18:5x — S1 rung COMPLETE, powered-cpu, ~13 min)
+
+**VERDICT: CLAIMED (PASS) — the routing repair is real.** P1 PASS: frac mean 0.575 >= 0.5
+(OFF 0.428; per-seed 0.259/0.689/0.631/0.608/0.686). G1 PASS (-0.2818, CI [-0.3078,
+-0.2559]); G2 PASS (+0.3081, CI [0.1136, 0.5027], Holm p 0.0205). B4 (reported): trunk
+drift +0.7209 vs OFF +1.2021 — best B4 of any arm measured. CANARY PASS (3rd independent
+cross-process bit-identity proof). Mechanism ladder complete: interleaved=partition-bounded
+(PR-06) -> floors exonerated (PR-09) -> trunk plasticity is the cause and the 0.25 C-dose
+repairs it (PR-10). **S1 COMPLETE. NEXT = S2 (PR-2026-09-03-11, the REPAIRED FLAGSHIP):
+PR-08 protocol VERBATIM with the registered lever wired into the C phases of PRIM-LM,
+FORCED-RECRUIT and SHARED-HEAD (FROZEN-TRUNK/FROZEN-CHECKPOINT have no C backbone step);
+bars B1-B4 as PR-08; the B3 ledger FAIL is expected to flip — a PASS would REINSTATE the
+'lifelong routing' wording with evidence. Own ledger, own prereg; run --powered-cpu
+(~35 min).**
+
 ## BACKLOG
 
 1. **[PR-03 claim] Single-pass citation bar** — status: `done (commit: see git log "PR-03 CLAIMED", 2026-09-05)`

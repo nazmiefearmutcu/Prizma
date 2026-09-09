@@ -1,0 +1,55 @@
+[pr10] corpora: A=3906 B=3921 C=3906 segs; eval A=390 B=435 Cret=390; vocab=65; smoke=False; lr=0.003 (frozen, inherited); backbone_lr_C=0.00075 (treatment, C only); results=C:\Users\Kullanıcı\Prizma\results\trunklr_PR-2026-09-03-10\powered.json
+[pr10] budget projection from first cell: 13.1 min for 10 cells
+[pr10] OFF seed 0: A_preB=3.030 A_postC=2.765 B_postB=2.893 B_postC=4.028 Cret_postC=2.822 frac_C(1-20)to_A=0.325 wall=78.6s
+[pr10] OFF seed 1: A_preB=3.047 A_postC=2.747 B_postB=2.894 B_postC=4.098 Cret_postC=2.817 frac_C(1-20)to_A=0.4703 wall=71.6s
+[pr10] OFF seed 2: A_preB=3.038 A_postC=2.752 B_postB=2.889 B_postC=4.042 Cret_postC=2.799 frac_C(1-20)to_A=0.2938 wall=76.5s
+[pr10] OFF seed 3: A_preB=3.053 A_postC=2.769 B_postB=2.897 B_postC=4.031 Cret_postC=2.819 frac_C(1-20)to_A=0.2906 wall=73.7s
+[pr10] OFF seed 4: A_preB=2.979 A_postC=2.748 B_postB=2.882 B_postC=4.267 Cret_postC=2.814 frac_C(1-20)to_A=0.7609 wall=72.0s
+[pr10] CANARY PASS: 5 OFF cells bit-identical to PR-08 claim.PRIM-LM (C:\Users\Kullanıcı\Prizma\results\prizma_lm_PR-2026-09-03-08\powered.json)
+[pr10] TRUNK-LR-0.25C seed 0: A_preB=3.030 A_postC=2.753 B_postB=2.893 B_postC=3.704 Cret_postC=2.815 frac_C(1-20)to_A=0.2594 backbone_lr_C=0.00075 wall=70.6s
+[pr10] TRUNK-LR-0.25C seed 1: A_preB=3.047 A_postC=2.742 B_postB=2.894 B_postC=3.606 Cret_postC=2.804 frac_C(1-20)to_A=0.6891 backbone_lr_C=0.00075 wall=68.9s
+[pr10] TRUNK-LR-0.25C seed 2: A_preB=3.038 A_postC=2.737 B_postB=2.889 B_postC=3.539 Cret_postC=2.794 frac_C(1-20)to_A=0.6312 backbone_lr_C=0.00075 wall=68.0s
+[pr10] TRUNK-LR-0.25C seed 3: A_preB=3.053 A_postC=2.780 B_postB=2.897 B_postC=3.661 Cret_postC=2.826 frac_C(1-20)to_A=0.6078 backbone_lr_C=0.00075 wall=68.5s
+[pr10] TRUNK-LR-0.25C seed 4: A_preB=2.979 A_postC=2.725 B_postB=2.882 B_postC=3.550 Cret_postC=2.781 frac_C(1-20)to_A=0.6859 backbone_lr_C=0.00075 wall=70.2s
+
+==============================================================================
+  PR-2026-09-03-10 — POWERED CLAIM CAMPAIGN
+==============================================================================
+    claim.OFF.s0                       lr=3e-03 A_preB=3.030 A_postC=2.765 B_postB=2.893 B_postC=4.028 Cret=2.822 wall=78.6s
+      ledger: committed=4 a_expert=0 recruits=35 evictions=31 vetoed_segs=0 frac_C(1-20)to_A=0.325
+    claim.OFF.s1                       lr=3e-03 A_preB=3.047 A_postC=2.747 B_postB=2.894 B_postC=4.098 Cret=2.817 wall=71.6s
+      ledger: committed=4 a_expert=0 recruits=43 evictions=39 vetoed_segs=0 frac_C(1-20)to_A=0.4703
+    claim.OFF.s2                       lr=3e-03 A_preB=3.038 A_postC=2.752 B_postB=2.889 B_postC=4.042 Cret=2.799 wall=76.5s
+      ledger: committed=4 a_expert=0 recruits=27 evictions=23 vetoed_segs=2 frac_C(1-20)to_A=0.2938
+    claim.OFF.s3                       lr=3e-03 A_preB=3.053 A_postC=2.769 B_postB=2.897 B_postC=4.031 Cret=2.819 wall=73.7s
+      ledger: committed=4 a_expert=0 recruits=41 evictions=37 vetoed_segs=0 frac_C(1-20)to_A=0.2906
+    claim.OFF.s4                       lr=3e-03 A_preB=2.979 A_postC=2.748 B_postB=2.882 B_postC=4.267 Cret=2.814 wall=72.0s
+      ledger: committed=4 a_expert=0 recruits=33 evictions=29 vetoed_segs=0 frac_C(1-20)to_A=0.7609
+    claim.TRUNK-LR-0.25C.s0            lr=3e-03 A_preB=3.030 A_postC=2.753 B_postB=2.893 B_postC=3.704 Cret=2.815 wall=70.6s
+      ledger: committed=4 a_expert=0 recruits=24 evictions=20 vetoed_segs=0 frac_C(1-20)to_A=0.2594
+      backbone_lr_c: lr=0.00075 scale=0.25 blocks=['C']
+    claim.TRUNK-LR-0.25C.s1            lr=3e-03 A_preB=3.047 A_postC=2.742 B_postB=2.894 B_postC=3.606 Cret=2.804 wall=68.9s
+      ledger: committed=4 a_expert=0 recruits=50 evictions=46 vetoed_segs=0 frac_C(1-20)to_A=0.6891
+      backbone_lr_c: lr=0.00075 scale=0.25 blocks=['C']
+    claim.TRUNK-LR-0.25C.s2            lr=3e-03 A_preB=3.038 A_postC=2.737 B_postB=2.889 B_postC=3.539 Cret=2.794 wall=68.0s
+      ledger: committed=4 a_expert=0 recruits=40 evictions=36 vetoed_segs=2 frac_C(1-20)to_A=0.6312
+      backbone_lr_c: lr=0.00075 scale=0.25 blocks=['C']
+    claim.TRUNK-LR-0.25C.s3            lr=3e-03 A_preB=3.053 A_postC=2.780 B_postB=2.897 B_postC=3.661 Cret=2.826 wall=68.5s
+      ledger: committed=4 a_expert=0 recruits=55 evictions=51 vetoed_segs=0 frac_C(1-20)to_A=0.6078
+      backbone_lr_c: lr=0.00075 scale=0.25 blocks=['C']
+    claim.TRUNK-LR-0.25C.s4            lr=3e-03 A_preB=2.979 A_postC=2.725 B_postB=2.882 B_postC=3.550 Cret=2.781 wall=70.2s
+      ledger: committed=4 a_expert=0 recruits=52 evictions=48 vetoed_segs=0 frac_C(1-20)to_A=0.6859
+      backbone_lr_c: lr=0.00075 scale=0.25 blocks=['C']
+    P1: tl_frac_mean=0.575 (bar >= 0.5) [off control mean=0.428] -> PASS
+    G1: mean=-0.2818 CI=[-0.3078, -0.2559] p_raw=0.0000 p_holm=0.0000 -> PASS
+    G2: mean=0.3081 CI=[0.1136, 0.5027] p_raw=0.0205 p_holm=0.0205 -> PASS
+    B4 OFF: B-eval degradation post-C mean +1.2021 (reported, not gated)
+    B4 TRUNK-LR-0.25C: B-eval degradation post-C mean +0.7209 (reported, not gated)
+    churn OFF: recruits=179 evictions=159 vetoed_segs=2 (per-seed: {'s0': {'recruits': 35, 'evictions': 31, 'vetoed_novel_segments': 0}, 's1': {'recruits': 43, 'evictions': 39, 'vetoed_novel_segments': 0}, 's2': {'recruits': 27, 'evictions': 23, 'vetoed_novel_segments': 2}, 's3': {'recruits': 41, 'evictions': 37, 'vetoed_novel_segments': 0}, 's4': {'recruits': 33, 'evictions': 29, 'vetoed_novel_segments': 0}})
+    churn TRUNK-LR-0.25C: recruits=221 evictions=201 vetoed_segs=2 (per-seed: {'s0': {'recruits': 24, 'evictions': 20, 'vetoed_novel_segments': 0}, 's1': {'recruits': 50, 'evictions': 46, 'vetoed_novel_segments': 0}, 's2': {'recruits': 40, 'evictions': 36, 'vetoed_novel_segments': 2}, 's3': {'recruits': 55, 'evictions': 51, 'vetoed_novel_segments': 0}, 's4': {'recruits': 52, 'evictions': 48, 'vetoed_novel_segments': 0}})
+    per-seed fracs: OFF=[0.325, 0.4703, 0.2938, 0.2906, 0.7609] TRUNK-LR-0.25C=[0.2594, 0.6891, 0.6312, 0.6078, 0.6859]
+  OUTCOME: CLAIMED
+  CLAIMED — P1 PASS with G1 (retention-A) and G2 (adaptation-C) intact: the routing scatter is monotone in trunk plasticity and separable from adaptation; PR-LM-1 designs inherit C-block trunk-lr scaling (doc §4).
+  ledger: C:\Users\Kullanıcı\Prizma\results\trunklr_PR-2026-09-03-10\powered.json
+  raw archive: C:\Users\Kullanıcı\Prizma\results\runs\trunklr-PR-2026-09-03-10-20260909T160038Z.json
+==============================================================================
