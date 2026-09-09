@@ -733,12 +733,19 @@ class SharedHeadLM(nn.Module):
         return self.lm(idx)
 
 
-def train_stream_shared(model, xs, ys, lr):
+def train_stream_shared(model, xs, ys, lr, *, backbone_lr=None):
     """Backbone steps FIRST on the base LM loss (objective unchanged vs plain and
     fusion); the shared head then takes ONE local AdamW step on the WHOLE batch —
     the exact _expert_train math (post-update base logits recomputed on detached
-    pre-step hidden, mirrored verbatim), minus routing."""
-    opt_bb = torch.optim.AdamW(model.lm.parameters(), lr=lr)
+    pre-step hidden, mirrored verbatim), minus routing.
+
+    PR-2026-09-03-11 guarded lever (keyword-only, DEFAULT-OFF; frozen protocol
+    docs/preregistry/2026-09-09-repaired-flagship.md §2): backbone_lr overrides the
+    BACKBONE optimizer's lr alone (the shared head's per-batch AdamW keeps `lr`);
+    None -> the exact PR-08 value (off-identity, pinned behaviorally by tests) —
+    the same guarded pattern train_pr08 already carries."""
+    opt_bb = torch.optim.AdamW(model.lm.parameters(),
+                               lr=lr if backbone_lr is None else backbone_lr)
     model.train()
     n = xs.shape[0]
     for i in range(0, n, BATCH_SEGS):

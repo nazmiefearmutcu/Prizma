@@ -81,6 +81,29 @@ LEDGER SEPARATION + RETENTION (surprise_claim pattern, mirrored):
   (cellkey, config-fingerprint); a cell present at a FOREIGN fingerprint is a hard refusal.
   BUDGET GUARD: powered mode projects total wall from the first completed claim cell and WARNS
   when the projection exceeds 2 h (A100-equivalent; the projection is recorded in the ledger).
+
+PR-2026-09-03-11 REPAIRED-FLAGSHIP MODE (guarded, DEFAULT-OFF; frozen protocol
+  docs/preregistry/2026-09-09-repaired-flagship.md): the PR-08 protocol VERBATIM + ONE lever —
+  the block-C BACKBONE lr is 7.5e-4 (= 3e-3 x 0.25, the PR-10 frozen dose) in every arm that
+  trains a backbone on C (PRIM-LM and FORCED-RECRUIT via train_pr08's guarded backbone_lr;
+  SHARED-HEAD via train_stream_shared's guarded kwarg — the capacity control sees the same
+  schedule). FROZEN-TRUNK (backbone frozen after A) and FROZEN-CHECKPOINT (no B/C training)
+  have no C backbone step: their training calls stay parameter-identical to PR-08 and their
+  cells carry NO lever audit key, so they are byte-comparable canaries. FAIL-LOUD CANARIES
+  (claim mode + lever ON only): after the FROZEN-TRUNK arm's 5 cells and again after the
+  FROZEN-CHECKPOINT arm's 5 cells, every science field of claim.<ARM>.s{seed} must equal the
+  PR-08 powered ledger's same-arm cells EXACTLY (ffc.canary_mismatches, ffc.CANARY_IGNORE;
+  missing PR-08 ledger or any mismatch = SystemExit ABORT before any further arm runs).
+  HONEST ORDERING NOTE: ARMS runs PRIM-LM BEFORE the first canary gate, so if a canary fails,
+  the already-run PRIM cells are quarantine-suspect — the run aborts loudly either way, and
+  the FROZEN canaries still prove the lever's blast radius end-to-end. Wiring:
+  run(..., trunk_lr_c=None, ledger_dir=None, provenance=None) + CLI --trunk-lr-c /
+  --ledger-dir. With trunk_lr_c None the behavior is byte-identical to before, including NO
+  canary. The lever value is IN every cell + lr-selection fingerprint (a treated rerun never
+  resumes from untreated cells); ledger_dir points the run at its OWN ledger subdir (default
+  None = LEDDIR, byte-identical; the PR-11 run uses prizma_lm_PR-2026-09-03-11 so the PR-08
+  ledger is never touched — it is read by the canaries, never written); provenance (when
+  given) is recorded as meta["pr11_repair"].
 """
 from __future__ import annotations
 
@@ -172,18 +195,23 @@ def _results_root() -> str:
     return os.path.abspath(root)
 
 
-def _default_results_path(smoke: bool) -> str:
-    return os.path.join(_results_root(), LEDDIR, SMOKE_BASENAME if smoke else POWERED_BASENAME)
+def _default_results_path(smoke: bool, ledger_dir=None) -> str:
+    # PR-2026-09-03-11 (guarded): ledger_dir overrides LEDDIR; None => LEDDIR (byte-identical).
+    return os.path.join(_results_root(), LEDDIR if ledger_dir is None else ledger_dir,
+                        SMOKE_BASENAME if smoke else POWERED_BASENAME)
 
 
-def resolve_results_path(explicit=None, *, smoke: bool = False, force_smoke_path: bool = False) -> str:
+def resolve_results_path(explicit=None, *, smoke: bool = False, force_smoke_path: bool = False,
+                         ledger_dir=None) -> str:
     """Resolve the results path and enforce the smoke/powered file separation (the recall_gate
     refusal pattern): a --smoke run pointed at the POWERED ledger is refused (SystemExit) unless
     force_smoke_path. Smoke numbers are plumbing-only; a smoke entry inside the claim ledger is
-    exactly the 2026-06-08 contamination mechanism."""
-    path = explicit if explicit else _default_results_path(smoke)
+    exactly the 2026-06-08 contamination mechanism. PR-2026-09-03-11 (guarded): ledger_dir
+    overrides LEDDIR in both the resolved default and the powered-ledger refusal reference;
+    None => byte-identical to before."""
+    path = explicit if explicit else _default_results_path(smoke, ledger_dir)
     if smoke and not force_smoke_path:
-        powered = _default_results_path(smoke=False)
+        powered = _default_results_path(smoke=False, ledger_dir=ledger_dir)
         if os.path.normcase(os.path.abspath(path)) == os.path.normcase(os.path.abspath(powered)):
             raise SystemExit(
                 f"refusing: a --smoke run was pointed at the powered ledger ({powered}). Smoke and "
@@ -656,13 +684,30 @@ def _forced_placement(model, *, E, stream_pos):
                     "at_batch": int(stream_pos)}
 
 
-def run_routed(vocab_size, seed, data, lr, *, frozen_after_A=False, forced_c=False):
+def _backbone_lr_for_c(trunk_lr_c, frozen_after_A):
+    """PR-2026-09-03-11 guarded lever (PURE truth table, USED by run_routed): the block-C
+    backbone-lr override for a routed arm. Returns None when the lever is OFF (trunk_lr_c is
+    None) or structurally inapplicable (frozen_after_A: FROZEN-TRUNK has no C backbone step) —
+    in both cases the train_pr08 C call stays parameter-identical to PR-08 and the cell
+    carries NO lever audit key, keeping FROZEN-TRUNK cells byte-comparable canaries."""
+    if trunk_lr_c is None or frozen_after_A:
+        return None
+    return trunk_lr_c
+
+
+def run_routed(vocab_size, seed, data, lr, *, frozen_after_A=False, forced_c=False,
+               trunk_lr_c=None):
     """PRIM-LM / FROZEN-TRUNK / FORCED-RECRUIT cell. A and B phases are identical across
     PRIM-LM and FORCED-RECRUIT (FROZEN-TRUNK shares phase A only; its B-phase backbone is
     frozen by design) (same seed stream -> identical init and trajectory — the probe-2
     determinism property); FROZEN-TRUNK freezes the backbone after A (parameter-identity
     proven); FORCED-RECRUIT replaces C routing with a forced fresh recruit (probe-2
-    override)."""
+    override).
+    trunk_lr_c (PR-2026-09-03-11, guarded DEFAULT-OFF): the block-C backbone-lr lever,
+    applied via _backbone_lr_for_c ONLY when trunk_lr_c is not None AND this arm trains a
+    backbone on C (not frozen_after_A) — FROZEN-TRUNK's C call stays parameter-identical to
+    PR-08 and carries no audit key. When the lever is applied the cell records
+    rec["backbone_lr_c_applied"] = trunk_lr_c."""
     import time
     import torch
     from seq import fusion_probe as fp
@@ -729,8 +774,16 @@ def run_routed(vocab_size, seed, data, lr, *, frozen_after_A=False, forced_c=Fal
                 "reason": "forced_recruit_pool_full (doc addendum #3)"})
     boundary = {"segments_total": 0, "to_A_expert": 0, "a_expert": int(a_expert)}
     before = model.n_segments[:]
+    # PR-2026-09-03-11 guarded lever: the C call passes backbone_lr ONLY when the lever is ON
+    # and this arm trains a backbone on C (empty kwargs = parameter-identical to PR-08, so
+    # FROZEN-TRUNK cells remain byte-comparable canaries).
+    bb_lr_c = _backbone_lr_for_c(trunk_lr_c, frozen_after_A)
+    c_kwargs = {}
+    if bb_lr_c is not None:
+        rec["backbone_lr_c_applied"] = trunk_lr_c
+        c_kwargs["backbone_lr"] = bb_lr_c
     train_pr08(model, Cx, Cy, lr, "C", ledger, seed=seed, boundary=boundary,
-               force_slot=force_slot)
+               force_slot=force_slot, **c_kwargs)
     tr["C"] = [model.n_segments[s] - before[s] for s in range(E)]
 
     ev_A, ev_B, ev_Cr = [0] * E, [0] * E, [0] * E
@@ -749,9 +802,14 @@ def run_routed(vocab_size, seed, data, lr, *, frozen_after_A=False, forced_c=Fal
     return rec
 
 
-def run_shared(vocab_size, seed, data, lr):
+def run_shared(vocab_size, seed, data, lr, *, trunk_lr_c=None):
     """SHARED-HEAD capacity control (probe-2 P2 verbatim): one head, no routing, the exact
-    _expert_train learning rule on every segment; backbone objective unchanged."""
+    _expert_train learning rule on every segment; backbone objective unchanged.
+    trunk_lr_c (PR-2026-09-03-11, guarded DEFAULT-OFF): threaded to train_stream_shared's
+    guarded kwarg on the C-phase call ONLY (the capacity control must see the same C
+    backbone schedule to stay honest — frozen protocol §2); when OFF the call is
+    parameter-identical to PR-08. When applied the cell records
+    rec["backbone_lr_c_applied"] = trunk_lr_c."""
     import time
     from seq import fusion_probe as fp
 
@@ -766,7 +824,12 @@ def run_shared(vocab_size, seed, data, lr):
     rec["bpc_A_postB"] = fp.eval_bpc_shared(model, Aex, Aey)
     rec["bpc_B_postB"] = fp.eval_bpc_shared(model, Bex, Bey)
     rec["bpc_Cret_postB"] = fp.eval_bpc_shared(model, Crx, Cry)
-    fp.train_stream_shared(model, Cx, Cy, lr)
+    # PR-2026-09-03-11 guarded lever (C-phase call only; OFF = parameter-identical to PR-08).
+    if trunk_lr_c is not None:
+        rec["backbone_lr_c_applied"] = trunk_lr_c
+        fp.train_stream_shared(model, Cx, Cy, lr, backbone_lr=trunk_lr_c)
+    else:
+        fp.train_stream_shared(model, Cx, Cy, lr)
     rec["bpc_A_postC"] = fp.eval_bpc_shared(model, Aex, Aey)
     rec["bpc_B_postC"] = fp.eval_bpc_shared(model, Bex, Bey)
     rec["bpc_Cret_postC"] = fp.eval_bpc_shared(model, Crx, Cry)
@@ -808,13 +871,73 @@ def _fp(payload: dict) -> str:
     return config_fingerprint({"registry": REGISTRY_ID, **payload})
 
 
+def _pr11_powered_path() -> str:
+    """The PR-08 powered ledger — the canary's READ-ONLY reference. Always LEDDIR (never
+    ledger_dir): a PR-11 run pointed at its own ledger subdir must still verify against the
+    untouched PR-08 ledger."""
+    return os.path.join(_results_root(), LEDDIR, POWERED_BASENAME)
+
+
+def _pr11_canary(res, seeds, arm):
+    """PR-2026-09-03-11 fail-loud canary (claim mode + lever ON ONLY): every science field of
+    the just-finished FROZEN arm's cells (FROZEN-TRUNK / FROZEN-CHECKPOINT — no C backbone
+    step, so the lever is structurally inapplicable there) must equal the PR-08 powered
+    ledger's claim.<ARM>.s{seed} EXACTLY. Comparator + ignore set REUSED from
+    seq/floorfreeze_claim.py (the PR-09/PR-10 canary style; seq/trunklr_claim.py aliases the
+    same objects). A missing PR-08 ledger or any mismatch is a SystemExit ABORT before any
+    further arm runs. Lazy ffc import: ffc imports THIS module at its own module level, so it
+    must never be imported at ours."""
+    from seq.gpu_harness import load_results
+    import seq.floorfreeze_claim as ffc
+
+    pr08_path = _pr11_powered_path()
+    if not os.path.isfile(pr08_path):
+        raise SystemExit(
+            "CANARY ABORT (PR-2026-09-03-11): the PR-08 powered ledger is MISSING at "
+            f"{pr08_path} — the frozen control arm {arm} cannot be verified against "
+            f"claim.{arm}.s{{0..4}}. The registered protocol aborts before any further arm "
+            "runs; run this where the PR-08 ledger exists.")
+    pr08 = load_results(pr08_path)
+    checked = []
+    for seed in seeds:
+        cellkey = f"claim.{arm}.s{seed}"
+        fresh = res.get(cellkey)
+        ref = pr08.get(cellkey)
+        if not isinstance(fresh, dict) or not isinstance(ref, dict):
+            raise SystemExit(
+                f"CANARY ABORT (PR-2026-09-03-11): missing cell for comparison ({cellkey} "
+                "absent here or in the PR-08 ledger) — refusing to proceed to any further arm.")
+        mm = ffc.canary_mismatches(fresh, ref)
+        if mm:
+            raise SystemExit(
+                f"CANARY ABORT (PR-2026-09-03-11): {cellkey} does NOT reproduce the PR-08 "
+                f"record bit-identically — mismatched science fields: {mm}. A frozen arm has "
+                "no C backbone step, so the trunk-lr lever must not touch it; arms already run "
+                "before this gate (PRIM-LM precedes it in ARMS order) are quarantine-suspect. "
+                f"Ledger: {pr08_path}")
+        checked.append(cellkey)
+    rec = {"ok": True, "arm": arm, "pr08_ledger": pr08_path, "cells_checked": checked,
+           "ignored_fields": sorted(ffc.CANARY_IGNORE),
+           "note": (f"every science field of {arm} == PR-08 claim.{arm} EXACTLY "
+                    "(no C backbone step -> the lever is structurally inapplicable here)")}
+    print(f"[pr11] CANARY PASS ({arm}): {len(checked)} cells bit-identical to the PR-08 "
+          f"powered ledger ({pr08_path})", flush=True)
+    return rec
+
+
 def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
-        powered_cpu: bool = False):
+        powered_cpu: bool = False, trunk_lr_c=None, ledger_dir=None, provenance=None):
     """Execute the protocol: --smoke (CPU plumbing), --powered (the A100 claim campaign), or
     --powered-cpu (the doc section-6 CPU-feasible fallback: identical to --powered except the
-    CUDA guard is skipped and the ledger meta records powered_cpu + the fallback note)."""
+    CUDA guard is skipped and the ledger meta records powered_cpu + the fallback note).
+    PR-2026-09-03-11 (guarded, DEFAULT-OFF): trunk_lr_c = the block-C backbone-lr lever for
+    the arms that train a backbone on C (None = byte-identical PR-08 behavior, including NO
+    canary); ledger_dir redirects the ledger subdir (None = LEDDIR, byte-identical);
+    provenance (when given) is recorded as meta["pr11_repair"]. The lever value is part of
+    every cell + lr-selection fingerprint."""
     # BAR-0 FIRST: resolve + guard the results path before any heavy import or write.
-    path = resolve_results_path(results_path, smoke=smoke, force_smoke_path=force_smoke_path)
+    path = resolve_results_path(results_path, smoke=smoke, force_smoke_path=force_smoke_path,
+                                ledger_dir=ledger_dir)
 
     import time
 
@@ -907,6 +1030,8 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
     if powered_cpu:
         res["meta"]["powered_cpu"] = True
         res["meta"]["compute_fallback_note"] = POWERED_CPU_FALLBACK_NOTE
+    if provenance is not None:
+        res["meta"]["pr11_repair"] = provenance   # PR-2026-09-03-11 provenance (orchestrator)
     _save(res, path)
     print(f"[pr08] corpora: A={Ax.shape[0]} B={Bx.shape[0]} C={Cx.shape[0]} segs; "
           f"eval A={Aex.shape[0]} B={Bex.shape[0]} Cret={Crx.shape[0]}; vocab={V}; "
@@ -928,7 +1053,10 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
             cfgsig = _fp({"leg": "lr-selection", "family": family, "lr_grid": list(LR_GRID),
                           "select_segs": int(xs200.shape[0]), "seed": 0, "vocab": V,
                           "smoke": bool(smoke), "tissue": res["meta"]["tissue"],
-                          "slices": res["meta"]["pinned_slices"]})
+                          "slices": res["meta"]["pinned_slices"],
+                          "trunk_lr_c": trunk_lr_c})   # PR-11: the lever is IN the fingerprint
+                                                       # (a treated rerun never resumes from
+                                                       # untreated lr-selection cells)
             rec = res.get(cellkey)
             if isinstance(rec, dict) and rec.get("cfgsig") == cfgsig and rec.get("complete"):
                 lrs[family] = rec["lr"]
@@ -993,9 +1121,12 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
                           "slices": res["meta"]["pinned_slices"],
                           "stream_lengths": res["meta"]["stream_lengths"],
                           "tissue": res["meta"]["tissue"],
-                          "bars": res["meta"]["bars"]})   # review M-2: the bars constants (B3's
-                                                          # window applies at train time) must
-                                                          # invalidate stale resume cells
+                          "bars": res["meta"]["bars"],   # review M-2: the bars constants (B3's
+                                                         # window applies at train time) must
+                                                         # invalidate stale resume cells
+                          "trunk_lr_c": trunk_lr_c})     # PR-11: the lever is IN the fingerprint
+                                                         # (a treated rerun never resumes from
+                                                         # untreated cells)
             prior = res.get(cellkey)
             if isinstance(prior, dict) and prior.get("cfgsig") == cfgsig and prior.get("complete"):
                 print(f"[pr08] {arm} seed {seed}: resumed from ledger "
@@ -1008,11 +1139,15 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
             if arm == "FROZEN-CHECKPOINT":
                 rec = run_frozen_checkpoint(V, seed, data, lr)
             elif arm == "SHARED-HEAD":
-                rec = run_shared(V, seed, data, lr)
+                rec = run_shared(V, seed, data, lr, trunk_lr_c=trunk_lr_c)
             else:
+                # PRIM-LM / FROZEN-TRUNK / FORCED-RECRUIT. trunk_lr_c is threaded for all
+                # three; _backbone_lr_for_c nulls it for FROZEN-TRUNK (no C backbone step —
+                # its call stays parameter-identical to PR-08, no audit key: canary-clean).
                 rec = run_routed(V, seed, data, lr,
                                  frozen_after_A=(arm == "FROZEN-TRUNK"),
-                                 forced_c=(arm == "FORCED-RECRUIT"))
+                                 forced_c=(arm == "FORCED-RECRUIT"),
+                                 trunk_lr_c=trunk_lr_c)
             rec.update({"arm": arm, "seed": seed, "lr": lr, "cellkey": cellkey,
                         "cfgsig": cfgsig, "complete": True,
                         "wall_s": round(time.time() - t0, 1)})
@@ -1030,6 +1165,14 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
                   f"A_postC={rec['bpc_A_postC']:.3f} B_postB={rec['bpc_B_postB']:.3f} "
                   f"B_postC={rec['bpc_B_postC']:.3f} Cret_postC={rec['bpc_Cret_postC']:.3f} "
                   f"wall={rec['wall_s']}s", flush=True)
+        if not smoke and trunk_lr_c is not None and arm in ("FROZEN-TRUNK", "FROZEN-CHECKPOINT"):
+            # PR-2026-09-03-11 fail-loud canary: a frozen arm has NO C backbone step, so the
+            # lever cannot touch it — bit-identity vs the (read-only) PR-08 powered ledger
+            # gates every arm that follows. HONEST ORDERING NOTE: ARMS runs PRIM-LM before the
+            # FIRST gate, so if a canary fails, the already-run PRIM cells are
+            # quarantine-suspect (the run aborts loudly either way).
+            res[f"canary.{arm}"] = _pr11_canary(res, seeds, arm)
+            _save(res, path)
 
     # ---------------- RETENTION (docs/RETENTION.md): archive BEFORE any verdict ----------------
     raw_archive = archive_run(res, label=f"prizma-lm-{REGISTRY_ID}")
@@ -1044,6 +1187,8 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
               "cells": {k: res[k] for k in sorted(res) if k.startswith("claim.")}}
     if powered_cpu:
         report["powered_cpu"] = True
+    if trunk_lr_c is not None:
+        report["trunk_lr_c"] = trunk_lr_c         # PR-2026-09-03-11 lever (recorded when set)
     if not smoke:
         prim = [res[f"claim.PRIM-LM.s{s}"] for s in seeds]
         frozen_ck = [res[f"claim.FROZEN-CHECKPOINT.s{s}"] for s in seeds]
@@ -1130,6 +1275,15 @@ def _build_parser():
     p.add_argument("--force-smoke-path", action="store_true",
                    help="let a --smoke run write the powered ledger it was pointed at "
                         "(default: REFUSED — separate ledgers)")
+    p.add_argument("--trunk-lr-c", type=float, default=None,
+                   help="PR-2026-09-03-11 guarded lever: the block-C BACKBONE lr in the arms "
+                        "that train a backbone on C (the registered repaired-flagship dose is "
+                        "7.5e-4 = 3e-3 x 0.25). Default None = byte-identical PR-08 behavior "
+                        "(no audit keys, no canaries).")
+    p.add_argument("--ledger-dir", default=None,
+                   help="ledger subdirectory under $PRIZMA_RESULTS (default None = the PR-08 "
+                        "default dir; the PR-11 run uses prizma_lm_PR-2026-09-03-11 so the "
+                        "PR-08 ledger is never written)")
     return p
 
 
@@ -1137,7 +1291,7 @@ def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     args = _build_parser().parse_args(argv)   # SystemExit non-zero on unknown args: nothing runs
     run(smoke=args.smoke, results_path=args.out, force_smoke_path=args.force_smoke_path,
-        powered_cpu=args.powered_cpu)
+        powered_cpu=args.powered_cpu, trunk_lr_c=args.trunk_lr_c, ledger_dir=args.ledger_dir)
 
 
 if __name__ == "__main__":

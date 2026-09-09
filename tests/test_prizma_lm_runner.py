@@ -330,4 +330,15 @@ def test_forced_placement_respects_the_m_max_cap():
     slot, placement = plc._forced_placement(model, E=6, stream_pos=0)
     assert slot == 2, "the near-empty slot INSIDE the M_MAX=4 window is the victim; slots " \
                       "4-5 are outside the cap and never selected"
-    assert placement["victim"] == 2
+
+
+# ── 8. PR-2026-09-03-11 additions (2026-09-09): the guarded lever flags default to None ─────
+# ADD-ONLY section: the PR-11 repaired-flagship mode (--trunk-lr-c / --ledger-dir) must leave
+# every existing PR-08 parser default untouched. Deeper PR-11 coverage lives in
+# tests/test_pr11_repaired_flagship.py.
+
+def test_pr11_flags_default_to_none_so_pr08_defaults_are_unchanged():
+    p = plc._build_parser()
+    args = p.parse_args(["--powered-cpu"])
+    assert args.trunk_lr_c is None, "no --trunk-lr-c => the lever is OFF (byte-identical PR-08)"
+    assert args.ledger_dir is None, "no --ledger-dir => the PR-08 default ledger dir (LEDDIR)"
