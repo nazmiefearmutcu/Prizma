@@ -511,7 +511,24 @@ def route_pr08(model, h, y, corpus, ledger, stream_pos, *, boundary=None, force_
                                       "freeze_min_seen": FREEZE_MIN_SEEN})
     free = [s for s in range(model.E) if not model.committed[s]]
 
-    if recruiting_ids:
+    # PR-2026-09-03-13 refinement (guarded, DEFAULT-OFF; frozen protocol
+    # docs/preregistry/2026-09-09-exclusion-flagship.md §2 L2-refinement): during C with
+    # domain-exclusion active, if the pool is full and the post-exclusion eviction pool is
+    # empty or ONLY the a_expert, SUPPRESS the recruit — the novelty segments fall through
+    # to argmin and the redirect folding sends them to the a_expert, preserving the
+    # A-expert slot identity (PR-12's disclosed self-eviction recycling, fixed).
+    suppress_recruit = False
+    if recruiting_ids and not free:
+        _dp = getattr(model, "domain_protect", None)
+        if _dp is not None and corpus == "C" and _dp and boundary is not None:
+            a_ref = boundary.get("a_expert")
+            cap_r = min(M_MAX, model.E)
+            cands_r = [s for s in range(cap_r) if model.committed[s] and s not in _dp]
+            if a_ref is not None and set(cands_r) <= {a_ref}:
+                suppress_recruit = True
+                ledger["domain_protect_suppressed_recruits"] =                     ledger.get("domain_protect_suppressed_recruits", 0) + 1
+
+    if recruiting_ids and not suppress_recruit:
         # (2) recruit — from a free slot, or by Policy A eviction at the M_max cap.
         if free:
             slot, reason = free[0], "novel"          # left-to-right fill = recruit recency
@@ -718,7 +735,7 @@ def _backbone_lr_for_c(trunk_lr_c, frozen_after_A):
 
 
 def run_routed(vocab_size, seed, data, lr, *, frozen_after_A=False, forced_c=False,
-               trunk_lr_c=None):
+               trunk_lr_c=None, domain_exclusion=False):
     """PRIM-LM / FROZEN-TRUNK / FORCED-RECRUIT cell. A and B phases are identical across
     PRIM-LM and FORCED-RECRUIT (FROZEN-TRUNK shares phase A only; its B-phase backbone is
     frozen by design) (same seed stream -> identical init and trajectory — the probe-2
@@ -795,6 +812,15 @@ def run_routed(vocab_size, seed, data, lr, *, frozen_after_A=False, forced_c=Fal
                                    + len(ledger["evictions"]) - 1,
                 "reason": "forced_recruit_pool_full (doc addendum #3)"})
     boundary = {"segments_total": 0, "to_A_expert": 0, "a_expert": int(a_expert)}
+    if domain_exclusion:
+        # PR-2026-09-03-13 L2 (guarded, DEFAULT-OFF; PR-12 lever + the refinement): pin the
+        # protected set at C start; route_pr08's guarded branches do the rest.
+        model.domain_protect = {s for s in range(E) if model.committed[s]} - {int(a_expert)}
+        rec["domain_exclusion_applied"] = {
+            "slots": sorted(model.domain_protect), "a_expert": int(a_expert),
+            "note": ("protected slots receive no C training (redirect to the a_expert) and "
+                     "are exempt from eviction during C; recruits suppressed rather than "
+                     "self-evict the a_expert")}
     before = model.n_segments[:]
     # PR-2026-09-03-11 guarded lever: the C call passes backbone_lr ONLY when the lever is ON
     # and this arm trains a backbone on C (empty kwargs = parameter-identical to PR-08, so
@@ -948,7 +974,8 @@ def _pr11_canary(res, seeds, arm):
 
 
 def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
-        powered_cpu: bool = False, trunk_lr_c=None, ledger_dir=None, provenance=None):
+        powered_cpu: bool = False, trunk_lr_c=None, ledger_dir=None, provenance=None,
+        domain_exclusion=False):
     """Execute the protocol: --smoke (CPU plumbing), --powered (the A100 claim campaign), or
     --powered-cpu (the doc section-6 CPU-feasible fallback: identical to --powered except the
     CUDA guard is skipped and the ledger meta records powered_cpu + the fallback note).
@@ -1146,7 +1173,8 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
                           "bars": res["meta"]["bars"],   # review M-2: the bars constants (B3's
                                                          # window applies at train time) must
                                                          # invalidate stale resume cells
-                          "trunk_lr_c": trunk_lr_c})     # PR-11: the lever is IN the fingerprint
+                          "trunk_lr_c": trunk_lr_c,      # PR-11: the lever is IN the fingerprint
+                          "domain_exclusion": domain_exclusion})  # PR-13: same discipline
                                                          # (a treated rerun never resumes from
                                                          # untreated cells)
             prior = res.get(cellkey)
@@ -1167,6 +1195,7 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
                 # three; _backbone_lr_for_c nulls it for FROZEN-TRUNK (no C backbone step —
                 # its call stays parameter-identical to PR-08, no audit key: canary-clean).
                 rec = run_routed(V, seed, data, lr,
+                                 domain_exclusion=(domain_exclusion and arm == "PRIM-LM"),
                                  frozen_after_A=(arm == "FROZEN-TRUNK"),
                                  forced_c=(arm == "FORCED-RECRUIT"),
                                  trunk_lr_c=trunk_lr_c)
@@ -1187,7 +1216,7 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
                   f"A_postC={rec['bpc_A_postC']:.3f} B_postB={rec['bpc_B_postB']:.3f} "
                   f"B_postC={rec['bpc_B_postC']:.3f} Cret_postC={rec['bpc_Cret_postC']:.3f} "
                   f"wall={rec['wall_s']}s", flush=True)
-        if not smoke and trunk_lr_c is not None and arm in ("FROZEN-TRUNK", "FROZEN-CHECKPOINT"):
+        if not smoke and (trunk_lr_c is not None or domain_exclusion) and                 arm in ("FROZEN-TRUNK", "FROZEN-CHECKPOINT"):
             # PR-2026-09-03-11 fail-loud canary: a frozen arm has NO C backbone step, so the
             # lever cannot touch it — bit-identity vs the (read-only) PR-08 powered ledger
             # gates every arm that follows. HONEST ORDERING NOTE: ARMS runs PRIM-LM before the
@@ -1211,6 +1240,8 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
         report["powered_cpu"] = True
     if trunk_lr_c is not None:
         report["trunk_lr_c"] = trunk_lr_c         # PR-2026-09-03-11 lever (recorded when set)
+    if domain_exclusion:
+        report["domain_exclusion"] = True         # PR-2026-09-03-13 lever (recorded when set)
     if not smoke:
         prim = [res[f"claim.PRIM-LM.s{s}"] for s in seeds]
         frozen_ck = [res[f"claim.FROZEN-CHECKPOINT.s{s}"] for s in seeds]
@@ -1306,6 +1337,11 @@ def _build_parser():
                    help="ledger subdirectory under $PRIZMA_RESULTS (default None = the PR-08 "
                         "default dir; the PR-11 run uses prizma_lm_PR-2026-09-03-11 so the "
                         "PR-08 ledger is never written)")
+    p.add_argument("--domain-exclusion", action="store_true",
+                   help="PR-2026-09-03-13 guarded lever (L2): domain-exclusive C-routing in "
+                        "the PRIM-LM arm (protected slots receive no C training; recruits "
+                        "suppressed rather than self-evict the a_expert). Default OFF = "
+                        "byte-identical PR-08/PR-11 behavior.")
     return p
 
 
@@ -1313,7 +1349,8 @@ def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     args = _build_parser().parse_args(argv)   # SystemExit non-zero on unknown args: nothing runs
     run(smoke=args.smoke, results_path=args.out, force_smoke_path=args.force_smoke_path,
-        powered_cpu=args.powered_cpu, trunk_lr_c=args.trunk_lr_c, ledger_dir=args.ledger_dir)
+        powered_cpu=args.powered_cpu, trunk_lr_c=args.trunk_lr_c, ledger_dir=args.ledger_dir,
+        domain_exclusion=args.domain_exclusion)
 
 
 if __name__ == "__main__":
