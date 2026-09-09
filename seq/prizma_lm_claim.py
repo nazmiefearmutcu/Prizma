@@ -538,7 +538,9 @@ def route_pr08(model, h, y, corpus, ledger, stream_pos, *, boundary=None, force_
     if recruiting_ids and not free:
         _dp = getattr(model, "domain_protect", None)
         if _dp is not None and corpus == "C" and _dp and boundary is not None:
-            a_ref = boundary.get("a_expert")
+            # PR-2026-09-03-14: boundary["owner_slot"] (the per-block domain owner elected by
+            # the runner) takes precedence; without it the PR-13 a_expert semantics apply.
+            a_ref = boundary.get("owner_slot", boundary.get("a_expert"))
             cap_r = min(M_MAX, model.E)
             cands_r = [s for s in range(cap_r) if model.committed[s] and s not in _dp]
             if a_ref is not None and set(cands_r) <= {a_ref}:
@@ -610,7 +612,7 @@ def route_pr08(model, h, y, corpus, ledger, stream_pos, *, boundary=None, force_
     # => byte-identical PR-08/PR-11 path (off-identity pinned by tests).
     protect = getattr(model, "domain_protect", None)
     if protect is not None and corpus == "C" and protect and boundary is not None:
-        a_slot = boundary.get("a_expert")
+        a_slot = boundary.get("owner_slot", boundary.get("a_expert"))
         if a_slot is not None:
             moved = 0
             for s in [s for s in list(assign) if s in protect and s != a_slot]:

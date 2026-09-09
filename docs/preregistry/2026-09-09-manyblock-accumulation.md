@@ -95,3 +95,14 @@ deterministic from the training ledger (no tuning surface). The PLAIN arm is reg
 not reused — so the exclusion-cost guard G1 is a real comparison. What would change our
 mind: only dated addenda. The one bet: that the probe's revisit dynamics survive
 registration-grade n=5 and that exclusion does not interfere with re-encounter recovery.
+
+---
+
+## Addendum 2026-09-09 #1 (pre-run, maintainer) — Holm family corrected
+
+§3 listed the Holm family as [P1, P3, G1, G2], but G1 and G2 are 'absence of harm'
+guards: their registered decision rule is CI-POSITIONAL (PASS iff CI upper <= the
+allowance; FAIL iff CI lower > the allowance; straddle -> INCONCLUSIVE), and an
+'absence of harm' bar cannot carry a small-p gate (the harm hypothesis is null by
+construction). Holm family corrected to **[P1, P3]**; G1/G2 remain CI-based guards
+with the doc §3 straddle rule. No numbers changed; landed before any run.
