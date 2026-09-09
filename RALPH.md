@@ -158,6 +158,29 @@ the real payload; stage 6 confirmatory). CPU-side the registered program is comp
 through S2; future CPU iterations = polish or NEW registrations only when a mechanism
 lead justifies one.**
 
+## MANYBLOCK PROBE (2026-09-09 23:0x — LANE-EXPLORATORY, n=2, ~8 min; PR-14 design lead)
+
+seq/manyblock_probe.py, 5 blocks A=text8[0,1M) -> B=shakes -> C=text8[1.1M,2.1M) ->
+D=shakes-REVISIT (the EXACT B slice) -> E=text8[2.1M,3.1M); L1 dose on every post-A
+block; NO exclusion (measuring plain argmin). **Findings (both seeds agree):**
+1. **The literal revisit WORKS under plain argmin**: B-eval ~3.96 post-C -> ~2.89 post-D
+   (recovery -1.08 bpc, BELOW even the post-B level ~3.04) — the B-expert re-engages
+   naturally on re-encounter. Seesaw pattern: leave B (+0.9), revisit (-1.08), leave again
+   (+0.95) — fast, repeatable recovery.
+2. **A-retention holds through 5 blocks**: A-eval 6.08 init -> 2.71 post-E (negative
+   forgetting persists at many-block scale with L1 only).
+3. **text8 accumulates**: Cret 2.85 -> 2.74 post-E.
+4. High recruit/eviction churn continues (77-110 recruits) without breaking retention.
+**PR-14 lead (register next): "many-block accumulation + true revisit" — 5-block stream,
+bars frozen FROM THESE measurements: (i) revisit recovery >= 0.10 (measured ~1.08),
+(ii) A-retention CI upper <= 0.05 through E (measured ~ -3.3), (iii) post-revisit B-eval
+<= post-B level (second visit beats the first: 2.89 < 3.04), (iv) re-engagement ledger
+(D-window frac to B-experts >= 0.5). Open design question: whether to add L2
+domain-exclusion with per-block owner election, or run plain argmin (the probe suggests
+argmin alone recovers on revisit; exclusion may still be needed to keep the recovery).
+n=5, levers L1 (+L2 decision in the prereg), ~11 min CPU.** Artifacts:
+results/exploratory/manyblock_probe_2026-09-09/ + console log.
+
 ## BACKLOG
 
 1. **[PR-03 claim] Single-pass citation bar** — status: `done (commit: see git log "PR-03 CLAIMED", 2026-09-05)`
