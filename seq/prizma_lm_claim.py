@@ -543,7 +543,7 @@ def route_pr08(model, h, y, corpus, ledger, stream_pos, *, boundary=None, force_
 
 
 def train_pr08(model, xs, ys, lr, corpus, ledger, *, seed=None, frozen=False,
-               boundary=None, force_slot=None):
+               boundary=None, force_slot=None, backbone_lr=None):
     """One online pass over in-order segment batches. Backbone step FIRST on the whole batch
     (shared LM loss, all segments — fusion_probe.train_stream_fusion verbatim); expert steps
     SECOND on their routed segments using the same (pre-update) forward — a single forward per
@@ -556,7 +556,12 @@ def train_pr08(model, xs, ys, lr, corpus, ledger, *, seed=None, frozen=False,
 
     if seed is not None:
         torch.manual_seed(seed)                    # claim.train_stream's seed convention
-    opt_bb = torch.optim.AdamW(model.lm.parameters(), lr=lr)
+    # PR-2026-09-03-10 trunk-lr lever (guarded, DEFAULT-OFF; frozen protocol
+    # docs/preregistry/2026-09-09-trunklr-routing-repair.md §2): backbone_lr overrides the
+    # BACKBONE optimizer's lr only (tissue _expert_train keeps `lr`); None -> the exact
+    # PR-08 value (off-identity pinned behaviorally by tests).
+    opt_bb = torch.optim.AdamW(model.lm.parameters(),
+                               lr=lr if backbone_lr is None else backbone_lr)
     model.train()
     n = xs.shape[0]
     for i in range(0, n, BATCH_SEGS):
