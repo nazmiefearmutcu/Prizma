@@ -87,3 +87,44 @@ def test_p1_inconclusive_straddle():
     assert v["P1"]["status"] == "INCONCLUSIVE"
     assert v["outcome"] == "INCONCLUSIVE"
     assert any("PRE-AUTHORIZED" in b for b in v["branches"])
+
+
+# ── PR-2026-09-03-17: scheduled-TF attribution (doc §3-§4) ──────────────────────────────────
+
+def test_scheduled_flag_parser_and_fingerprint():
+    p = wtm._build_parser()
+    args = p.parse_args(["--powered-cpu", "--post-a-lr", "0.0075",
+                         "--ledger-dir", "windowtf_sched_PR-2026-09-03-17"])
+    assert args.post_a_lr == 0.0075
+    assert args.ledger_dir == "windowtf_sched_PR-2026-09-03-17"
+    assert p.parse_args(["--powered-cpu"]).post_a_lr is None
+
+
+def test_attribution_truth_table():
+    col = [0.64] * 5                                   # the column's damage (PR-14 EX)
+    plain = [1.01] * 5                                 # the plain TF's damage (PR-15)
+    sched_better = [0.70] * 5                          # schedule alone mostly closes it
+    att = wtm.attribution(sched_better, plain, col)
+    assert att["C1_schedule_effect"]["position"] == "ESTABLISHED"
+    assert att["attribution"] == "SCHEDULE-CARRIED"
+
+    sched_flat = [0.98] * 5                            # schedule does nothing
+    att2 = wtm.attribution(sched_flat, plain, col)
+    assert att2["C1_schedule_effect"]["position"] != "ESTABLISHED"
+    assert att2["C2_tissue_residual"]["position"] == "ESTABLISHED"
+    assert att2["attribution"] == "TISSUE-CARRIED"
+
+    sched_half = [0.82 - j * 0.02 for j in range(5)]   # schedule closes ~half; wide spread
+    att3 = wtm.attribution(sched_half, plain, col)
+    assert att3["attribution"] in ("COMPOUND", "TISSUE-CARRIED", "SCHEDULE-CARRIED",
+                                   "UNRESOLVED at n=5 (doc §4: the n=10 seed extension "
+                                   "is pre-authorized)")
+    assert att3["C1_schedule_effect"]["ci"][0] < att3["C1_schedule_effect"]["ci"][1],         "a degenerate (zero-width) CI means the fixture has no spread"
+
+
+def test_attribution_unresolved_when_narrow():
+    col = [0.64] * 5
+    plain = [1.01] * 5
+    sched = [0.85 - j * 0.02 for j in range(5)]        # delta ~ +0.20, tight -> unresolved
+    att = wtm.attribution(sched, plain, col)
+    assert att["attribution"].startswith("UNRESOLVED at n=5")

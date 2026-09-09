@@ -128,9 +128,12 @@ def claim_verdict(tf, pr14_ex_retentions, *, alpha=ALPHA):
 
 
 # ================================================================================= runner ========
-def run_cell(seed, blocks_data, evals, lr):
-    """PR-15 cell: the WINDOW-TF trains the 5 blocks sequentially (sliding-window, the
-    PR-07' path verbatim); A/B/Cret evals after every block."""
+def run_cell(seed, blocks_data, evals, lr, *, post_a_lr=None):
+    """PR-15/PR-17 cell: the WINDOW-TF trains the 5 blocks sequentially (sliding-window,
+    the PR-07' path verbatim); A/B/Cret evals after every block.
+    post_a_lr (PR-2026-09-03-17, guarded DEFAULT-OFF): when set, the POST-A blocks train
+    with this backbone lr (the L1 dose) while block A keeps `lr` — the scheduled control.
+    None => every block trains at `lr` (byte-identical PR-15 behavior)."""
     import time
 
     import torch
@@ -138,7 +141,8 @@ def run_cell(seed, blocks_data, evals, lr):
 
     t0 = time.time()
     model, _ = claim.build_model(vocab_size := evals["vocab"], seed)
-    rec = {"config": "WINDOW-TF", "seed": seed, "lr": lr}
+    rec = {"config": ("WINDOW-TF+scheduled" if post_a_lr is not None else "WINDOW-TF"),
+           "seed": seed, "lr": lr}
 
     def eval_all():
         return {"bpc_A": claim.eval_bpc(model, evals["A"][0], evals["A"][1]),
@@ -147,8 +151,8 @@ def run_cell(seed, blocks_data, evals, lr):
 
     for tag in BLOCKS:
         bx, by = blocks_data[tag]
-        before_loss = None
-        claim.train_stream(model, bx, by, lr, seed)
+        block_lr = lr if (post_a_lr is None or tag == "A") else post_a_lr
+        claim.train_stream(model, bx, by, block_lr, seed)
         ev = eval_all()
         rec[f"traj_{tag}"] = ev
         rec[f"block_{tag}"] = {"wall_note": "sequential training, no schedule (control)"}
@@ -166,9 +170,46 @@ def run_cell(seed, blocks_data, evals, lr):
     return rec
 
 
+def attribution(sched_damage, plain_damage, col_damage, *, alpha=ALPHA):
+    """PURE PR-2026-09-03-17 attribution (doc §3-§4): C1 = mean(plain) - mean(sched) — the
+    schedule effect on the control; C2 = mean(sched) - mean(col) — the tissue's residual.
+    Both CIs are two-sided 95% Welch on the named deltas; the attributions are
+    CI-positional (established iff CI lower >= 0.25; ~0 iff CI upper < 0.25; straddle =
+    unresolved). Returns the pre-committed attribution pair."""
+    # delta directions per the doc: C1 = mean(PLAIN) - mean(SCHED); C2 = mean(SCHED) - mean(COL)
+    c1 = plc._welch_margin(sched_damage, plain_damage, 0.25)
+    c2 = plc._welch_margin(col_damage, sched_damage, 0.25)
+
+    def _pos(ci):
+        if ci[0] >= 0.25:
+            return "ESTABLISHED"
+        if ci[1] < 0.25:
+            return "~0 (CI upper < 0.25)"
+        return "UNRESOLVED (CI straddles 0.25)"
+
+    c1_pos, c2_pos = _pos(c1["ci"]), _pos(c2["ci"])
+    if c1_pos == "ESTABLISHED" and c2_pos != "ESTABLISHED":
+        attrib = "SCHEDULE-CARRIED"
+    elif c1_pos != "ESTABLISHED" and c2_pos == "ESTABLISHED":
+        attrib = "TISSUE-CARRIED"
+    elif c1_pos == "ESTABLISHED" and c2_pos == "ESTABLISHED":
+        attrib = "COMPOUND"
+    else:
+        attrib = "UNRESOLVED at n=5 (doc §4: the n=10 seed extension is pre-authorized)"
+    return {"C1_schedule_effect": {"delta_mean": c1["delta"], "ci": c1["ci"],
+                                   "position": c1_pos,
+                                   "note": "mean(PLAIN-TF damage) - mean(SCHED-TF damage)"},
+            "C2_tissue_residual": {"delta_mean": c2["delta"], "ci": c2["ci"],
+                                   "position": c2_pos,
+                                   "note": "mean(SCHED-TF damage) - mean(COLUMN damage)"},
+            "attribution": attrib}
+
+
 def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
-        powered_cpu: bool = False):
-    path = resolve_results_path(results_path, smoke=smoke, force_smoke_path=force_smoke_path)
+        powered_cpu: bool = False, post_a_lr=None, ledger_dir=None):
+    path = os.path.join(_results_root(), ledger_dir,
+                        SMOKE_BASENAME if smoke else POWERED_BASENAME)         if ledger_dir else resolve_results_path(results_path, smoke=smoke,
+                                                force_smoke_path=force_smoke_path)
 
     import torch
 
@@ -236,6 +277,11 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
         "control": {"config": "TFConfig(vocab, d64, 2L, H4, window=SEG=256) — the PR-07' "
                               "WINDOW-TF path verbatim",
                     "lr": LR_FROZEN,
+                    "post_a_lr": post_a_lr,
+                    "post_a_lr_note": (None if post_a_lr is None else
+                                       "PR-2026-09-03-17 scheduled control: post-A blocks "
+                                       "train at this backbone lr (the L1 dose); block A "
+                                       "keeps the base lr"),
                     "note": ("no lr schedule, no tissue — the control's plain learning rule "
                              "IS the comparison (doc §2, disclosed)")},
         "stream_lengths": {t: len(text_blocks.get(t, shake_blocks.get(t, "")))
@@ -265,6 +311,7 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
                 "lr": LR_FROZEN, "smoke": bool(smoke), "vocab": V,
                 "tf_config": {"d_model": 64, "n_layers": 2, "n_heads": 4,
                               "max_len": plc.SEG},
+                "post_a_lr": post_a_lr,   # PR-17: the schedule is IN the fingerprint
                 "stream_lengths": res["meta"]["stream_lengths"]})
             prior = res.get(cellkey)
             if isinstance(prior, dict) and prior.get("cfgsig") == cfgsig and prior.get("complete"):
@@ -275,7 +322,7 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
                 raise SystemExit(f"cell {cellkey} exists at a foreign config fingerprint "
                                  f"({prior.get('cfgsig')} != {cfgsig}) — refusing to resume")
             t0 = __import__("time").time()
-            rec = run_cell(seed, blocks_data, evals, LR_FROZEN)
+            rec = run_cell(seed, blocks_data, evals, LR_FROZEN, post_a_lr=post_a_lr)
             rec.update({"arm": arm, "seed": seed, "lr": LR_FROZEN, "cellkey": cellkey,
                         "cfgsig": cfgsig, "complete": True,
                         "wall_s": round(__import__("time").time() - t0, 1)})
@@ -298,11 +345,35 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
               "cells": {k: res[k] for k in sorted(res) if k.startswith("claim.")}}
     if powered_cpu:
         report["powered_cpu"] = True
+    if post_a_lr is not None:
+        report["post_a_lr"] = post_a_lr          # PR-2026-09-03-17 (recorded when set)
     if not smoke:
         tf = [res[f"claim.WINDOW-TF.s{s}"] for s in CLAIM_SEEDS]
         verdict = claim_verdict(tf, pr14_ex_ret, alpha=ALPHA)
         report["verdict"] = verdict
         res["verdict"] = verdict
+        if post_a_lr is not None:
+            # PR-2026-09-03-17 attribution: SCHED vs the plain TF (PR-15 ledger) and vs
+            # the column (PR-14 EX ledger, already loaded above for the baseline reuse).
+            pr15_path = os.path.join(_results_root(), "windowtf_manyblock_PR-2026-09-03-15",
+                                     POWERED_BASENAME)
+            if not os.path.isfile(pr15_path):
+                raise SystemExit(
+                    "refusing: the PR-15 powered ledger is MISSING at "
+                    f"{pr15_path} — C1's plain-TF damage side comes from it (doc §2).")
+            pr15 = load_results(pr15_path)
+            sched_damage = [res[f"claim.WINDOW-TF.s{s}"]["b_degradation_B_postC"]
+                            for s in CLAIM_SEEDS]
+            plain_damage = [pr15[f"claim.WINDOW-TF.s{s}"]["b_degradation_B_postC"]
+                            for s in CLAIM_SEEDS]
+            col_damage = [pr14[f"claim.EX.s{s}"]["b_degradation_B_postC"]
+                          for s in CLAIM_SEEDS]
+            att = attribution(sched_damage, plain_damage, col_damage)
+            report["attribution"] = att
+            res["attribution"] = att
+            print(f"[pr15->pr17] C1 schedule effect: {att['C1_schedule_effect']}", flush=True)
+            print(f"[pr15->pr17] C2 tissue residual: {att['C2_tissue_residual']}", flush=True)
+            print(f"[pr17] ATTRIBUTION: {att['attribution']}", flush=True)
     res["report"] = report
     _save(res, path)
     _print_report(report, path, smoke=smoke)
@@ -355,6 +426,14 @@ def _build_parser():
     p.add_argument("--force-smoke-path", action="store_true",
                    help="let a --smoke run write the powered ledger it was pointed at "
                         "(default: REFUSED — separate ledgers)")
+    p.add_argument("--post-a-lr", type=float, default=None,
+                   help="PR-2026-09-03-17 guarded lever: the POST-A blocks' backbone lr "
+                        "(the scheduled control uses 7.5e-4). Default None = byte-identical "
+                        "PR-15 behavior.")
+    p.add_argument("--ledger-dir", default=None,
+                   help="ledger subdirectory under $PRIZMA_RESULTS (default None = the "
+                        "PR-15 dir; the PR-17 run uses windowtf_sched_PR-2026-09-03-17 so "
+                        "the PR-15 ledger is never written)")
     return p
 
 
@@ -362,7 +441,7 @@ def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     args = _build_parser().parse_args(argv)
     run(smoke=args.smoke, results_path=args.out, force_smoke_path=args.force_smoke_path,
-        powered_cpu=args.powered_cpu)
+        powered_cpu=args.powered_cpu, post_a_lr=args.post_a_lr, ledger_dir=args.ledger_dir)
 
 
 if __name__ == "__main__":
