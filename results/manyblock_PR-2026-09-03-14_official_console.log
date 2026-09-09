@@ -1,0 +1,51 @@
+[pr14] stream: A/B/C/D/E segs=[3906, 3921, 3906, 3921, 3906]; vocab=65; smoke=False; lr=0.003 + backbone_postA=0.00075; results=C:\Users\Kullanıcı\Prizma\results\manyblock_PR-2026-09-03-14\powered.json
+[pr14] PLAIN seed 0: B: postB=3.054 postC=3.969 postD=2.886 postE=3.860 | A_postE=2.712 wall=147.6s
+[pr14] PLAIN seed 1: B: postB=3.034 postC=3.952 postD=2.887 postE=3.914 | A_postE=2.696 wall=127.6s
+[pr14] PLAIN seed 2: B: postB=3.080 postC=4.038 postD=2.872 postE=3.816 | A_postE=2.702 wall=130.4s
+[pr14] PLAIN seed 3: B: postB=3.071 postC=3.978 postD=2.907 postE=3.804 | A_postE=2.727 wall=134.3s
+[pr14] PLAIN seed 4: B: postB=3.029 postC=3.903 postD=2.876 postE=3.891 | A_postE=2.691 wall=132.5s
+[pr14] EX seed 0: A_postE=2.708 B: postB=3.054 postC=3.655 postD=2.875 postE=3.859 D_frac_to_owner=0.975 wall=135.1s
+[pr14] EX seed 1: A_postE=2.702 B: postB=3.034 postC=3.672 postD=2.879 postE=3.839 D_frac_to_owner=0.98125 wall=130.5s
+[pr14] EX seed 2: A_postE=2.700 B: postB=3.080 postC=3.751 postD=2.870 postE=3.757 D_frac_to_owner=0.95625 wall=111.6s
+[pr14] EX seed 3: A_postE=2.730 B: postB=3.071 postC=3.712 postD=2.897 postE=3.748 D_frac_to_owner=0.975 wall=127.4s
+[pr14] EX seed 4: A_postE=2.693 B: postB=3.029 postC=3.695 postD=2.865 postE=3.833 D_frac_to_owner=0.9671875 wall=114.4s
+
+==============================================================================
+  PR-2026-09-03-14 — POWERED CLAIM CAMPAIGN
+==============================================================================
+    claim.EX.s0                    B: postB=3.054 postC=3.655 postD=2.875 postE=3.859 | A_postE=2.708 Cret_postE=2.736 wall=135.1s
+      D: owner=1 frac_to_owner_first20=0.975 suppressed=0 redirects=209
+    claim.EX.s1                    B: postB=3.034 postC=3.672 postD=2.879 postE=3.839 | A_postE=2.702 Cret_postE=2.744 wall=130.5s
+      D: owner=1 frac_to_owner_first20=0.98125 suppressed=0 redirects=224
+    claim.EX.s2                    B: postB=3.080 postC=3.751 postD=2.870 postE=3.757 | A_postE=2.700 Cret_postE=2.730 wall=111.6s
+      D: owner=1 frac_to_owner_first20=0.95625 suppressed=0 redirects=316
+    claim.EX.s3                    B: postB=3.071 postC=3.712 postD=2.897 postE=3.748 | A_postE=2.730 Cret_postE=2.751 wall=127.4s
+      D: owner=1 frac_to_owner_first20=0.975 suppressed=0 redirects=276
+    claim.EX.s4                    B: postB=3.029 postC=3.695 postD=2.865 postE=3.833 | A_postE=2.693 Cret_postE=2.713 wall=114.4s
+      D: owner=1 frac_to_owner_first20=0.9671875 suppressed=21 redirects=301
+    claim.PLAIN.s0                 B: postB=3.054 postC=3.969 postD=2.886 postE=3.860 | A_postE=2.712 Cret_postE=2.743 wall=147.6s
+      D: owner=None frac_to_owner_first20=0.0 suppressed=0 redirects=0
+    claim.PLAIN.s1                 B: postB=3.034 postC=3.952 postD=2.887 postE=3.914 | A_postE=2.696 Cret_postE=2.738 wall=127.6s
+      D: owner=None frac_to_owner_first20=0.0 suppressed=0 redirects=0
+    claim.PLAIN.s2                 B: postB=3.080 postC=4.038 postD=2.872 postE=3.816 | A_postE=2.702 Cret_postE=2.733 wall=130.4s
+      D: owner=None frac_to_owner_first20=0.0 suppressed=0 redirects=0
+    claim.PLAIN.s3                 B: postB=3.071 postC=3.978 postD=2.907 postE=3.804 | A_postE=2.727 Cret_postE=2.751 wall=134.3s
+      D: owner=None frac_to_owner_first20=0.0 suppressed=0 redirects=0
+    claim.PLAIN.s4                 B: postB=3.029 postC=3.903 postD=2.876 postE=3.891 | A_postE=2.691 Cret_postE=2.710 wall=132.5s
+      D: owner=None frac_to_owner_first20=0.0 suppressed=0 redirects=0
+    P1: recovery mean=-0.8195 CI=[-0.8682,-0.7707] (bar >= -0.1) p_holm=0.0000 -> PASS
+    P2: frac_mean=0.971 (bar >= 0.5) -> PASS
+    P3: A-retention mean=-0.3226 CI=[-0.3507,-0.2946] (bar <= 0.05) p_holm=0.0000 -> PASS
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\Kullanıcı\Prizma\seq\manyblock_claim.py", line 572, in <module>
+    main()
+  File "C:\Users\Kullanıcı\Prizma\seq\manyblock_claim.py", line 567, in main
+    run(smoke=args.smoke, results_path=args.out, force_smoke_path=args.force_smoke_path,
+  File "C:\Users\Kullanıcı\Prizma\seq\manyblock_claim.py", line 495, in run
+    _print_report(report, path, smoke=smoke)
+  File "C:\Users\Kullanıcı\Prizma\seq\manyblock_claim.py", line 526, in _print_report
+    f"{g1['ci'][1]:.4f}] (allowance {g1['margin']}) p_holm={g1['p_holm']:.4f} "
+                                                            ~~^^^^^^^^^^
+KeyError: 'p_holm'

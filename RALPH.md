@@ -181,6 +181,21 @@ argmin alone recovers on revisit; exclusion may still be needed to keep the reco
 n=5, levers L1 (+L2 decision in the prereg), ~11 min CPU.** Artifacts:
 results/exploratory/manyblock_probe_2026-09-09/ + console log.
 
+## PR-14 EXECUTED (2026-09-09/10 night — S2.5 rung, powered-cpu, ~25 min)
+
+**VERDICT: CLAIMED — ALL FIVE BARS. The lifelong claim now rests on 5 blocks with a true
+revisit.** P1 revisit recovery +0.8195 (8x margin); P2 re-engagement frac 0.971; P3
+A-retention -0.3226 (negative forgetting through 5 blocks); G1 harm -0.0083 (exclusion
+costs nothing — marginally better than plain argmin); G2 text8 continuity -0.1173
+(accumulating). PLAIN reproduced the exploratory probe BIT-FOR-BIT (3rd independent
+cross-run determinism proof family). **INCIDENT (cosmetic only): two printer crashes AFTER
+the verdict was ledgered (stale guard keys in _print_report) — fixed; claim cells never
+recomputed.** **S2.5 COMPLETE — the CPU-side lifelong story is now: 5 blocks, 3 drift
+boundaries, 1 true revisit, zero forgetting of A, full recovery of B on re-encounter, and
+a re-engagement ledger that the routing machinery earns.** NEXT = S3 (owner Colab: Tier-0,
+PR-01, PR-02, kernel, PR-LM-1 — designs inherit L1 generalized + L2 owner election +
+refinement). Artifacts: results/manyblock_PR-2026-09-03-14/ + official console log.
+
 ## BACKLOG
 
 1. **[PR-03 claim] Single-pass citation bar** — status: `done (commit: see git log "PR-03 CLAIMED", 2026-09-05)`

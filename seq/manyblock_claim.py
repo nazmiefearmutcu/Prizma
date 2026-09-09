@@ -513,8 +513,10 @@ def _print_report(report, path, *, smoke):
     if not smoke:
         v = report["verdict"]
         p1 = v["P1"]
-        print(f"    P1: recovery mean={p1['mean']:.4f} CI=[{p1['ci'][0]:.4f},{p1['ci'][1]:.4f}] "
-              f"(bar >= {p1['margin']}) p_holm={p1['p_holm']:.4f} -> {p1['status']}", flush=True)
+        print(f"    P1: recovery mean={p1['recovery_mean']:.4f} "
+              f"(flipped-scale mean={p1['mean']:.4f}, CI=[{p1['ci'][0]:.4f},{p1['ci'][1]:.4f}], "
+              f"bar flipped <= {p1['margin']}) p_holm={p1['p_holm']:.4f} -> {p1['status']}",
+              flush=True)
         p2 = v["P2"]
         print(f"    P2: frac_mean={p2['frac_mean']:.3f} (bar >= {p2['frac_bar']}) "
               f"-> {p2['status']}", flush=True)
@@ -522,12 +524,13 @@ def _print_report(report, path, *, smoke):
         print(f"    P3: A-retention mean={p3['mean']:.4f} CI=[{p3['ci'][0]:.4f},{p3['ci'][1]:.4f}] "
               f"(bar <= {p3['margin']}) p_holm={p3['p_holm']:.4f} -> {p3['status']}", flush=True)
         g1 = v["G1"]
-        print(f"    G1: delta(PLAIN-EX) mean={g1['delta']:.4f} CI=[{g1['ci'][0]:.4f},"
-              f"{g1['ci'][1]:.4f}] (allowance {g1['margin']}) p_holm={g1['p_holm']:.4f} "
-              f"-> {g1['status']}", flush=True)
+        print(f"    G1: harm mean={g1['harm_mean']:.4f} CI=[{g1['ci'][0]:.4f},"
+              f"{g1['ci'][1]:.4f}] (allowance 0.10; CI-positional, no p-gate — doc "
+              f"addendum #1) -> {g1['status']}", flush=True)
         g2 = v["G2"]
         print(f"    G2: Cret drift mean={g2['mean']:.4f} CI=[{g2['ci'][0]:.4f},{g2['ci'][1]:.4f}] "
-              f"(bar <= {g2['margin']}) p_holm={g2['p_holm']:.4f} -> {g2['status']}", flush=True)
+              f"(bar <= {g2['margin']}; CI-positional, no p-gate — doc addendum #1) "
+              f"-> {g2['status']}", flush=True)
         print(f"  OUTCOME: {v['outcome']}", flush=True)
         print(f"  {v['verdict']}", flush=True)
         for br in v["branches"]:
