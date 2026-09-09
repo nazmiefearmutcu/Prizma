@@ -1,0 +1,24 @@
+[pr15] stream: A/B/C/D/E segs=[3906, 3921, 3906, 3921, 3906]; vocab=65; smoke=False; lr=0.003 (PR-07' WINDOW-TF); baseline=C:\Users\Kullanıcı\Prizma\results\manyblock_PR-2026-09-03-14\powered.json
+[pr15] WINDOW-TF seed 0: A: preB=3.013 postE=2.711 retention=-0.302 | B: postB=3.134 postC=3.736 postD=2.905 postE=3.662 wall=101.2s
+[pr15] WINDOW-TF seed 1: A: preB=3.016 postE=2.705 retention=-0.311 | B: postB=3.116 postC=3.748 postD=2.909 postE=3.651 wall=99.3s
+[pr15] WINDOW-TF seed 2: A: preB=3.011 postE=2.697 retention=-0.313 | B: postB=3.147 postC=3.826 postD=2.904 postE=3.607 wall=100.3s
+[pr15] WINDOW-TF seed 3: A: preB=3.037 postE=2.729 retention=-0.308 | B: postB=3.142 postC=3.777 postD=2.926 postE=3.611 wall=99.1s
+[pr15] WINDOW-TF seed 4: A: preB=2.971 postE=2.698 retention=-0.274 | B: postB=3.099 postC=3.748 postD=2.895 postE=3.642 wall=98.0s
+[pr15->pr17] C1 schedule effect: {'delta_mean': np.float64(0.37240569014612646), 'ci': (np.float64(0.27427861724351943), np.float64(0.4705327630487335)), 'position': 'ESTABLISHED', 'note': 'mean(PLAIN-TF damage) - mean(SCHED-TF damage)'}
+[pr15->pr17] C2 tissue residual: {'delta_mean': np.float64(-0.0039183363225628876), 'ci': (np.float64(-0.0443603143893569), np.float64(0.036523641744231124)), 'position': '~0 (CI upper < 0.25)', 'note': 'mean(SCHED-TF damage) - mean(COLUMN damage)'}
+[pr17] ATTRIBUTION: SCHEDULE-CARRIED
+
+==============================================================================
+  PR-2026-09-03-15 — POWERED CLAIM CAMPAIGN
+==============================================================================
+    claim.WINDOW-TF.s0             A: preB=3.013 postE=2.711 retention=-0.302 | B: postB=3.134 postC=3.736 postD=2.905 postE=3.662 wall=101.2s
+    claim.WINDOW-TF.s1             A: preB=3.016 postE=2.705 retention=-0.311 | B: postB=3.116 postC=3.748 postD=2.909 postE=3.651 wall=99.3s
+    claim.WINDOW-TF.s2             A: preB=3.011 postE=2.697 retention=-0.313 | B: postB=3.147 postC=3.826 postD=2.904 postE=3.607 wall=100.3s
+    claim.WINDOW-TF.s3             A: preB=3.037 postE=2.729 retention=-0.308 | B: postB=3.142 postC=3.777 postD=2.926 postE=3.611 wall=99.1s
+    claim.WINDOW-TF.s4             A: preB=2.971 postE=2.698 retention=-0.274 | B: postB=3.099 postC=3.748 postD=2.895 postE=3.642 wall=98.0s
+    P1: delta(TF-column retention) mean=-0.0208 CI=[-0.0500,0.0083] (bar: CI lower >= 0.1) p_raw=1.0000 -> FAIL
+  OUTCOME: NEGATIVE
+  NEGATIVE — the WINDOW-TF holds A comparably or better; the repaired column's retention advantage does not generalize to the 5-block curriculum (doc §4).
+  ledger: C:\Users\Kullanıcı\Prizma\results\windowtf_sched_PR-2026-09-03-17\powered.json
+  raw archive: C:\Users\Kullanıcı\Prizma\results\runs\windowtf-PR-2026-09-03-15-20260909T233232Z.json
+==============================================================================

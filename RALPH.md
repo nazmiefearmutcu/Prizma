@@ -226,6 +226,22 @@ Next head-to-head candidates (own preregs when a lead justifies): the B-drift ga
 D/E boundaries, the window-matched TF WITH the tissue-style schedule, and the S3 GPU
 tier.** Artifacts: results/boundary_damage_PR-2026-09-03-16/ + archive.
 
+## PR-17 EXECUTED (2026-09-10 02:2x — the attribution control, powered-cpu, ~9 min)
+
+**ATTRIBUTION: SCHEDULE-CARRIED (both CIs pre-committed, no cherry-picking).** C1
+ESTABLISHED: the schedule alone reduces the plain TF's boundary damage by +0.3724 (CI
+[0.2743, 0.4705]) — matching the column's PR-16 delta almost exactly. C2 ~0: SCHED-TF
+damage == COLUMN damage (-0.0039, CI [-0.0444, +0.0365]). **CORRECTION to PR-16's
+interpretation (dated): the boundary-damage protection is carried by the L1 LR SCHEDULE
+(any model can adopt it), NOT the tissue. The tissue's established uniqueness = the
+routing ledger (PR-13 B3: frac 0.976 + zero forced cost), specialization purity
+(PR-12-era evidence), and the bounded-M economy (PR-05).** SCHED-TF also recovers on the
+revisit (postC 3.74 -> postD 2.91). Runner: windowtf_manyblock gained the guarded
+--post-a-lr/--ledger-dir flags (default None = byte-identical PR-15). **Next
+head-to-head leads: the routing-ledger head-to-head (a plain TF has no ledger — the
+tissue's home turf), the D/E-boundary audit, and S3 (owner Colab).** Artifacts:
+results/windowtf_sched_PR-2026-09-03-17/ + official console log.
+
 ## BACKLOG
 
 1. **[PR-03 claim] Single-pass citation bar** — status: `done (commit: see git log "PR-03 CLAIMED", 2026-09-05)`
