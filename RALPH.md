@@ -95,6 +95,23 @@ bars B1-B4 as PR-08; the B3 ledger FAIL is expected to flip — a PASS would REI
 'lifelong routing' wording with evidence. Own ledger, own prereg; run --powered-cpu
 (~35 min).**
 
+## PR-11 EXECUTED (2026-09-09 19:3x — S2 rung, powered-cpu, ~31 min)
+
+**VERDICT: FAIL (B3 clause (b)) — clause (a) REPAIRED, the value clause is the new binding
+constraint.** B1 PASS (-0.2818), B2 PASS (+0.3081, Holm p 0.0205), B3 clause (a) PASS
+(frac 0.575 — the PR-10 repair TRANSFERRED to the flagship), B3 clause (b) FAIL: forced
+cost -0.1995 (killing pattern completion improves B-eval by 0.1995 > the 0.10 allowance).
+Mechanism: PRIM's non-A C segments (42.5%) contaminate B-experts via argmin; FORCED
+protects them. B4: PRIM +0.7209 best arm. CANARIES PASS x2 (FROZEN-TRUNK +
+FROZEN-CHECKPOINT bit-identical to PR-08 — the lever's blast radius mechanically proven).
+**CORRECTION (maintainer, 2026-09-09): my PR-08/PR-09 wrap-up prose said 'clause (b) PASS
+(forced cost -0.156, costs nothing)' — the sign was misread; -0.1554 also VIOLATED clause
+(b). OUTCOMES unaffected (clause (a) had failed independently).** **S2b LEAD (next prereg,
+not yet registered): DOMAIN-EXCLUSIVE EXPERTS — C segments train only the A-expert or fresh
+recruits, never B-committed experts; prediction: B3b flips (B-experts protected => PRIM_B
+~ FORCED_B) while clause (a) holds.** Artifacts: results/prizma_lm_PR-2026-09-03-11/ +
+results/pr11_repaired_flagship_official_console.log.
+
 ## BACKLOG
 
 1. **[PR-03 claim] Single-pass citation bar** — status: `done (commit: see git log "PR-03 CLAIMED", 2026-09-05)`
