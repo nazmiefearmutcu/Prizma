@@ -1,0 +1,721 @@
+{
+  "meta": {
+    "registry": "PR-2026-09-03-15",
+    "smoke": false,
+    "lane": "CLAIM (frozen pre-registration)",
+    "doc": "docs/preregistry/2026-09-10-windowtf-manyblock-control.md",
+    "arms": [
+      "WINDOW-TF"
+    ],
+    "claim_seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "blocks": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "control": {
+      "config": "TFConfig(vocab, d64, 2L, H4, window=SEG=256) \u2014 the PR-07' WINDOW-TF path verbatim",
+      "lr": 0.003,
+      "note": "no lr schedule, no tissue \u2014 the control's plain learning rule IS the comparison (doc \u00a72, disclosed)"
+    },
+    "stream_lengths": {
+      "A": 1000000,
+      "B": 1003854,
+      "C": 1000000,
+      "D": 1003854,
+      "E": 1000000
+    },
+    "vocab": 65,
+    "threads": 8,
+    "bars": {
+      "P1_margin": 0.1,
+      "alpha": 0.05,
+      "baseline": {
+        "source": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\manyblock_PR-2026-09-03-14\\powered.json",
+        "cells": "claim.EX.s0..s4 (reused, disclosed)",
+        "a_retention_mean": -0.3226
+      }
+    },
+    "t_isf_convention": "UPPER-TAIL p in (0, 0.5] (the PR-03 lesson)",
+    "powered_cpu": true,
+    "compute_fallback_note": "POWERED VIA THE REGISTERED CPU FALLBACK (PR-15 doc \u00a75; precedent = PR-08 addendum 2026-09-08 #2 + the PR-09..PR-14 powered-cpu executions).",
+    "raw_archive": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\runs\\windowtf-PR-2026-09-03-15-20260909T213440Z.json"
+  },
+  "claim.WINDOW-TF.s0": {
+    "config": "WINDOW-TF",
+    "seed": 0,
+    "lr": 0.003,
+    "traj_A": {
+      "bpc_A": 3.0131521618596238,
+      "bpc_B": 5.293177911935504,
+      "bpc_Cret": 2.9639867353173566
+    },
+    "block_A": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_B": {
+      "bpc_A": 3.233285142977644,
+      "bpc_B": 2.8923480048380914,
+      "bpc_Cret": 3.3010665749115224
+    },
+    "block_B": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_C": {
+      "bpc_A": 2.766218977851908,
+      "bpc_B": 3.8610841884469584,
+      "bpc_Cret": 2.819332720355322
+    },
+    "block_C": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_D": {
+      "bpc_A": 3.109179152992446,
+      "bpc_B": 2.7596876443909175,
+      "bpc_Cret": 3.18358432650558
+    },
+    "block_D": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_E": {
+      "bpc_A": 2.649326670508691,
+      "bpc_B": 3.719831887889712,
+      "bpc_Cret": 2.6988495140418682
+    },
+    "block_E": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "bpc_A_preB": 3.0131521618596238,
+    "bpc_A_postE": 2.649326670508691,
+    "bpc_A_retention": -0.3638254913509327,
+    "bpc_B_postB": 2.8923480048380914,
+    "bpc_B_postC": 3.8610841884469584,
+    "bpc_B_postD": 2.7596876443909175,
+    "bpc_B_postE": 3.719831887889712,
+    "b_degradation_B_postC": 0.968736183608867,
+    "b_recovery_postD": 1.101396544056041,
+    "wall_s": 145.3,
+    "arm": "WINDOW-TF",
+    "cellkey": "claim.WINDOW-TF.s0",
+    "cfgsig": "48ac3b014cbbf7eb",
+    "complete": true
+  },
+  "claim.WINDOW-TF.s1": {
+    "config": "WINDOW-TF",
+    "seed": 1,
+    "lr": 0.003,
+    "traj_A": {
+      "bpc_A": 3.0159528543488463,
+      "bpc_B": 5.25617272361146,
+      "bpc_Cret": 2.9606991149634627
+    },
+    "block_A": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_B": {
+      "bpc_A": 3.2339235954953853,
+      "bpc_B": 2.885915869510319,
+      "bpc_Cret": 3.298085207150889
+    },
+    "block_B": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_C": {
+      "bpc_A": 2.7478429685168204,
+      "bpc_B": 3.8803565563953963,
+      "bpc_Cret": 2.8060161830756227
+    },
+    "block_C": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_D": {
+      "bpc_A": 3.1204634586011686,
+      "bpc_B": 2.75005826065025,
+      "bpc_Cret": 3.201037252917711
+    },
+    "block_D": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_E": {
+      "bpc_A": 2.6425008925308258,
+      "bpc_B": 3.7130811220838176,
+      "bpc_Cret": 2.700744470042889
+    },
+    "block_E": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "bpc_A_preB": 3.0159528543488463,
+    "bpc_A_postE": 2.6425008925308258,
+    "bpc_A_retention": -0.37345196181802054,
+    "bpc_B_postB": 2.885915869510319,
+    "bpc_B_postC": 3.8803565563953963,
+    "bpc_B_postD": 2.75005826065025,
+    "bpc_B_postE": 3.7130811220838176,
+    "b_degradation_B_postC": 0.9944406868850773,
+    "b_recovery_postD": 1.1302982957451464,
+    "wall_s": 141.3,
+    "arm": "WINDOW-TF",
+    "cellkey": "claim.WINDOW-TF.s1",
+    "cfgsig": "a0b2f41e52ae4b6c",
+    "complete": true
+  },
+  "claim.WINDOW-TF.s2": {
+    "config": "WINDOW-TF",
+    "seed": 2,
+    "lr": 0.003,
+    "traj_A": {
+      "bpc_A": 3.0105277842201406,
+      "bpc_B": 5.450389747035316,
+      "bpc_Cret": 2.963517880624386
+    },
+    "block_A": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_B": {
+      "bpc_A": 3.261369027901228,
+      "bpc_B": 2.8894479930522765,
+      "bpc_Cret": 3.2963682875900413
+    },
+    "block_B": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_C": {
+      "bpc_A": 2.7463721411359985,
+      "bpc_B": 3.8976712288284796,
+      "bpc_Cret": 2.793169618817106
+    },
+    "block_C": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_D": {
+      "bpc_A": 3.091781398614712,
+      "bpc_B": 2.747974808257685,
+      "bpc_Cret": 3.160627217945346
+    },
+    "block_D": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_E": {
+      "bpc_A": 2.640755810149428,
+      "bpc_B": 3.8508898223254486,
+      "bpc_Cret": 2.6801625142119803
+    },
+    "block_E": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "bpc_A_preB": 3.0105277842201406,
+    "bpc_A_postE": 2.640755810149428,
+    "bpc_A_retention": -0.3697719740707126,
+    "bpc_B_postB": 2.8894479930522765,
+    "bpc_B_postC": 3.8976712288284796,
+    "bpc_B_postD": 2.747974808257685,
+    "bpc_B_postE": 3.8508898223254486,
+    "b_degradation_B_postC": 1.008223235776203,
+    "b_recovery_postD": 1.1496964205707947,
+    "wall_s": 139.2,
+    "arm": "WINDOW-TF",
+    "cellkey": "claim.WINDOW-TF.s2",
+    "cfgsig": "0ed55c4aec7058fc",
+    "complete": true
+  },
+  "claim.WINDOW-TF.s3": {
+    "config": "WINDOW-TF",
+    "seed": 3,
+    "lr": 0.003,
+    "traj_A": {
+      "bpc_A": 3.0370943059034663,
+      "bpc_B": 5.15010570440915,
+      "bpc_Cret": 2.985750492423708
+    },
+    "block_A": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_B": {
+      "bpc_A": 3.240518673299496,
+      "bpc_B": 2.904001935134273,
+      "bpc_Cret": 3.2976557514783256
+    },
+    "block_B": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_C": {
+      "bpc_A": 2.772920787207182,
+      "bpc_B": 3.8438502585078753,
+      "bpc_Cret": 2.8121892842475766
+    },
+    "block_C": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_D": {
+      "bpc_A": 3.0932022928172715,
+      "bpc_B": 2.765225994975492,
+      "bpc_Cret": 3.156417724720788
+    },
+    "block_D": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_E": {
+      "bpc_A": 2.6512761176692035,
+      "bpc_B": 3.8541147018268576,
+      "bpc_Cret": 2.696222021311499
+    },
+    "block_E": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "bpc_A_preB": 3.0370943059034663,
+    "bpc_A_postE": 2.6512761176692035,
+    "bpc_A_retention": -0.38581818823426284,
+    "bpc_B_postB": 2.904001935134273,
+    "bpc_B_postC": 3.8438502585078753,
+    "bpc_B_postD": 2.765225994975492,
+    "bpc_B_postE": 3.8541147018268576,
+    "b_degradation_B_postC": 0.9398483233736021,
+    "b_recovery_postD": 1.0786242635323835,
+    "wall_s": 138.8,
+    "arm": "WINDOW-TF",
+    "cellkey": "claim.WINDOW-TF.s3",
+    "cfgsig": "b7e36d7e25882736",
+    "complete": true
+  },
+  "claim.WINDOW-TF.s4": {
+    "config": "WINDOW-TF",
+    "seed": 4,
+    "lr": 0.003,
+    "traj_A": {
+      "bpc_A": 2.971468841425105,
+      "bpc_B": 5.21712878098813,
+      "bpc_Cret": 2.92973020784222
+    },
+    "block_A": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_B": {
+      "bpc_A": 3.2352494388556434,
+      "bpc_B": 2.8787949559220762,
+      "bpc_Cret": 3.2984146130187657
+    },
+    "block_B": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_C": {
+      "bpc_A": 2.739327777618698,
+      "bpc_B": 4.026616473030279,
+      "bpc_Cret": 2.80118604238848
+    },
+    "block_C": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_D": {
+      "bpc_A": 3.135493754488788,
+      "bpc_B": 2.751169488396327,
+      "bpc_Cret": 3.2201031472847332
+    },
+    "block_D": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_E": {
+      "bpc_A": 2.6443763254141053,
+      "bpc_B": 3.78766294607897,
+      "bpc_Cret": 2.691604373568139
+    },
+    "block_E": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "bpc_A_preB": 2.971468841425105,
+    "bpc_A_postE": 2.6443763254141053,
+    "bpc_A_retention": -0.32709251601099965,
+    "bpc_B_postB": 2.8787949559220762,
+    "bpc_B_postC": 4.026616473030279,
+    "bpc_B_postD": 2.751169488396327,
+    "bpc_B_postE": 3.78766294607897,
+    "b_degradation_B_postC": 1.1478215171082025,
+    "b_recovery_postD": 1.2754469846339518,
+    "wall_s": 139.1,
+    "arm": "WINDOW-TF",
+    "cellkey": "claim.WINDOW-TF.s4",
+    "cfgsig": "295f15e3f19f4dbd",
+    "complete": true
+  },
+  "verdict": {
+    "outcome": "NEGATIVE",
+    "verdict": "NEGATIVE \u2014 the WINDOW-TF holds A comparably or better; the repaired column's retention advantage does not generalize to the 5-block curriculum (doc \u00a74).",
+    "branches": [],
+    "P1": {
+      "n_a": 5,
+      "n_b": 5,
+      "delta": 0.04135219791519673,
+      "se": 0.014137182980383656,
+      "df": 7.997151683093292,
+      "ci": [
+        0.008749774311978716,
+        0.07395462151841475
+      ],
+      "p_raw": 0.9983909088316185,
+      "margin": 0.1,
+      "tf_retention_per_seed": [
+        -0.3638254913509327,
+        -0.37345196181802054,
+        -0.3697719740707126,
+        -0.38581818823426284,
+        -0.32709251601099965
+      ],
+      "column_retention_mean": -0.32263982838178895,
+      "tf_retention_mean": -0.3639920262969857,
+      "note": "delta = mean(TF A-retention) - mean(column A-retention); positive = the TF forgets MORE. PASS iff CI lower >= 0.10 (doc \u00a73).",
+      "status": "FAIL"
+    },
+    "alpha": 0.05
+  },
+  "report": {
+    "registry": "PR-2026-09-03-15",
+    "smoke": false,
+    "arms": [
+      "WINDOW-TF"
+    ],
+    "claim_seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "lr": 0.003,
+    "raw_archive": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\runs\\windowtf-PR-2026-09-03-15-20260909T213440Z.json",
+    "cells": {
+      "claim.WINDOW-TF.s0": {
+        "config": "WINDOW-TF",
+        "seed": 0,
+        "lr": 0.003,
+        "traj_A": {
+          "bpc_A": 3.0131521618596238,
+          "bpc_B": 5.293177911935504,
+          "bpc_Cret": 2.9639867353173566
+        },
+        "block_A": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_B": {
+          "bpc_A": 3.233285142977644,
+          "bpc_B": 2.8923480048380914,
+          "bpc_Cret": 3.3010665749115224
+        },
+        "block_B": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_C": {
+          "bpc_A": 2.766218977851908,
+          "bpc_B": 3.8610841884469584,
+          "bpc_Cret": 2.819332720355322
+        },
+        "block_C": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_D": {
+          "bpc_A": 3.109179152992446,
+          "bpc_B": 2.7596876443909175,
+          "bpc_Cret": 3.18358432650558
+        },
+        "block_D": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_E": {
+          "bpc_A": 2.649326670508691,
+          "bpc_B": 3.719831887889712,
+          "bpc_Cret": 2.6988495140418682
+        },
+        "block_E": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "bpc_A_preB": 3.0131521618596238,
+        "bpc_A_postE": 2.649326670508691,
+        "bpc_A_retention": -0.3638254913509327,
+        "bpc_B_postB": 2.8923480048380914,
+        "bpc_B_postC": 3.8610841884469584,
+        "bpc_B_postD": 2.7596876443909175,
+        "bpc_B_postE": 3.719831887889712,
+        "b_degradation_B_postC": 0.968736183608867,
+        "b_recovery_postD": 1.101396544056041,
+        "wall_s": 145.3,
+        "arm": "WINDOW-TF",
+        "cellkey": "claim.WINDOW-TF.s0",
+        "cfgsig": "48ac3b014cbbf7eb",
+        "complete": true
+      },
+      "claim.WINDOW-TF.s1": {
+        "config": "WINDOW-TF",
+        "seed": 1,
+        "lr": 0.003,
+        "traj_A": {
+          "bpc_A": 3.0159528543488463,
+          "bpc_B": 5.25617272361146,
+          "bpc_Cret": 2.9606991149634627
+        },
+        "block_A": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_B": {
+          "bpc_A": 3.2339235954953853,
+          "bpc_B": 2.885915869510319,
+          "bpc_Cret": 3.298085207150889
+        },
+        "block_B": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_C": {
+          "bpc_A": 2.7478429685168204,
+          "bpc_B": 3.8803565563953963,
+          "bpc_Cret": 2.8060161830756227
+        },
+        "block_C": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_D": {
+          "bpc_A": 3.1204634586011686,
+          "bpc_B": 2.75005826065025,
+          "bpc_Cret": 3.201037252917711
+        },
+        "block_D": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_E": {
+          "bpc_A": 2.6425008925308258,
+          "bpc_B": 3.7130811220838176,
+          "bpc_Cret": 2.700744470042889
+        },
+        "block_E": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "bpc_A_preB": 3.0159528543488463,
+        "bpc_A_postE": 2.6425008925308258,
+        "bpc_A_retention": -0.37345196181802054,
+        "bpc_B_postB": 2.885915869510319,
+        "bpc_B_postC": 3.8803565563953963,
+        "bpc_B_postD": 2.75005826065025,
+        "bpc_B_postE": 3.7130811220838176,
+        "b_degradation_B_postC": 0.9944406868850773,
+        "b_recovery_postD": 1.1302982957451464,
+        "wall_s": 141.3,
+        "arm": "WINDOW-TF",
+        "cellkey": "claim.WINDOW-TF.s1",
+        "cfgsig": "a0b2f41e52ae4b6c",
+        "complete": true
+      },
+      "claim.WINDOW-TF.s2": {
+        "config": "WINDOW-TF",
+        "seed": 2,
+        "lr": 0.003,
+        "traj_A": {
+          "bpc_A": 3.0105277842201406,
+          "bpc_B": 5.450389747035316,
+          "bpc_Cret": 2.963517880624386
+        },
+        "block_A": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_B": {
+          "bpc_A": 3.261369027901228,
+          "bpc_B": 2.8894479930522765,
+          "bpc_Cret": 3.2963682875900413
+        },
+        "block_B": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_C": {
+          "bpc_A": 2.7463721411359985,
+          "bpc_B": 3.8976712288284796,
+          "bpc_Cret": 2.793169618817106
+        },
+        "block_C": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_D": {
+          "bpc_A": 3.091781398614712,
+          "bpc_B": 2.747974808257685,
+          "bpc_Cret": 3.160627217945346
+        },
+        "block_D": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_E": {
+          "bpc_A": 2.640755810149428,
+          "bpc_B": 3.8508898223254486,
+          "bpc_Cret": 2.6801625142119803
+        },
+        "block_E": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "bpc_A_preB": 3.0105277842201406,
+        "bpc_A_postE": 2.640755810149428,
+        "bpc_A_retention": -0.3697719740707126,
+        "bpc_B_postB": 2.8894479930522765,
+        "bpc_B_postC": 3.8976712288284796,
+        "bpc_B_postD": 2.747974808257685,
+        "bpc_B_postE": 3.8508898223254486,
+        "b_degradation_B_postC": 1.008223235776203,
+        "b_recovery_postD": 1.1496964205707947,
+        "wall_s": 139.2,
+        "arm": "WINDOW-TF",
+        "cellkey": "claim.WINDOW-TF.s2",
+        "cfgsig": "0ed55c4aec7058fc",
+        "complete": true
+      },
+      "claim.WINDOW-TF.s3": {
+        "config": "WINDOW-TF",
+        "seed": 3,
+        "lr": 0.003,
+        "traj_A": {
+          "bpc_A": 3.0370943059034663,
+          "bpc_B": 5.15010570440915,
+          "bpc_Cret": 2.985750492423708
+        },
+        "block_A": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_B": {
+          "bpc_A": 3.240518673299496,
+          "bpc_B": 2.904001935134273,
+          "bpc_Cret": 3.2976557514783256
+        },
+        "block_B": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_C": {
+          "bpc_A": 2.772920787207182,
+          "bpc_B": 3.8438502585078753,
+          "bpc_Cret": 2.8121892842475766
+        },
+        "block_C": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_D": {
+          "bpc_A": 3.0932022928172715,
+          "bpc_B": 2.765225994975492,
+          "bpc_Cret": 3.156417724720788
+        },
+        "block_D": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_E": {
+          "bpc_A": 2.6512761176692035,
+          "bpc_B": 3.8541147018268576,
+          "bpc_Cret": 2.696222021311499
+        },
+        "block_E": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "bpc_A_preB": 3.0370943059034663,
+        "bpc_A_postE": 2.6512761176692035,
+        "bpc_A_retention": -0.38581818823426284,
+        "bpc_B_postB": 2.904001935134273,
+        "bpc_B_postC": 3.8438502585078753,
+        "bpc_B_postD": 2.765225994975492,
+        "bpc_B_postE": 3.8541147018268576,
+        "b_degradation_B_postC": 0.9398483233736021,
+        "b_recovery_postD": 1.0786242635323835,
+        "wall_s": 138.8,
+        "arm": "WINDOW-TF",
+        "cellkey": "claim.WINDOW-TF.s3",
+        "cfgsig": "b7e36d7e25882736",
+        "complete": true
+      },
+      "claim.WINDOW-TF.s4": {
+        "config": "WINDOW-TF",
+        "seed": 4,
+        "lr": 0.003,
+        "traj_A": {
+          "bpc_A": 2.971468841425105,
+          "bpc_B": 5.21712878098813,
+          "bpc_Cret": 2.92973020784222
+        },
+        "block_A": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_B": {
+          "bpc_A": 3.2352494388556434,
+          "bpc_B": 2.8787949559220762,
+          "bpc_Cret": 3.2984146130187657
+        },
+        "block_B": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_C": {
+          "bpc_A": 2.739327777618698,
+          "bpc_B": 4.026616473030279,
+          "bpc_Cret": 2.80118604238848
+        },
+        "block_C": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_D": {
+          "bpc_A": 3.135493754488788,
+          "bpc_B": 2.751169488396327,
+          "bpc_Cret": 3.2201031472847332
+        },
+        "block_D": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_E": {
+          "bpc_A": 2.6443763254141053,
+          "bpc_B": 3.78766294607897,
+          "bpc_Cret": 2.691604373568139
+        },
+        "block_E": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "bpc_A_preB": 2.971468841425105,
+        "bpc_A_postE": 2.6443763254141053,
+        "bpc_A_retention": -0.32709251601099965,
+        "bpc_B_postB": 2.8787949559220762,
+        "bpc_B_postC": 4.026616473030279,
+        "bpc_B_postD": 2.751169488396327,
+        "bpc_B_postE": 3.78766294607897,
+        "b_degradation_B_postC": 1.1478215171082025,
+        "b_recovery_postD": 1.2754469846339518,
+        "wall_s": 139.1,
+        "arm": "WINDOW-TF",
+        "cellkey": "claim.WINDOW-TF.s4",
+        "cfgsig": "295f15e3f19f4dbd",
+        "complete": true
+      }
+    },
+    "powered_cpu": true,
+    "verdict": {
+      "outcome": "NEGATIVE",
+      "verdict": "NEGATIVE \u2014 the WINDOW-TF holds A comparably or better; the repaired column's retention advantage does not generalize to the 5-block curriculum (doc \u00a74).",
+      "branches": [],
+      "P1": {
+        "n_a": 5,
+        "n_b": 5,
+        "delta": 0.04135219791519673,
+        "se": 0.014137182980383656,
+        "df": 7.997151683093292,
+        "ci": [
+          0.008749774311978716,
+          0.07395462151841475
+        ],
+        "p_raw": 0.9983909088316185,
+        "margin": 0.1,
+        "tf_retention_per_seed": [
+          -0.3638254913509327,
+          -0.37345196181802054,
+          -0.3697719740707126,
+          -0.38581818823426284,
+          -0.32709251601099965
+        ],
+        "column_retention_mean": -0.32263982838178895,
+        "tf_retention_mean": -0.3639920262969857,
+        "note": "delta = mean(TF A-retention) - mean(column A-retention); positive = the TF forgets MORE. PASS iff CI lower >= 0.10 (doc \u00a73).",
+        "status": "FAIL"
+      },
+      "alpha": 0.05
+    }
+  }
+}

@@ -196,6 +196,22 @@ a re-engagement ledger that the routing machinery earns.** NEXT = S3 (owner Cola
 PR-01, PR-02, kernel, PR-LM-1 — designs inherit L1 generalized + L2 owner election +
 refinement). Artifacts: results/manyblock_PR-2026-09-03-14/ + official console log.
 
+## PR-15 EXECUTED (2026-09-10 00:5x — the first head-to-head control, powered-cpu, ~22 min)
+
+**VERDICT: NEGATIVE (P1 FAIL) — the registered A-retention bar was NOT discriminating,
+and the honest run found the real gap elsewhere.** The WINDOW-TF control holds A across
+the 5-block curriculum (retention ~ -0.36, delta vs the column +0.0414 CI [+0.0087,
++0.0740] — marginally BETTER). Why: the curriculum re-exposes A's domain at C and E, so
+both models are continuously rehearsed on text8 — A-retention cannot separate them here.
+**The discriminating descriptives (measured, n=5 both arms): B-boundary drift damage
+post-C: WINDOW-TF ~+1.15 bpc vs repaired column ~+0.60 bpc — the tissue HALVES boundary
+damage.** Both recover on the literal revisit (TF postD 2.77). **PR-16 lead (register
+next): the B-boundary drift-damage head-to-head — delta = TF damage - column damage, bar
+CI lower >= 0.25 (half the measured ~0.5 gap), n=5, same reuse pattern.** LESSON for all
+future controls: a retention bar only discriminates when the target domain does NOT recur
+in the training stream. Artifacts:
+results/windowtf_manyblock_PR-2026-09-03-15/ + official console log.
+
 ## BACKLOG
 
 1. **[PR-03 claim] Single-pass citation bar** — status: `done (commit: see git log "PR-03 CLAIMED", 2026-09-05)`

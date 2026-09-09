@@ -1,0 +1,21 @@
+[pr15] stream: A/B/C/D/E segs=[3906, 3921, 3906, 3921, 3906]; vocab=65; smoke=False; lr=0.003 (PR-07' WINDOW-TF); baseline=C:\Users\Kullanıcı\Prizma\results\manyblock_PR-2026-09-03-14\powered.json
+[pr15] WINDOW-TF seed 0: A: preB=3.013 postE=2.649 retention=-0.364 | B: postB=2.892 postC=3.861 postD=2.760 postE=3.720 wall=145.3s
+[pr15] WINDOW-TF seed 1: A: preB=3.016 postE=2.643 retention=-0.373 | B: postB=2.886 postC=3.880 postD=2.750 postE=3.713 wall=141.3s
+[pr15] WINDOW-TF seed 2: A: preB=3.011 postE=2.641 retention=-0.370 | B: postB=2.889 postC=3.898 postD=2.748 postE=3.851 wall=139.2s
+[pr15] WINDOW-TF seed 3: A: preB=3.037 postE=2.651 retention=-0.386 | B: postB=2.904 postC=3.844 postD=2.765 postE=3.854 wall=138.8s
+[pr15] WINDOW-TF seed 4: A: preB=2.971 postE=2.644 retention=-0.327 | B: postB=2.879 postC=4.027 postD=2.751 postE=3.788 wall=139.1s
+
+==============================================================================
+  PR-2026-09-03-15 — POWERED CLAIM CAMPAIGN
+==============================================================================
+    claim.WINDOW-TF.s0             A: preB=3.013 postE=2.649 retention=-0.364 | B: postB=2.892 postC=3.861 postD=2.760 postE=3.720 wall=145.3s
+    claim.WINDOW-TF.s1             A: preB=3.016 postE=2.643 retention=-0.373 | B: postB=2.886 postC=3.880 postD=2.750 postE=3.713 wall=141.3s
+    claim.WINDOW-TF.s2             A: preB=3.011 postE=2.641 retention=-0.370 | B: postB=2.889 postC=3.898 postD=2.748 postE=3.851 wall=139.2s
+    claim.WINDOW-TF.s3             A: preB=3.037 postE=2.651 retention=-0.386 | B: postB=2.904 postC=3.844 postD=2.765 postE=3.854 wall=138.8s
+    claim.WINDOW-TF.s4             A: preB=2.971 postE=2.644 retention=-0.327 | B: postB=2.879 postC=4.027 postD=2.751 postE=3.788 wall=139.1s
+    P1: delta(TF-column retention) mean=0.0414 CI=[0.0087,0.0740] (bar: CI lower >= 0.1) p_raw=0.9984 -> FAIL
+  OUTCOME: NEGATIVE
+  NEGATIVE — the WINDOW-TF holds A comparably or better; the repaired column's retention advantage does not generalize to the 5-block curriculum (doc §4).
+  ledger: C:\Users\Kullanıcı\Prizma\results\windowtf_manyblock_PR-2026-09-03-15\powered.json
+  raw archive: C:\Users\Kullanıcı\Prizma\results\runs\windowtf-PR-2026-09-03-15-20260909T213440Z.json
+==============================================================================
