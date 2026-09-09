@@ -1,0 +1,20 @@
+{
+  "meta": {
+    "registry": "PR-2026-09-03-16",
+    "smoke": false,
+    "lane": "CLAIM (frozen pre-registration; confirmatory ANALYSIS)",
+    "doc": "docs/preregistry/2026-09-10-boundary-damage-headtohead.md",
+    "sources": {
+      "column": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\manyblock_PR-2026-09-03-14\\powered.json",
+      "control": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\windowtf_manyblock_PR-2026-09-03-15\\powered.json",
+      "cells": "claim.EX.s0..s4 / claim.WINDOW-TF.s0..s4 (reused, disclosed)"
+    },
+    "damage_def": "bpc_B_postC - bpc_B_postB per seed (the degradation from block C)",
+    "bars": {
+      "P1_margin": 0.25,
+      "alpha": 0.05,
+      "t_isf_convention": "UPPER-TAIL p in (0, 0.5] (the PR-03 lesson)"
+    },
+    "post_hoc_disclosure": "the ~0.55 point gap was descriptively visible in PR-15's console/INDEX before this freeze; the bar is HALF that point estimate (doc \u00a72)"
+  }
+}

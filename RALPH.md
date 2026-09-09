@@ -212,6 +212,20 @@ future controls: a retention bar only discriminates when the target domain does 
 in the training stream. Artifacts:
 results/windowtf_manyblock_PR-2026-09-03-15/ + official console log.
 
+## PR-16 EXECUTED (2026-09-10 01:2x — the head-to-head ledger's first established gap)
+
+**VERDICT: CLAIMED.** delta = +0.3685 (CONTROL damage [0.969, 0.994, 1.008, 0.940, 1.148]
+vs COLUMN [0.601, 0.638, 0.671, 0.641, 0.666]); Welch CI [0.2704, 0.4666] — CI lower
+0.2704 >= 0.25 (p_raw 0.0134). The tissue HALVES B-boundary drift damage vs the
+memory-matched sliding-window control — established at claim grade over the registered
+n=5 artifacts (PR-14 EX + PR-15 WINDOW-TF; post-hoc visibility disclosed, bar frozen at
+half the point estimate). Runner seq/boundary_damage_claim.py (analysis-only, seconds).
+**The comparison ledger vs the standing control: accumulation parity (PR-15: both hold
+A), boundary damage 2x better (PR-16: established), revisit recovery both (descriptive).
+Next head-to-head candidates (own preregs when a lead justifies): the B-drift gap at the
+D/E boundaries, the window-matched TF WITH the tissue-style schedule, and the S3 GPU
+tier.** Artifacts: results/boundary_damage_PR-2026-09-03-16/ + archive.
+
 ## BACKLOG
 
 1. **[PR-03 claim] Single-pass citation bar** — status: `done (commit: see git log "PR-03 CLAIMED", 2026-09-05)`

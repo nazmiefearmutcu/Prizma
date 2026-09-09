@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "registry": "PR-2026-09-03-16",
+    "smoke": false,
+    "lane": "CLAIM (frozen pre-registration; confirmatory ANALYSIS)",
+    "doc": "docs/preregistry/2026-09-10-boundary-damage-headtohead.md",
+    "sources": {
+      "column": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\manyblock_PR-2026-09-03-14\\powered.json",
+      "control": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\windowtf_manyblock_PR-2026-09-03-15\\powered.json",
+      "cells": "claim.EX.s0..s4 / claim.WINDOW-TF.s0..s4 (reused, disclosed)"
+    },
+    "damage_def": "bpc_B_postC - bpc_B_postB per seed (the degradation from block C)",
+    "bars": {
+      "P1_margin": 0.25,
+      "alpha": 0.05,
+      "t_isf_convention": "UPPER-TAIL p in (0, 0.5] (the PR-03 lesson)"
+    },
+    "post_hoc_disclosure": "the ~0.55 point gap was descriptively visible in PR-15's console/INDEX before this freeze; the bar is HALF that point estimate (doc \u00a72)",
+    "raw_archive": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\runs\\boundary-damage-PR-2026-09-03-16-20260909T221910Z.json"
+  },
+  "verdict": {
+    "outcome": "CLAIMED",
+    "verdict": "CLAIMED \u2014 the tissue halves B-boundary drift damage: the control's damage exceeds the column's by a CI-established margin above 0.25 bpc (doc \u00a74).",
+    "branches": [],
+    "P1": {
+      "n_a": 5,
+      "n_b": 5,
+      "delta": 0.36848735382356357,
+      "se": 0.03806166511219797,
+      "df": 4.953655506804158,
+      "ci": [
+        0.27037076753913963,
+        0.4666039401079875
+      ],
+      "p_raw": 0.013396252248201347,
+      "margin": 0.25,
+      "damage_col_per_seed": [
+        0.6005553450938472,
+        0.6383309903905614,
+        0.6710555360697033,
+        0.6410516151781915,
+        0.6656396909018318
+      ],
+      "damage_ctl_per_seed": [
+        0.968736183608867,
+        0.9944406868850773,
+        1.008223235776203,
+        0.9398483233736021,
+        1.1478215171082025
+      ],
+      "col_damage_mean": 0.643326635526827,
+      "ctl_damage_mean": 1.0118139893503906,
+      "note": "delta = mean(CONTROL damage) - mean(COLUMN damage); positive = the column damages less. PASS iff CI lower >= 0.25 (doc \u00a73).",
+      "status": "PASS"
+    },
+    "alpha": 0.05
+  },
+  "report": {
+    "registry": "PR-2026-09-03-16",
+    "smoke": false,
+    "raw_archive": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\runs\\boundary-damage-PR-2026-09-03-16-20260909T221910Z.json",
+    "verdict": {
+      "outcome": "CLAIMED",
+      "verdict": "CLAIMED \u2014 the tissue halves B-boundary drift damage: the control's damage exceeds the column's by a CI-established margin above 0.25 bpc (doc \u00a74).",
+      "branches": [],
+      "P1": {
+        "n_a": 5,
+        "n_b": 5,
+        "delta": 0.36848735382356357,
+        "se": 0.03806166511219797,
+        "df": 4.953655506804158,
+        "ci": [
+          0.27037076753913963,
+          0.4666039401079875
+        ],
+        "p_raw": 0.013396252248201347,
+        "margin": 0.25,
+        "damage_col_per_seed": [
+          0.6005553450938472,
+          0.6383309903905614,
+          0.6710555360697033,
+          0.6410516151781915,
+          0.6656396909018318
+        ],
+        "damage_ctl_per_seed": [
+          0.968736183608867,
+          0.9944406868850773,
+          1.008223235776203,
+          0.9398483233736021,
+          1.1478215171082025
+        ],
+        "col_damage_mean": 0.643326635526827,
+        "ctl_damage_mean": 1.0118139893503906,
+        "note": "delta = mean(CONTROL damage) - mean(COLUMN damage); positive = the column damages less. PASS iff CI lower >= 0.25 (doc \u00a73).",
+        "status": "PASS"
+      },
+      "alpha": 0.05
+    },
+    "powered_cpu_note": "analysis is CPU-native"
+  }
+}
