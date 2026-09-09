@@ -145,6 +145,19 @@ L2 + the refinement). CPU-side, the next rung is optional polish; the program is
 owner-GPU-gated from here.** Artifacts: results/prizma_lm_PR-2026-09-03-13/ +
 results/pr13_exclusion_flagship_official_console.log + results/invalid_dose_archive/.
 
+## S3-READINESS ITERATION (2026-09-09 22:3x — record consolidation, no new claims)
+
+The notebook's sanity expectation was STALE (392 vs the actual 478) and its stage 6 still
+pointed at the ORIGINAL PR-08 command. Updated: sanity -> 478 (2026-09-09), stage 6 ->
+the REPAIRED flagship command (--trunk-lr-c 7.5e-4 --domain-exclusion, own
+prizma_lm_PR-2026-09-03-13_gpu ledger, labeled CONFIRMATORY — the claim already stands on
+PR-13's CPU ledger). PRIZMA_SEQ_REPORT.md gained the 09-09-night addendum (PR-09..PR-13 +
+the sign-convention correction + the invalid-dose incident). Suite 478P/10S green.
+**S3 remains owner-gated: PRIZMA_GPU_CAMPAIGN.ipynb on the owner's Colab (stages 1-5 are
+the real payload; stage 6 confirmatory). CPU-side the registered program is complete
+through S2; future CPU iterations = polish or NEW registrations only when a mechanism
+lead justifies one.**
+
 ## BACKLOG
 
 1. **[PR-03 claim] Single-pass citation bar** — status: `done (commit: see git log "PR-03 CLAIMED", 2026-09-05)`

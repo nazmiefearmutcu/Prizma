@@ -486,3 +486,23 @@ under the two-lane registry and are now part of the public record:
 
 Full table, honest-limit notes, and per-run artifacts: `README.md` §"Registered
 pre-registration outcomes" and `docs/preregistry/INDEX.md`.
+
+
+---
+
+## Addendum 2026-09-09 (night) — the routing-repair campaign: PR-09..PR-13, the flagship bar stands
+
+Five pre-registered claims in one night (all CPU at the registered §6 fallback dose; every
+run canary-checked by bit-identity against earlier ledgers; suite 392 -> 478P/10S):
+
+| id | Question | Verdict |
+|---|---|---|
+| PR-09 | Is the PR-08 boundary-routing scatter caused by trunk training re-calibrating the tissue's floors? | **NEGATIVE** — floor pinning left routing near-identical (0.405 vs 0.428). Floors exonerated. |
+| PR-10 | Is the scatter monotone in trunk plasticity (backbone lr x0.25 on C)? | **CLAIMED** — frac 0.575 >= 0.5, guards intact, B4 trunk drift +1.20 -> +0.72 (best arm). |
+| PR-11 | Does the repair transfer to the full 5-arm flagship? | **FAIL on B3 clause (b)** — clause (a) transferred (0.575) but killing pattern completion IMPROVED B-eval by 0.1995: C segments leak into B-experts via argmin. (Correction: PR-08's clause (b) had also failed; earlier prose misread the sign — outcomes unaffected.) |
+| PR-12 | Is the clause-(b) failure expert-head contamination, fixed by domain-exclusive C-routing? | **CLAIMED** — PRIM-DE B-eval == FORCED's to 4 decimals (B4 +0.5213 vs +0.5214); frac 0.976. |
+| PR-13 | Do both repairs compose into a flagship that clears ALL gated bars? | **CLAIM PASS — ALL THREE BARS** (B1 -0.267, B2 +0.299, B3 frac 0.976 AND forced_cost +0.0000). **The 'lifelong routing' wording is REINSTATED WITH EVIDENCE.** Disclosed incident: the first PR-13 launch ran at a 10x CLI dose typo — INVALID, archived (results/invalid_dose_archive/); the runner now refuses unregistered doses. |
+
+GPU-tier program unchanged (PRIZMA_GPU_CAMPAIGN.ipynb): Tier-0 -> PR-01 -> PR-02 (+ the
+confirmatory repaired-flagship stage); PR-LM-1 designs inherit L1 (C-block trunk-lr
+scaling) + L2 (domain-exclusive C-routing) + the eviction refinement.
