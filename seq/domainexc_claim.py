@@ -517,7 +517,9 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
         report["powered_cpu"] = True
     if not smoke:
         prim_de = [res[f"claim.PRIM-DE.s{s}"] for s in seeds]
-        verdict = claim_verdict(prim_de, pr11, alpha=ALPHA)
+        pr11_b = {arm: [pr11[f"claim.{arm}.s{s}"] for s in seeds]
+                  for arm in ("PRIM-LM", "FORCED-RECRUIT", "FROZEN-CHECKPOINT")}
+        verdict = claim_verdict(prim_de, pr11_b, alpha=ALPHA)
         report["verdict"] = verdict
         report["canaries"] = canaries
         res["verdict"] = verdict

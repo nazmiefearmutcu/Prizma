@@ -1,0 +1,4373 @@
+{
+  "meta": {
+    "registry": "PR-2026-09-03-12",
+    "smoke": false,
+    "lane": "CLAIM (frozen pre-registration)",
+    "doc": "docs/preregistry/2026-09-09-domain-exclusive-c.md",
+    "arms": [
+      "PRIM-DE"
+    ],
+    "claim_seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "seg": 256,
+    "batch_segs": 32,
+    "lr_rule": "FROZEN by inheritance: 3e-3 A/B both arms; backbone C dose 7.5e-4 (PR-10/PR-11 carried). NO lr-selection leg.",
+    "lever": "domain-exclusion: protected slots (committed at C start minus the a_expert) receive no C training \u2014 redirected to the a_expert; exempt from Policy A eviction during C; guarded default-off branches in route_pr08",
+    "reused_baselines": {
+      "ledger": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\prizma_lm_PR-2026-09-03-11\\powered.json",
+      "cells": [
+        "claim.PRIM-LM",
+        "claim.FORCED-RECRUIT",
+        "claim.FROZEN-CHECKPOINT"
+      ],
+      "note": "same seeds, same lever, same frozen protocol; read-only; disclosed in doc \u00a72"
+    },
+    "pinned_slices": {
+      "A_train": [
+        "text8",
+        0,
+        1000000
+      ],
+      "A_eval": [
+        "text8",
+        1000000,
+        1100000
+      ],
+      "C_retention": [
+        "text8",
+        900000,
+        1000000
+      ],
+      "C_train": [
+        "text8",
+        1100000,
+        2100000
+      ],
+      "B_train": [
+        "shakespeare",
+        0.0,
+        0.9
+      ],
+      "B_eval": [
+        "shakespeare",
+        0.9,
+        1.0
+      ]
+    },
+    "stream_lengths": {
+      "A_train": 1000000,
+      "B_train": 1003854,
+      "C_train": 1000000,
+      "A_eval": 100000,
+      "B_eval": 111540,
+      "C_retention": 100000
+    },
+    "vocab": 65,
+    "threads": 8,
+    "c_range_repair": "DOC-VS-CODE REPAIR (maintainer addendum 2026-09-08 \u2014 see the doc's dated addendum section): pre-reg section 2 pins Block C = text8[1.0M, 2.0M) while A-eval = text8[1.0M, 1.1M) \u2014 literal C training would consume the A-eval slice and bar B1 would measure training, not retention. The doc's own cited provenance (fusion_probe2 P3) skipped [1.0M, 1.1M) for exactly this reason. Pinned here: C = text8[1.1M, 2.1M) (1.0M chars, the doc's block size, A-eval clean).",
+    "c_retention_prose_note": "DOC PROSE BUG (disclosed, slice implemented as pinned): section 2 calls text8[0.9M, 1.0M) 'held-out ... disjoint from A-train's tail', but that slice IS A-train's tail ([0.9M, 1.0M) is inside [0, 1.0M)). Both B2 arms saw it equally in A-training, so B2 stays a fair adaptation comparison (C-training's in-domain benefit over the frozen floor).",
+    "bars": {
+      "P1_margin": 0.1,
+      "P2_frac_bar": 0.5,
+      "G1_margin": 0.05,
+      "G2_margin": 0.1,
+      "alpha": 0.05,
+      "holm_family": [
+        "G1",
+        "G2"
+      ],
+      "p1_p2_form": "exact means, no CI (the PR-08 B3 form)",
+      "t_isf_convention": "UPPER-TAIL p in (0, 0.5] (the PR-03 lesson)"
+    },
+    "boundary_note": "A-expert := the committed slot with max train_A at C start; frac = TRAINING-ledger fraction of C segments in the first 20 C-batches assigned to it, counting POST-REDIRECT routing",
+    "canary": "doc \u00a72, per cell: bpc_A_preB and bpc_B_postB must equal PR-11's claim.PRIM-LM.s{seed} EXACTLY \u2014 the lever activates only at C.",
+    "powered_cpu": true,
+    "compute_fallback_note": "POWERED VIA THE REGISTERED CPU FALLBACK (PR-12 doc \u00a75; precedent = PR-08 addendum 2026-09-08 #2 + the PR-09/PR-10/PR-11 powered-cpu executions): protocol-identical to the A100 tier; --powered (CUDA-refusing) remains available for the GPU session.",
+    "budget_projection": {
+      "projected_min": 5.8,
+      "warn": false,
+      "warn_threshold_min": 120.0,
+      "note": "within budget"
+    }
+  },
+  "claim.PRIM-DE.s0": {
+    "config": "PRIM-DE",
+    "E": 4,
+    "seed": 0,
+    "lr": 0.003,
+    "bpc_A_preB": 3.0297276592459217,
+    "bpc_A_postB": 3.2404801174350597,
+    "bpc_B_postB": 2.8934403310977945,
+    "bpc_Cret_postB": 3.2960155732221796,
+    "a_expert": 0,
+    "domain_protect": {
+      "slots": [
+        1
+      ],
+      "a_expert": 0,
+      "note": "committed-at-C-start slots other than the A-expert receive NO C training; their would-be segments redirect to the A-expert and they are exempt from Policy A eviction during C (guarded branches in seq/prizma_lm_claim.py route_pr08); trunk-lr C dose 7.5e-4 carried from PR-10/PR-11",
+      "redirects": 298
+    },
+    "bpc_A_postC": 2.7682792312294655,
+    "bpc_B_postC": 3.490492309730359,
+    "bpc_Cret_postC": 2.8206493771961365,
+    "fgt_A_full": 0.2614484280164562,
+    "b_degradation_B_postC": 0.5970519786325643,
+    "ledger": {
+      "n_committed": 4,
+      "a_expert": 0,
+      "recruits": [
+        {
+          "slot": 0,
+          "at_batch": 0,
+          "corpus": "A",
+          "n_novel_segs": 32,
+          "trigger_z": null,
+          "reason": "empty_pool"
+        },
+        {
+          "slot": 1,
+          "at_batch": 0,
+          "corpus": "B",
+          "n_novel_segs": 32,
+          "trigger_z_max": 25.098,
+          "reason": "novel"
+        },
+        {
+          "slot": 2,
+          "at_batch": 0,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.833,
+          "reason": "novel"
+        },
+        {
+          "slot": 3,
+          "at_batch": 32,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.95,
+          "reason": "novel"
+        },
+        {
+          "slot": 2,
+          "at_batch": 96,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.895,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 160,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.33,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 192,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.2,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 352,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 6.308,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 544,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.161,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 704,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 5.873,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 800,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 6.572,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 1184,
+          "corpus": "C",
+          "n_novel_segs": 17,
+          "trigger_z_max": 7.955,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 1216,
+          "corpus": "C",
+          "n_novel_segs": 6,
+          "trigger_z_max": 6.481,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 1408,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 7.058,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 1632,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.363,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 1856,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.352,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 1888,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 6.071,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 1952,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 5.785,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 2016,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 6.099,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 2080,
+          "corpus": "C",
+          "n_novel_segs": 3,
+          "trigger_z_max": 6.043,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 2144,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 6.231,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3040,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 6.774,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3232,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.05,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3264,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 8.002,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3296,
+          "corpus": "C",
+          "n_novel_segs": 4,
+          "trigger_z_max": 19.814,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3328,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 10.201,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3392,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.971,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3520,
+          "corpus": "C",
+          "n_novel_segs": 4,
+          "trigger_z_max": 6.878,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3552,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.985,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3584,
+          "corpus": "C",
+          "n_novel_segs": 3,
+          "trigger_z_max": 6.475,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3616,
+          "corpus": "C",
+          "n_novel_segs": 3,
+          "trigger_z_max": 7.776,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3680,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 8.708,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3712,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.608,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3776,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 6.733,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3808,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 7.334,
+          "reason": "novel_policy_a_eviction"
+        }
+      ],
+      "evictions": [
+        {
+          "victim": 2,
+          "at_batch": 96,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9985,
+            "e2": 0.0005,
+            "e3": 0.001
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260941
+        },
+        {
+          "victim": 2,
+          "at_batch": 160,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9985,
+            "e2": 0.0002,
+            "e3": 0.0012
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260942
+        },
+        {
+          "victim": 2,
+          "at_batch": 192,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9981,
+            "e2": 0.0005,
+            "e3": 0.0015
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260943
+        },
+        {
+          "victim": 2,
+          "at_batch": 352,
+          "corpus": "C",
+          "victim_n_segments": 4,
+          "train_shares_at_fire": {
+            "e0": 0.9942,
+            "e2": 0.0009,
+            "e3": 0.0049
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260944
+        },
+        {
+          "victim": 2,
+          "at_batch": 544,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9917,
+            "e2": 0.0002,
+            "e3": 0.0081
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260945
+        },
+        {
+          "victim": 2,
+          "at_batch": 704,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9909,
+            "e2": 0.0004,
+            "e3": 0.0086
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260946
+        },
+        {
+          "victim": 2,
+          "at_batch": 800,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.99,
+            "e2": 0.0004,
+            "e3": 0.0095
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260947
+        },
+        {
+          "victim": 2,
+          "at_batch": 1184,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.988,
+            "e2": 0.0002,
+            "e3": 0.0118
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260948
+        },
+        {
+          "victim": 2,
+          "at_batch": 1216,
+          "corpus": "C",
+          "victim_n_segments": 17,
+          "train_shares_at_fire": {
+            "e0": 0.9848,
+            "e2": 0.0033,
+            "e3": 0.0119
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260949
+        },
+        {
+          "victim": 2,
+          "at_batch": 1408,
+          "corpus": "C",
+          "victim_n_segments": 6,
+          "train_shares_at_fire": {
+            "e0": 0.987,
+            "e2": 0.0011,
+            "e3": 0.0119
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260950
+        },
+        {
+          "victim": 2,
+          "at_batch": 1632,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9868,
+            "e2": 0.0002,
+            "e3": 0.013
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260951
+        },
+        {
+          "victim": 2,
+          "at_batch": 1856,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9852,
+            "e2": 0.0003,
+            "e3": 0.0144
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260952
+        },
+        {
+          "victim": 2,
+          "at_batch": 1888,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9849,
+            "e2": 0.0002,
+            "e3": 0.0149
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260953
+        },
+        {
+          "victim": 2,
+          "at_batch": 1952,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9839,
+            "e2": 0.0002,
+            "e3": 0.0159
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260954
+        },
+        {
+          "victim": 2,
+          "at_batch": 2016,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9829,
+            "e2": 0.0003,
+            "e3": 0.0168
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260955
+        },
+        {
+          "victim": 2,
+          "at_batch": 2080,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9819,
+            "e2": 0.0003,
+            "e3": 0.0178
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260956
+        },
+        {
+          "victim": 2,
+          "at_batch": 2144,
+          "corpus": "C",
+          "victim_n_segments": 3,
+          "train_shares_at_fire": {
+            "e0": 0.9816,
+            "e2": 0.0005,
+            "e3": 0.0179
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260957
+        },
+        {
+          "victim": 2,
+          "at_batch": 3040,
+          "corpus": "C",
+          "victim_n_segments": 8,
+          "train_shares_at_fire": {
+            "e0": 0.9684,
+            "e2": 0.0012,
+            "e3": 0.0305
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260958
+        },
+        {
+          "victim": 2,
+          "at_batch": 3232,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9685,
+            "e2": 0.0003,
+            "e3": 0.0312
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260959
+        },
+        {
+          "victim": 2,
+          "at_batch": 3264,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9675,
+            "e2": 0.0001,
+            "e3": 0.0324
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260960
+        },
+        {
+          "victim": 2,
+          "at_batch": 3296,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9668,
+            "e2": 0.0003,
+            "e3": 0.0329
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260961
+        },
+        {
+          "victim": 2,
+          "at_batch": 3328,
+          "corpus": "C",
+          "victim_n_segments": 4,
+          "train_shares_at_fire": {
+            "e0": 0.9655,
+            "e2": 0.0006,
+            "e3": 0.0339
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260962
+        },
+        {
+          "victim": 2,
+          "at_batch": 3392,
+          "corpus": "C",
+          "victim_n_segments": 3,
+          "train_shares_at_fire": {
+            "e0": 0.9635,
+            "e2": 0.0004,
+            "e3": 0.0361
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260963
+        },
+        {
+          "victim": 2,
+          "at_batch": 3520,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9581,
+            "e2": 0.0001,
+            "e3": 0.0417
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260964
+        },
+        {
+          "victim": 2,
+          "at_batch": 3552,
+          "corpus": "C",
+          "victim_n_segments": 4,
+          "train_shares_at_fire": {
+            "e0": 0.9579,
+            "e2": 0.0005,
+            "e3": 0.0415
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260965
+        },
+        {
+          "victim": 2,
+          "at_batch": 3584,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9583,
+            "e2": 0.0001,
+            "e3": 0.0415
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260966
+        },
+        {
+          "victim": 2,
+          "at_batch": 3616,
+          "corpus": "C",
+          "victim_n_segments": 3,
+          "train_shares_at_fire": {
+            "e0": 0.9574,
+            "e2": 0.0004,
+            "e3": 0.0422
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260967
+        },
+        {
+          "victim": 2,
+          "at_batch": 3680,
+          "corpus": "C",
+          "victim_n_segments": 3,
+          "train_shares_at_fire": {
+            "e0": 0.957,
+            "e2": 0.0004,
+            "e3": 0.0426
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260968
+        },
+        {
+          "victim": 2,
+          "at_batch": 3712,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.957,
+            "e2": 0.0003,
+            "e3": 0.0427
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260969
+        },
+        {
+          "victim": 2,
+          "at_batch": 3776,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9571,
+            "e2": 0.0001,
+            "e3": 0.0428
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260970
+        },
+        {
+          "victim": 2,
+          "at_batch": 3808,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9572,
+            "e2": 0.0003,
+            "e3": 0.0426
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260971
+        }
+      ],
+      "veto_events": [],
+      "vetoed_novel_segments": 0,
+      "cap_fallback_batches": 0,
+      "cap_fallback_segments": 0,
+      "cap_events": [],
+      "per_expert": [
+        {
+          "slot": 0,
+          "committed": true,
+          "train_A": 3906,
+          "train_B": 26,
+          "train_C": 3488,
+          "train_total": 7420,
+          "mu": 1.9425,
+          "sigma": 0.0556,
+          "n_batches": 267,
+          "n_segments": 7420,
+          "is_A_expert": true
+        },
+        {
+          "slot": 1,
+          "committed": true,
+          "train_A": 0,
+          "train_B": 3895,
+          "train_C": 0,
+          "train_total": 3895,
+          "mu": 1.9928,
+          "sigma": 0.0979,
+          "n_batches": 123,
+          "n_segments": 3895,
+          "is_A_expert": false
+        },
+        {
+          "slot": 2,
+          "committed": true,
+          "train_A": 0,
+          "train_B": 0,
+          "train_C": 1,
+          "train_total": 1,
+          "mu": 2.3585,
+          "sigma": 0.2359,
+          "n_batches": 1,
+          "n_segments": 1,
+          "is_A_expert": false
+        },
+        {
+          "slot": 3,
+          "committed": true,
+          "train_A": 0,
+          "train_B": 0,
+          "train_C": 330,
+          "train_total": 330,
+          "mu": 1.9673,
+          "sigma": 0.2583,
+          "n_batches": 78,
+          "n_segments": 330,
+          "is_A_expert": false
+        }
+      ],
+      "block_majority_share": {
+        "A": 1.0,
+        "B": 0.9934,
+        "C": 0.9133
+      },
+      "train_sums_balance": {
+        "A": {
+          "sum": 3906,
+          "expected": 3906,
+          "ok": true
+        },
+        "B": {
+          "sum": 3921,
+          "expected": 3921,
+          "ok": true
+        },
+        "C": {
+          "sum": 3819,
+          "expected": 3906,
+          "ok": false
+        }
+      },
+      "eval_routes": {
+        "A_eval": [
+          194,
+          114,
+          0,
+          82
+        ],
+        "B_eval": [
+          0,
+          434,
+          1,
+          0
+        ],
+        "C_retention": [
+          212,
+          121,
+          0,
+          57
+        ]
+      },
+      "boundary_window": {
+        "c_batches_1_to": 20,
+        "segments_total": 640,
+        "to_A_expert": 591,
+        "frac_to_A_expert": 0.9234,
+        "recruit_events_c_batches_1_to_20": [
+          {
+            "slot": 2,
+            "c_batch_1based": 1,
+            "reason": "novel"
+          },
+          {
+            "slot": 3,
+            "c_batch_1based": 2,
+            "reason": "novel"
+          },
+          {
+            "slot": 2,
+            "c_batch_1based": 4,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 2,
+            "c_batch_1based": 6,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 2,
+            "c_batch_1based": 7,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 2,
+            "c_batch_1based": 12,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 2,
+            "c_batch_1based": 18,
+            "reason": "novel_policy_a_eviction"
+          }
+        ]
+      }
+    },
+    "wall_s": 69.5,
+    "arm": "PRIM-DE",
+    "cellkey": "claim.PRIM-DE.s0",
+    "cfgsig": "2765833ac139daac",
+    "complete": true
+  },
+  "claim.PRIM-DE.s1": {
+    "config": "PRIM-DE",
+    "E": 4,
+    "seed": 1,
+    "lr": 0.003,
+    "bpc_A_preB": 3.0466566153762726,
+    "bpc_A_postB": 3.2226585554714084,
+    "bpc_B_postB": 2.894042597735895,
+    "bpc_Cret_postB": 3.2774146599696525,
+    "a_expert": 0,
+    "domain_protect": {
+      "slots": [
+        1
+      ],
+      "a_expert": 0,
+      "note": "committed-at-C-start slots other than the A-expert receive NO C training; their would-be segments redirect to the A-expert and they are exempt from Policy A eviction during C (guarded branches in seq/prizma_lm_claim.py route_pr08); trunk-lr C dose 7.5e-4 carried from PR-10/PR-11",
+      "redirects": 284
+    },
+    "bpc_A_postC": 2.7605293119738685,
+    "bpc_B_postC": 3.4212288250426495,
+    "bpc_Cret_postC": 2.814415745186777,
+    "fgt_A_full": 0.2861273034024041,
+    "b_degradation_B_postC": 0.5271862273067547,
+    "ledger": {
+      "n_committed": 4,
+      "a_expert": 0,
+      "recruits": [
+        {
+          "slot": 0,
+          "at_batch": 0,
+          "corpus": "A",
+          "n_novel_segs": 32,
+          "trigger_z": null,
+          "reason": "empty_pool"
+        },
+        {
+          "slot": 1,
+          "at_batch": 0,
+          "corpus": "B",
+          "n_novel_segs": 32,
+          "trigger_z_max": 26.253,
+          "reason": "novel"
+        },
+        {
+          "slot": 2,
+          "at_batch": 0,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.847,
+          "reason": "novel"
+        },
+        {
+          "slot": 3,
+          "at_batch": 32,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 6.258,
+          "reason": "novel"
+        },
+        {
+          "slot": 3,
+          "at_batch": 64,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 6.297,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 96,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 6.209,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 160,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 7.742,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 288,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.023,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 544,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 6.382,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 640,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.23,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 704,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 6.446,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 800,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 6.727,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 1184,
+          "corpus": "C",
+          "n_novel_segs": 18,
+          "trigger_z_max": 7.628,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 1216,
+          "corpus": "C",
+          "n_novel_segs": 7,
+          "trigger_z_max": 8.713,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 1408,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 6.87,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 1888,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.895,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 1952,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.178,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 2080,
+          "corpus": "C",
+          "n_novel_segs": 3,
+          "trigger_z_max": 6.847,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 2144,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 6.816,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 2176,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.34,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 2592,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 6.171,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3040,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 6.723,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3264,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 6.603,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3296,
+          "corpus": "C",
+          "n_novel_segs": 4,
+          "trigger_z_max": 13.03,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3328,
+          "corpus": "C",
+          "n_novel_segs": 3,
+          "trigger_z_max": 6.038,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3360,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 8.167,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3392,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 8.926,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3456,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 8.245,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3488,
+          "corpus": "C",
+          "n_novel_segs": 3,
+          "trigger_z_max": 13.486,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3520,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 5.108,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3552,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 5.816,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3584,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 5.79,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3616,
+          "corpus": "C",
+          "n_novel_segs": 3,
+          "trigger_z_max": 6.645,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3648,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 10.896,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3680,
+          "corpus": "C",
+          "n_novel_segs": 5,
+          "trigger_z_max": 7.951,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3712,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.942,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3776,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 6.342,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3808,
+          "corpus": "C",
+          "n_novel_segs": 3,
+          "trigger_z_max": 8.048,
+          "reason": "novel_policy_a_eviction"
+        }
+      ],
+      "evictions": [
+        {
+          "victim": 3,
+          "at_batch": 64,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9995,
+            "e2": 0.0003,
+            "e3": 0.0003
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260958
+        },
+        {
+          "victim": 2,
+          "at_batch": 96,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9993,
+            "e2": 0.0002,
+            "e3": 0.0005
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260942
+        },
+        {
+          "victim": 2,
+          "at_batch": 160,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9993,
+            "e2": 0.0002,
+            "e3": 0.0005
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260943
+        },
+        {
+          "victim": 2,
+          "at_batch": 288,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9993,
+            "e2": 0.0002,
+            "e3": 0.0005
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260944
+        },
+        {
+          "victim": 2,
+          "at_batch": 544,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9993,
+            "e2": 0.0002,
+            "e3": 0.0004
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260945
+        },
+        {
+          "victim": 3,
+          "at_batch": 640,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9991,
+            "e2": 0.0004,
+            "e3": 0.0004
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260963
+        },
+        {
+          "victim": 3,
+          "at_batch": 704,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9993,
+            "e2": 0.0004,
+            "e3": 0.0002
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260964
+        },
+        {
+          "victim": 3,
+          "at_batch": 800,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9991,
+            "e2": 0.0004,
+            "e3": 0.0004
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260965
+        },
+        {
+          "victim": 3,
+          "at_batch": 1184,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9994,
+            "e2": 0.0004,
+            "e3": 0.0002
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260966
+        },
+        {
+          "victim": 2,
+          "at_batch": 1216,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9961,
+            "e2": 0.0004,
+            "e3": 0.0035
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260950
+        },
+        {
+          "victim": 2,
+          "at_batch": 1408,
+          "corpus": "C",
+          "victim_n_segments": 7,
+          "train_shares_at_fire": {
+            "e0": 0.9953,
+            "e2": 0.0013,
+            "e3": 0.0034
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260951
+        },
+        {
+          "victim": 2,
+          "at_batch": 1888,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9965,
+            "e2": 0.0002,
+            "e3": 0.0033
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260952
+        },
+        {
+          "victim": 2,
+          "at_batch": 1952,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9962,
+            "e2": 0.0003,
+            "e3": 0.0034
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260953
+        },
+        {
+          "victim": 2,
+          "at_batch": 2080,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9965,
+            "e2": 0.0002,
+            "e3": 0.0034
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260954
+        },
+        {
+          "victim": 2,
+          "at_batch": 2144,
+          "corpus": "C",
+          "victim_n_segments": 3,
+          "train_shares_at_fire": {
+            "e0": 0.9962,
+            "e2": 0.0005,
+            "e3": 0.0033
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260955
+        },
+        {
+          "victim": 2,
+          "at_batch": 2176,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9964,
+            "e2": 0.0003,
+            "e3": 0.0033
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260956
+        },
+        {
+          "victim": 2,
+          "at_batch": 2592,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9966,
+            "e2": 0.0003,
+            "e3": 0.0031
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260957
+        },
+        {
+          "victim": 2,
+          "at_batch": 3040,
+          "corpus": "C",
+          "victim_n_segments": 4,
+          "train_shares_at_fire": {
+            "e0": 0.9965,
+            "e2": 0.0006,
+            "e3": 0.0029
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260958
+        },
+        {
+          "victim": 2,
+          "at_batch": 3264,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9968,
+            "e2": 0.0001,
+            "e3": 0.0031
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260959
+        },
+        {
+          "victim": 2,
+          "at_batch": 3296,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9965,
+            "e2": 0.0003,
+            "e3": 0.0032
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260960
+        },
+        {
+          "victim": 2,
+          "at_batch": 3328,
+          "corpus": "C",
+          "victim_n_segments": 4,
+          "train_shares_at_fire": {
+            "e0": 0.9961,
+            "e2": 0.0006,
+            "e3": 0.0033
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260961
+        },
+        {
+          "victim": 2,
+          "at_batch": 3360,
+          "corpus": "C",
+          "victim_n_segments": 4,
+          "train_shares_at_fire": {
+            "e0": 0.9961,
+            "e2": 0.0006,
+            "e3": 0.0033
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260962
+        },
+        {
+          "victim": 2,
+          "at_batch": 3392,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9966,
+            "e2": 0.0001,
+            "e3": 0.0033
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260963
+        },
+        {
+          "victim": 2,
+          "at_batch": 3456,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9964,
+            "e2": 0.0003,
+            "e3": 0.0033
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260964
+        },
+        {
+          "victim": 2,
+          "at_batch": 3488,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9965,
+            "e2": 0.0003,
+            "e3": 0.0033
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260965
+        },
+        {
+          "victim": 2,
+          "at_batch": 3520,
+          "corpus": "C",
+          "victim_n_segments": 3,
+          "train_shares_at_fire": {
+            "e0": 0.9963,
+            "e2": 0.0004,
+            "e3": 0.0033
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260966
+        },
+        {
+          "victim": 2,
+          "at_batch": 3552,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9965,
+            "e2": 0.0003,
+            "e3": 0.0032
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260967
+        },
+        {
+          "victim": 2,
+          "at_batch": 3584,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9965,
+            "e2": 0.0003,
+            "e3": 0.0032
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260968
+        },
+        {
+          "victim": 2,
+          "at_batch": 3616,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9965,
+            "e2": 0.0003,
+            "e3": 0.0032
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260969
+        },
+        {
+          "victim": 2,
+          "at_batch": 3648,
+          "corpus": "C",
+          "victim_n_segments": 3,
+          "train_shares_at_fire": {
+            "e0": 0.9963,
+            "e2": 0.0004,
+            "e3": 0.0033
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260970
+        },
+        {
+          "victim": 2,
+          "at_batch": 3680,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9963,
+            "e2": 0.0003,
+            "e3": 0.0035
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260971
+        },
+        {
+          "victim": 2,
+          "at_batch": 3712,
+          "corpus": "C",
+          "victim_n_segments": 5,
+          "train_shares_at_fire": {
+            "e0": 0.9958,
+            "e2": 0.0007,
+            "e3": 0.0036
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260972
+        },
+        {
+          "victim": 2,
+          "at_batch": 3776,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9963,
+            "e2": 0.0001,
+            "e3": 0.0035
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260973
+        },
+        {
+          "victim": 2,
+          "at_batch": 3808,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9963,
+            "e2": 0.0001,
+            "e3": 0.0035
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260974
+        }
+      ],
+      "veto_events": [],
+      "vetoed_novel_segments": 0,
+      "cap_fallback_batches": 0,
+      "cap_fallback_segments": 0,
+      "cap_events": [],
+      "per_expert": [
+        {
+          "slot": 0,
+          "committed": true,
+          "train_A": 3906,
+          "train_B": 0,
+          "train_C": 3803,
+          "train_total": 7709,
+          "mu": 1.9369,
+          "sigma": 0.0626,
+          "n_batches": 246,
+          "n_segments": 7709,
+          "is_A_expert": true
+        },
+        {
+          "slot": 1,
+          "committed": true,
+          "train_A": 0,
+          "train_B": 3921,
+          "train_C": 0,
+          "train_total": 3921,
+          "mu": 1.9828,
+          "sigma": 0.096,
+          "n_batches": 123,
+          "n_segments": 3921,
+          "is_A_expert": false
+        },
+        {
+          "slot": 2,
+          "committed": true,
+          "train_A": 0,
+          "train_B": 0,
+          "train_C": 3,
+          "train_total": 3,
+          "mu": 2.5046,
+          "sigma": 0.2505,
+          "n_batches": 1,
+          "n_segments": 3,
+          "is_A_expert": false
+        },
+        {
+          "slot": 3,
+          "committed": true,
+          "train_A": 0,
+          "train_B": 0,
+          "train_C": 28,
+          "train_total": 28,
+          "mu": 2.558,
+          "sigma": 0.3529,
+          "n_batches": 11,
+          "n_segments": 28,
+          "is_A_expert": false
+        }
+      ],
+      "block_majority_share": {
+        "A": 1.0,
+        "B": 1.0,
+        "C": 0.9919
+      },
+      "train_sums_balance": {
+        "A": {
+          "sum": 3906,
+          "expected": 3906,
+          "ok": true
+        },
+        "B": {
+          "sum": 3921,
+          "expected": 3921,
+          "ok": true
+        },
+        "C": {
+          "sum": 3834,
+          "expected": 3906,
+          "ok": false
+        }
+      },
+      "eval_routes": {
+        "A_eval": [
+          265,
+          117,
+          6,
+          2
+        ],
+        "B_eval": [
+          0,
+          435,
+          0,
+          0
+        ],
+        "C_retention": [
+          279,
+          102,
+          7,
+          2
+        ]
+      },
+      "boundary_window": {
+        "c_batches_1_to": 20,
+        "segments_total": 640,
+        "to_A_expert": 631,
+        "frac_to_A_expert": 0.9859,
+        "recruit_events_c_batches_1_to_20": [
+          {
+            "slot": 2,
+            "c_batch_1based": 1,
+            "reason": "novel"
+          },
+          {
+            "slot": 3,
+            "c_batch_1based": 2,
+            "reason": "novel"
+          },
+          {
+            "slot": 3,
+            "c_batch_1based": 3,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 2,
+            "c_batch_1based": 4,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 2,
+            "c_batch_1based": 6,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 2,
+            "c_batch_1based": 10,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 2,
+            "c_batch_1based": 18,
+            "reason": "novel_policy_a_eviction"
+          }
+        ]
+      }
+    },
+    "wall_s": 67.2,
+    "arm": "PRIM-DE",
+    "cellkey": "claim.PRIM-DE.s1",
+    "cfgsig": "cfb33930a9a9ace5",
+    "complete": true
+  },
+  "claim.PRIM-DE.s2": {
+    "config": "PRIM-DE",
+    "E": 4,
+    "seed": 2,
+    "lr": 0.003,
+    "bpc_A_preB": 3.037672453366155,
+    "bpc_A_postB": 3.2946937833607084,
+    "bpc_B_postB": 2.8886082179779726,
+    "bpc_Cret_postB": 3.3079688472446427,
+    "a_expert": 0,
+    "domain_protect": {
+      "slots": [
+        1,
+        2,
+        3
+      ],
+      "a_expert": 0,
+      "note": "committed-at-C-start slots other than the A-expert receive NO C training; their would-be segments redirect to the A-expert and they are exempt from Policy A eviction during C (guarded branches in seq/prizma_lm_claim.py route_pr08); trunk-lr C dose 7.5e-4 carried from PR-10/PR-11",
+      "redirects": 1667
+    },
+    "bpc_A_postC": 2.7595286410623903,
+    "bpc_B_postC": 3.408671608653693,
+    "bpc_Cret_postC": 2.8112724597291865,
+    "fgt_A_full": 0.2781438123037647,
+    "b_degradation_B_postC": 0.5200633906757202,
+    "ledger": {
+      "n_committed": 4,
+      "a_expert": 0,
+      "recruits": [
+        {
+          "slot": 0,
+          "at_batch": 0,
+          "corpus": "A",
+          "n_novel_segs": 32,
+          "trigger_z": null,
+          "reason": "empty_pool"
+        },
+        {
+          "slot": 1,
+          "at_batch": 3456,
+          "corpus": "A",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.343,
+          "reason": "novel"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3808,
+          "corpus": "B",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.313,
+          "reason": "novel"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3840,
+          "corpus": "B",
+          "n_novel_segs": 1,
+          "trigger_z_max": 6.292,
+          "reason": "novel"
+        },
+        {
+          "slot": 0,
+          "at_batch": 0,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 5.793,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 0,
+          "at_batch": 32,
+          "corpus": "C",
+          "n_novel_segs": 3,
+          "trigger_z_max": 5.638,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 0,
+          "at_batch": 64,
+          "corpus": "C",
+          "n_novel_segs": 8,
+          "trigger_z_max": 9.917,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 0,
+          "at_batch": 96,
+          "corpus": "C",
+          "n_novel_segs": 3,
+          "trigger_z_max": 6.358,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 0,
+          "at_batch": 128,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 6.67,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 0,
+          "at_batch": 160,
+          "corpus": "C",
+          "n_novel_segs": 3,
+          "trigger_z_max": 10.612,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 0,
+          "at_batch": 192,
+          "corpus": "C",
+          "n_novel_segs": 12,
+          "trigger_z_max": 10.988,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 0,
+          "at_batch": 224,
+          "corpus": "C",
+          "n_novel_segs": 3,
+          "trigger_z_max": 6.751,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 0,
+          "at_batch": 288,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.541,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 0,
+          "at_batch": 352,
+          "corpus": "C",
+          "n_novel_segs": 3,
+          "trigger_z_max": 8.915,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 0,
+          "at_batch": 416,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.104,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 0,
+          "at_batch": 448,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.131,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 0,
+          "at_batch": 480,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 6.52,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 0,
+          "at_batch": 544,
+          "corpus": "C",
+          "n_novel_segs": 9,
+          "trigger_z_max": 10.537,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 0,
+          "at_batch": 640,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.325,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 0,
+          "at_batch": 736,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 6.155,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 0,
+          "at_batch": 1184,
+          "corpus": "C",
+          "n_novel_segs": 10,
+          "trigger_z_max": 10.855,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 0,
+          "at_batch": 1216,
+          "corpus": "C",
+          "n_novel_segs": 6,
+          "trigger_z_max": 7.728,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 0,
+          "at_batch": 3296,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 10.485,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 0,
+          "at_batch": 3328,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.427,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 0,
+          "at_batch": 3360,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.664,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 0,
+          "at_batch": 3392,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 6.768,
+          "reason": "novel_policy_a_eviction"
+        }
+      ],
+      "evictions": [
+        {
+          "victim": 0,
+          "at_batch": 0,
+          "corpus": "C",
+          "victim_n_segments": 4114,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260907
+        },
+        {
+          "victim": 0,
+          "at_batch": 32,
+          "corpus": "C",
+          "victim_n_segments": 32,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260908
+        },
+        {
+          "victim": 0,
+          "at_batch": 64,
+          "corpus": "C",
+          "victim_n_segments": 32,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260909
+        },
+        {
+          "victim": 0,
+          "at_batch": 96,
+          "corpus": "C",
+          "victim_n_segments": 32,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260910
+        },
+        {
+          "victim": 0,
+          "at_batch": 128,
+          "corpus": "C",
+          "victim_n_segments": 32,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260911
+        },
+        {
+          "victim": 0,
+          "at_batch": 160,
+          "corpus": "C",
+          "victim_n_segments": 32,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260912
+        },
+        {
+          "victim": 0,
+          "at_batch": 192,
+          "corpus": "C",
+          "victim_n_segments": 32,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260913
+        },
+        {
+          "victim": 0,
+          "at_batch": 224,
+          "corpus": "C",
+          "victim_n_segments": 32,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260914
+        },
+        {
+          "victim": 0,
+          "at_batch": 288,
+          "corpus": "C",
+          "victim_n_segments": 64,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260915
+        },
+        {
+          "victim": 0,
+          "at_batch": 352,
+          "corpus": "C",
+          "victim_n_segments": 64,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260916
+        },
+        {
+          "victim": 0,
+          "at_batch": 416,
+          "corpus": "C",
+          "victim_n_segments": 64,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260917
+        },
+        {
+          "victim": 0,
+          "at_batch": 448,
+          "corpus": "C",
+          "victim_n_segments": 32,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260918
+        },
+        {
+          "victim": 0,
+          "at_batch": 480,
+          "corpus": "C",
+          "victim_n_segments": 32,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260919
+        },
+        {
+          "victim": 0,
+          "at_batch": 544,
+          "corpus": "C",
+          "victim_n_segments": 64,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260920
+        },
+        {
+          "victim": 0,
+          "at_batch": 640,
+          "corpus": "C",
+          "victim_n_segments": 96,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260921
+        },
+        {
+          "victim": 0,
+          "at_batch": 736,
+          "corpus": "C",
+          "victim_n_segments": 96,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260922
+        },
+        {
+          "victim": 0,
+          "at_batch": 1184,
+          "corpus": "C",
+          "victim_n_segments": 448,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260923
+        },
+        {
+          "victim": 0,
+          "at_batch": 1216,
+          "corpus": "C",
+          "victim_n_segments": 32,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260924
+        },
+        {
+          "victim": 0,
+          "at_batch": 3296,
+          "corpus": "C",
+          "victim_n_segments": 2080,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260925
+        },
+        {
+          "victim": 0,
+          "at_batch": 3328,
+          "corpus": "C",
+          "victim_n_segments": 32,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260926
+        },
+        {
+          "victim": 0,
+          "at_batch": 3360,
+          "corpus": "C",
+          "victim_n_segments": 32,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260927
+        },
+        {
+          "victim": 0,
+          "at_batch": 3392,
+          "corpus": "C",
+          "victim_n_segments": 32,
+          "train_shares_at_fire": {
+            "e0": 1.0
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260928
+        }
+      ],
+      "veto_events": [
+        {
+          "at_batch": 0,
+          "corpus": "B",
+          "n_vetoed_segs": 2,
+          "owner_slots": [
+            1
+          ],
+          "z_first8": [
+            5.617,
+            5.721
+          ],
+          "freeze_min_seen": 300
+        }
+      ],
+      "vetoed_novel_segments": 2,
+      "cap_fallback_batches": 0,
+      "cap_fallback_segments": 0,
+      "cap_events": [],
+      "per_expert": [
+        {
+          "slot": 0,
+          "committed": true,
+          "train_A": 3905,
+          "train_B": 209,
+          "train_C": -3600,
+          "train_total": 514,
+          "mu": 1.9944,
+          "sigma": 0.1381,
+          "n_batches": 17,
+          "n_segments": 514,
+          "is_A_expert": true
+        },
+        {
+          "slot": 1,
+          "committed": true,
+          "train_A": 1,
+          "train_B": 3710,
+          "train_C": 0,
+          "train_total": 3711,
+          "mu": 1.9844,
+          "sigma": 0.0846,
+          "n_batches": 124,
+          "n_segments": 3711,
+          "is_A_expert": false
+        },
+        {
+          "slot": 2,
+          "committed": true,
+          "train_A": 0,
+          "train_B": 1,
+          "train_C": 0,
+          "train_total": 1,
+          "mu": 2.4884,
+          "sigma": 0.2488,
+          "n_batches": 1,
+          "n_segments": 1,
+          "is_A_expert": false
+        },
+        {
+          "slot": 3,
+          "committed": true,
+          "train_A": 0,
+          "train_B": 1,
+          "train_C": 0,
+          "train_total": 1,
+          "mu": 2.4712,
+          "sigma": 0.2471,
+          "n_batches": 1,
+          "n_segments": 1,
+          "is_A_expert": false
+        }
+      ],
+      "block_majority_share": {
+        "A": 0.9997,
+        "B": 0.9462,
+        "C": -0.0
+      },
+      "train_sums_balance": {
+        "A": {
+          "sum": 3906,
+          "expected": 3906,
+          "ok": true
+        },
+        "B": {
+          "sum": 3921,
+          "expected": 3921,
+          "ok": true
+        },
+        "C": {
+          "sum": -3600,
+          "expected": 3906,
+          "ok": false
+        }
+      },
+      "eval_routes": {
+        "A_eval": [
+          139,
+          248,
+          2,
+          1
+        ],
+        "B_eval": [
+          0,
+          433,
+          2,
+          0
+        ],
+        "C_retention": [
+          209,
+          169,
+          9,
+          3
+        ]
+      },
+      "boundary_window": {
+        "c_batches_1_to": 20,
+        "segments_total": 640,
+        "to_A_expert": 640,
+        "frac_to_A_expert": 1.0,
+        "recruit_events_c_batches_1_to_20": [
+          {
+            "slot": 0,
+            "c_batch_1based": 1,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 0,
+            "c_batch_1based": 2,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 0,
+            "c_batch_1based": 3,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 0,
+            "c_batch_1based": 4,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 0,
+            "c_batch_1based": 5,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 0,
+            "c_batch_1based": 6,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 0,
+            "c_batch_1based": 7,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 0,
+            "c_batch_1based": 8,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 0,
+            "c_batch_1based": 10,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 0,
+            "c_batch_1based": 12,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 0,
+            "c_batch_1based": 14,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 0,
+            "c_batch_1based": 15,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 0,
+            "c_batch_1based": 16,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 0,
+            "c_batch_1based": 18,
+            "reason": "novel_policy_a_eviction"
+          }
+        ]
+      }
+    },
+    "wall_s": 66.5,
+    "arm": "PRIM-DE",
+    "cellkey": "claim.PRIM-DE.s2",
+    "cfgsig": "46c2b0210eef0127",
+    "complete": true
+  },
+  "claim.PRIM-DE.s3": {
+    "config": "PRIM-DE",
+    "E": 4,
+    "seed": 3,
+    "lr": 0.003,
+    "bpc_A_preB": 3.0526445221019287,
+    "bpc_A_postB": 3.208983807434719,
+    "bpc_B_postB": 2.897408074438153,
+    "bpc_Cret_postB": 3.2602350219274037,
+    "a_expert": 0,
+    "domain_protect": {
+      "slots": [
+        1,
+        2
+      ],
+      "a_expert": 0,
+      "note": "committed-at-C-start slots other than the A-expert receive NO C training; their would-be segments redirect to the A-expert and they are exempt from Policy A eviction during C (guarded branches in seq/prizma_lm_claim.py route_pr08); trunk-lr C dose 7.5e-4 carried from PR-10/PR-11",
+      "redirects": 431
+    },
+    "bpc_A_postC": 2.793810068097522,
+    "bpc_B_postC": 3.4092595663352414,
+    "bpc_Cret_postC": 2.831903159853161,
+    "fgt_A_full": 0.25883445400440674,
+    "b_degradation_B_postC": 0.5118514918970885,
+    "ledger": {
+      "n_committed": 4,
+      "a_expert": 0,
+      "recruits": [
+        {
+          "slot": 0,
+          "at_batch": 0,
+          "corpus": "A",
+          "n_novel_segs": 32,
+          "trigger_z": null,
+          "reason": "empty_pool"
+        },
+        {
+          "slot": 1,
+          "at_batch": 0,
+          "corpus": "B",
+          "n_novel_segs": 32,
+          "trigger_z_max": 23.566,
+          "reason": "novel"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3840,
+          "corpus": "B",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.854,
+          "reason": "novel"
+        },
+        {
+          "slot": 3,
+          "at_batch": 32,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.265,
+          "reason": "novel"
+        },
+        {
+          "slot": 3,
+          "at_batch": 96,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 6.038,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 160,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 7.839,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 192,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 5.242,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 288,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.051,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 704,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 6.116,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 800,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 7.087,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 1184,
+          "corpus": "C",
+          "n_novel_segs": 15,
+          "trigger_z_max": 8.831,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 1216,
+          "corpus": "C",
+          "n_novel_segs": 4,
+          "trigger_z_max": 6.034,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 1408,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 6.946,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 1856,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.029,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 1888,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 10.832,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 2144,
+          "corpus": "C",
+          "n_novel_segs": 3,
+          "trigger_z_max": 5.68,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3040,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 6.644,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3264,
+          "corpus": "C",
+          "n_novel_segs": 3,
+          "trigger_z_max": 8.049,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3296,
+          "corpus": "C",
+          "n_novel_segs": 5,
+          "trigger_z_max": 13.959,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3328,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 5.883,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3360,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 7.971,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3392,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 8.64,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3456,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 7.989,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3488,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 10.025,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3520,
+          "corpus": "C",
+          "n_novel_segs": 5,
+          "trigger_z_max": 5.916,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3552,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 5.848,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3584,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 6.506,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3616,
+          "corpus": "C",
+          "n_novel_segs": 5,
+          "trigger_z_max": 7.331,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3648,
+          "corpus": "C",
+          "n_novel_segs": 3,
+          "trigger_z_max": 10.829,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3680,
+          "corpus": "C",
+          "n_novel_segs": 4,
+          "trigger_z_max": 9.363,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3712,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.347,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3776,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 6.524,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3808,
+          "corpus": "C",
+          "n_novel_segs": 4,
+          "trigger_z_max": 9.227,
+          "reason": "novel_policy_a_eviction"
+        }
+      ],
+      "evictions": [
+        {
+          "victim": 3,
+          "at_batch": 96,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9995,
+            "e3": 0.0005
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260958
+        },
+        {
+          "victim": 3,
+          "at_batch": 160,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9998,
+            "e3": 0.0002
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260959
+        },
+        {
+          "victim": 3,
+          "at_batch": 192,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9995,
+            "e3": 0.0005
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260960
+        },
+        {
+          "victim": 3,
+          "at_batch": 288,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9995,
+            "e3": 0.0005
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260961
+        },
+        {
+          "victim": 3,
+          "at_batch": 704,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9998,
+            "e3": 0.0002
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260962
+        },
+        {
+          "victim": 3,
+          "at_batch": 800,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9996,
+            "e3": 0.0004
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260963
+        },
+        {
+          "victim": 3,
+          "at_batch": 1184,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9998,
+            "e3": 0.0002
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260964
+        },
+        {
+          "victim": 3,
+          "at_batch": 1216,
+          "corpus": "C",
+          "victim_n_segments": 15,
+          "train_shares_at_fire": {
+            "e0": 0.9971,
+            "e3": 0.0029
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260965
+        },
+        {
+          "victim": 3,
+          "at_batch": 1408,
+          "corpus": "C",
+          "victim_n_segments": 4,
+          "train_shares_at_fire": {
+            "e0": 0.9992,
+            "e3": 0.0008
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260966
+        },
+        {
+          "victim": 3,
+          "at_batch": 1856,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9998,
+            "e3": 0.0002
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260967
+        },
+        {
+          "victim": 3,
+          "at_batch": 1888,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9998,
+            "e3": 0.0002
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260968
+        },
+        {
+          "victim": 3,
+          "at_batch": 2144,
+          "corpus": "C",
+          "victim_n_segments": 3,
+          "train_shares_at_fire": {
+            "e0": 0.9995,
+            "e3": 0.0005
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260969
+        },
+        {
+          "victim": 3,
+          "at_batch": 3040,
+          "corpus": "C",
+          "victim_n_segments": 3,
+          "train_shares_at_fire": {
+            "e0": 0.9996,
+            "e3": 0.0004
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260970
+        },
+        {
+          "victim": 3,
+          "at_batch": 3264,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9999,
+            "e3": 0.0001
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260971
+        },
+        {
+          "victim": 3,
+          "at_batch": 3296,
+          "corpus": "C",
+          "victim_n_segments": 3,
+          "train_shares_at_fire": {
+            "e0": 0.9996,
+            "e3": 0.0004
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260972
+        },
+        {
+          "victim": 3,
+          "at_batch": 3328,
+          "corpus": "C",
+          "victim_n_segments": 5,
+          "train_shares_at_fire": {
+            "e0": 0.9993,
+            "e3": 0.0007
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260973
+        },
+        {
+          "victim": 3,
+          "at_batch": 3360,
+          "corpus": "C",
+          "victim_n_segments": 4,
+          "train_shares_at_fire": {
+            "e0": 0.9994,
+            "e3": 0.0006
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260974
+        },
+        {
+          "victim": 3,
+          "at_batch": 3392,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9999,
+            "e3": 0.0001
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260975
+        },
+        {
+          "victim": 3,
+          "at_batch": 3456,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9999,
+            "e3": 0.0001
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260976
+        },
+        {
+          "victim": 3,
+          "at_batch": 3488,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9997,
+            "e3": 0.0003
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260977
+        },
+        {
+          "victim": 3,
+          "at_batch": 3520,
+          "corpus": "C",
+          "victim_n_segments": 3,
+          "train_shares_at_fire": {
+            "e0": 0.9996,
+            "e3": 0.0004
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260978
+        },
+        {
+          "victim": 3,
+          "at_batch": 3552,
+          "corpus": "C",
+          "victim_n_segments": 5,
+          "train_shares_at_fire": {
+            "e0": 0.9993,
+            "e3": 0.0007
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260979
+        },
+        {
+          "victim": 3,
+          "at_batch": 3584,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9997,
+            "e3": 0.0003
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260980
+        },
+        {
+          "victim": 3,
+          "at_batch": 3616,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9997,
+            "e3": 0.0003
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260981
+        },
+        {
+          "victim": 3,
+          "at_batch": 3648,
+          "corpus": "C",
+          "victim_n_segments": 5,
+          "train_shares_at_fire": {
+            "e0": 0.9993,
+            "e3": 0.0007
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260982
+        },
+        {
+          "victim": 3,
+          "at_batch": 3680,
+          "corpus": "C",
+          "victim_n_segments": 3,
+          "train_shares_at_fire": {
+            "e0": 0.9996,
+            "e3": 0.0004
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260983
+        },
+        {
+          "victim": 3,
+          "at_batch": 3712,
+          "corpus": "C",
+          "victim_n_segments": 4,
+          "train_shares_at_fire": {
+            "e0": 0.9995,
+            "e3": 0.0005
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260984
+        },
+        {
+          "victim": 3,
+          "at_batch": 3776,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9999,
+            "e3": 0.0001
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260985
+        },
+        {
+          "victim": 3,
+          "at_batch": 3808,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9997,
+            "e3": 0.0003
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260986
+        }
+      ],
+      "veto_events": [],
+      "vetoed_novel_segments": 0,
+      "cap_fallback_batches": 0,
+      "cap_fallback_segments": 0,
+      "cap_events": [],
+      "per_expert": [
+        {
+          "slot": 0,
+          "committed": true,
+          "train_A": 3906,
+          "train_B": 0,
+          "train_C": 3820,
+          "train_total": 7726,
+          "mu": 1.9422,
+          "sigma": 0.0568,
+          "n_batches": 246,
+          "n_segments": 7726,
+          "is_A_expert": true
+        },
+        {
+          "slot": 1,
+          "committed": true,
+          "train_A": 0,
+          "train_B": 3920,
+          "train_C": 0,
+          "train_total": 3920,
+          "mu": 2.0057,
+          "sigma": 0.0909,
+          "n_batches": 123,
+          "n_segments": 3920,
+          "is_A_expert": false
+        },
+        {
+          "slot": 2,
+          "committed": true,
+          "train_A": 0,
+          "train_B": 1,
+          "train_C": 0,
+          "train_total": 1,
+          "mu": 2.5868,
+          "sigma": 0.2587,
+          "n_batches": 1,
+          "n_segments": 1,
+          "is_A_expert": false
+        },
+        {
+          "slot": 3,
+          "committed": true,
+          "train_A": 0,
+          "train_B": 0,
+          "train_C": 4,
+          "train_total": 4,
+          "mu": 2.5754,
+          "sigma": 0.2575,
+          "n_batches": 1,
+          "n_segments": 4,
+          "is_A_expert": false
+        }
+      ],
+      "block_majority_share": {
+        "A": 1.0,
+        "B": 0.9997,
+        "C": 0.999
+      },
+      "train_sums_balance": {
+        "A": {
+          "sum": 3906,
+          "expected": 3906,
+          "ok": true
+        },
+        "B": {
+          "sum": 3921,
+          "expected": 3921,
+          "ok": true
+        },
+        "C": {
+          "sum": 3824,
+          "expected": 3906,
+          "ok": false
+        }
+      },
+      "eval_routes": {
+        "A_eval": [
+          243,
+          147,
+          0,
+          0
+        ],
+        "B_eval": [
+          0,
+          435,
+          0,
+          0
+        ],
+        "C_retention": [
+          263,
+          126,
+          0,
+          1
+        ]
+      },
+      "boundary_window": {
+        "c_batches_1_to": 20,
+        "segments_total": 640,
+        "to_A_expert": 632,
+        "frac_to_A_expert": 0.9875,
+        "recruit_events_c_batches_1_to_20": [
+          {
+            "slot": 3,
+            "c_batch_1based": 2,
+            "reason": "novel"
+          },
+          {
+            "slot": 3,
+            "c_batch_1based": 4,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 3,
+            "c_batch_1based": 6,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 3,
+            "c_batch_1based": 7,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 3,
+            "c_batch_1based": 10,
+            "reason": "novel_policy_a_eviction"
+          }
+        ]
+      }
+    },
+    "wall_s": 67.2,
+    "arm": "PRIM-DE",
+    "cellkey": "claim.PRIM-DE.s3",
+    "cfgsig": "3122583dcc4e6e92",
+    "complete": true
+  },
+  "claim.PRIM-DE.s4": {
+    "config": "PRIM-DE",
+    "E": 4,
+    "seed": 4,
+    "lr": 0.003,
+    "bpc_A_preB": 2.9793155225298893,
+    "bpc_A_postB": 3.2333645866148704,
+    "bpc_B_postB": 2.881976010290421,
+    "bpc_Cret_postB": 3.281324465928403,
+    "a_expert": 0,
+    "domain_protect": {
+      "slots": [
+        1,
+        2
+      ],
+      "a_expert": 0,
+      "note": "committed-at-C-start slots other than the A-expert receive NO C training; their would-be segments redirect to the A-expert and they are exempt from Policy A eviction during C (guarded branches in seq/prizma_lm_claim.py route_pr08); trunk-lr C dose 7.5e-4 carried from PR-10/PR-11",
+      "redirects": 367
+    },
+    "bpc_A_postC": 2.7450864305887914,
+    "bpc_B_postC": 3.3325441263642097,
+    "bpc_Cret_postC": 2.7959905435217687,
+    "fgt_A_full": 0.23422909194109787,
+    "b_degradation_B_postC": 0.4505681160737889,
+    "ledger": {
+      "n_committed": 4,
+      "a_expert": 0,
+      "recruits": [
+        {
+          "slot": 0,
+          "at_batch": 0,
+          "corpus": "A",
+          "n_novel_segs": 32,
+          "trigger_z": null,
+          "reason": "empty_pool"
+        },
+        {
+          "slot": 1,
+          "at_batch": 3456,
+          "corpus": "A",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.182,
+          "reason": "novel"
+        },
+        {
+          "slot": 2,
+          "at_batch": 3840,
+          "corpus": "B",
+          "n_novel_segs": 1,
+          "trigger_z_max": 6.059,
+          "reason": "novel"
+        },
+        {
+          "slot": 3,
+          "at_batch": 32,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 6.559,
+          "reason": "novel"
+        },
+        {
+          "slot": 3,
+          "at_batch": 64,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 8.837,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 96,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.879,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 160,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 7.27,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 192,
+          "corpus": "C",
+          "n_novel_segs": 4,
+          "trigger_z_max": 5.652,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 288,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.001,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 640,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.041,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 704,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.191,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 800,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 6.176,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 896,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.964,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 1184,
+          "corpus": "C",
+          "n_novel_segs": 16,
+          "trigger_z_max": 7.798,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 1216,
+          "corpus": "C",
+          "n_novel_segs": 6,
+          "trigger_z_max": 9.059,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 1888,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 11.897,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 1952,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.265,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 2080,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 5.669,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 2144,
+          "corpus": "C",
+          "n_novel_segs": 3,
+          "trigger_z_max": 5.911,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 2592,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.496,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3040,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 6.793,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3264,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 6.548,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3296,
+          "corpus": "C",
+          "n_novel_segs": 5,
+          "trigger_z_max": 14.489,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3328,
+          "corpus": "C",
+          "n_novel_segs": 3,
+          "trigger_z_max": 9.218,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3360,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 8.779,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3392,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 9.659,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3456,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 8.866,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3488,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 10.709,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3520,
+          "corpus": "C",
+          "n_novel_segs": 3,
+          "trigger_z_max": 6.059,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3552,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.534,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3584,
+          "corpus": "C",
+          "n_novel_segs": 3,
+          "trigger_z_max": 6.62,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3616,
+          "corpus": "C",
+          "n_novel_segs": 4,
+          "trigger_z_max": 7.28,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3648,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 10.246,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3680,
+          "corpus": "C",
+          "n_novel_segs": 4,
+          "trigger_z_max": 8.365,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3712,
+          "corpus": "C",
+          "n_novel_segs": 1,
+          "trigger_z_max": 5.218,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3776,
+          "corpus": "C",
+          "n_novel_segs": 2,
+          "trigger_z_max": 5.819,
+          "reason": "novel_policy_a_eviction"
+        },
+        {
+          "slot": 3,
+          "at_batch": 3808,
+          "corpus": "C",
+          "n_novel_segs": 4,
+          "trigger_z_max": 7.921,
+          "reason": "novel_policy_a_eviction"
+        }
+      ],
+      "evictions": [
+        {
+          "victim": 3,
+          "at_batch": 64,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9997,
+            "e3": 0.0003
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260958
+        },
+        {
+          "victim": 3,
+          "at_batch": 96,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9998,
+            "e3": 0.0003
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260959
+        },
+        {
+          "victim": 3,
+          "at_batch": 160,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9998,
+            "e3": 0.0002
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260960
+        },
+        {
+          "victim": 3,
+          "at_batch": 192,
+          "corpus": "C",
+          "victim_n_segments": 3,
+          "train_shares_at_fire": {
+            "e0": 0.9993,
+            "e3": 0.0007
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260961
+        },
+        {
+          "victim": 3,
+          "at_batch": 288,
+          "corpus": "C",
+          "victim_n_segments": 4,
+          "train_shares_at_fire": {
+            "e0": 0.999,
+            "e3": 0.001
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260962
+        },
+        {
+          "victim": 3,
+          "at_batch": 640,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9998,
+            "e3": 0.0002
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260963
+        },
+        {
+          "victim": 3,
+          "at_batch": 704,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9998,
+            "e3": 0.0002
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260964
+        },
+        {
+          "victim": 3,
+          "at_batch": 800,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9998,
+            "e3": 0.0002
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260965
+        },
+        {
+          "victim": 3,
+          "at_batch": 896,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9998,
+            "e3": 0.0002
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260966
+        },
+        {
+          "victim": 3,
+          "at_batch": 1184,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9998,
+            "e3": 0.0002
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260967
+        },
+        {
+          "victim": 3,
+          "at_batch": 1216,
+          "corpus": "C",
+          "victim_n_segments": 19,
+          "train_shares_at_fire": {
+            "e0": 0.9963,
+            "e3": 0.0037
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260968
+        },
+        {
+          "victim": 3,
+          "at_batch": 1888,
+          "corpus": "C",
+          "victim_n_segments": 7,
+          "train_shares_at_fire": {
+            "e0": 0.9988,
+            "e3": 0.0012
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260969
+        },
+        {
+          "victim": 3,
+          "at_batch": 1952,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9997,
+            "e3": 0.0003
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260970
+        },
+        {
+          "victim": 3,
+          "at_batch": 2080,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9998,
+            "e3": 0.0002
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260971
+        },
+        {
+          "victim": 3,
+          "at_batch": 2144,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9997,
+            "e3": 0.0003
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260972
+        },
+        {
+          "victim": 3,
+          "at_batch": 2592,
+          "corpus": "C",
+          "victim_n_segments": 3,
+          "train_shares_at_fire": {
+            "e0": 0.9995,
+            "e3": 0.0005
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260973
+        },
+        {
+          "victim": 3,
+          "at_batch": 3040,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9997,
+            "e3": 0.0003
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260974
+        },
+        {
+          "victim": 3,
+          "at_batch": 3264,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9999,
+            "e3": 0.0001
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260975
+        },
+        {
+          "victim": 3,
+          "at_batch": 3296,
+          "corpus": "C",
+          "victim_n_segments": 3,
+          "train_shares_at_fire": {
+            "e0": 0.9996,
+            "e3": 0.0004
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260976
+        },
+        {
+          "victim": 3,
+          "at_batch": 3328,
+          "corpus": "C",
+          "victim_n_segments": 5,
+          "train_shares_at_fire": {
+            "e0": 0.9993,
+            "e3": 0.0007
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260977
+        },
+        {
+          "victim": 3,
+          "at_batch": 3360,
+          "corpus": "C",
+          "victim_n_segments": 4,
+          "train_shares_at_fire": {
+            "e0": 0.9994,
+            "e3": 0.0006
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260978
+        },
+        {
+          "victim": 3,
+          "at_batch": 3392,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9999,
+            "e3": 0.0001
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260979
+        },
+        {
+          "victim": 3,
+          "at_batch": 3456,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9997,
+            "e3": 0.0003
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260980
+        },
+        {
+          "victim": 3,
+          "at_batch": 3488,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9997,
+            "e3": 0.0003
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260981
+        },
+        {
+          "victim": 3,
+          "at_batch": 3520,
+          "corpus": "C",
+          "victim_n_segments": 3,
+          "train_shares_at_fire": {
+            "e0": 0.9996,
+            "e3": 0.0004
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260982
+        },
+        {
+          "victim": 3,
+          "at_batch": 3552,
+          "corpus": "C",
+          "victim_n_segments": 3,
+          "train_shares_at_fire": {
+            "e0": 0.9996,
+            "e3": 0.0004
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260983
+        },
+        {
+          "victim": 3,
+          "at_batch": 3584,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9999,
+            "e3": 0.0001
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260984
+        },
+        {
+          "victim": 3,
+          "at_batch": 3616,
+          "corpus": "C",
+          "victim_n_segments": 3,
+          "train_shares_at_fire": {
+            "e0": 0.9996,
+            "e3": 0.0004
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260985
+        },
+        {
+          "victim": 3,
+          "at_batch": 3648,
+          "corpus": "C",
+          "victim_n_segments": 4,
+          "train_shares_at_fire": {
+            "e0": 0.9995,
+            "e3": 0.0005
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260986
+        },
+        {
+          "victim": 3,
+          "at_batch": 3680,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9997,
+            "e3": 0.0003
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260987
+        },
+        {
+          "victim": 3,
+          "at_batch": 3712,
+          "corpus": "C",
+          "victim_n_segments": 4,
+          "train_shares_at_fire": {
+            "e0": 0.9995,
+            "e3": 0.0005
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260988
+        },
+        {
+          "victim": 3,
+          "at_batch": 3776,
+          "corpus": "C",
+          "victim_n_segments": 1,
+          "train_shares_at_fire": {
+            "e0": 0.9999,
+            "e3": 0.0001
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260989
+        },
+        {
+          "victim": 3,
+          "at_batch": 3808,
+          "corpus": "C",
+          "victim_n_segments": 2,
+          "train_shares_at_fire": {
+            "e0": 0.9997,
+            "e3": 0.0003
+          },
+          "m_max": 4,
+          "policy": "A (lowest lifetime routing share; tie -> highest slot)",
+          "fresh_head_seed": 20260990
+        }
+      ],
+      "veto_events": [],
+      "vetoed_novel_segments": 0,
+      "cap_fallback_batches": 0,
+      "cap_fallback_segments": 0,
+      "cap_events": [],
+      "per_expert": [
+        {
+          "slot": 0,
+          "committed": true,
+          "train_A": 3905,
+          "train_B": 0,
+          "train_C": 3810,
+          "train_total": 7715,
+          "mu": 1.9184,
+          "sigma": 0.0625,
+          "n_batches": 246,
+          "n_segments": 7715,
+          "is_A_expert": true
+        },
+        {
+          "slot": 1,
+          "committed": true,
+          "train_A": 1,
+          "train_B": 3920,
+          "train_C": 0,
+          "train_total": 3921,
+          "mu": 1.9706,
+          "sigma": 0.0856,
+          "n_batches": 124,
+          "n_segments": 3921,
+          "is_A_expert": false
+        },
+        {
+          "slot": 2,
+          "committed": true,
+          "train_A": 0,
+          "train_B": 1,
+          "train_C": 0,
+          "train_total": 1,
+          "mu": 2.6031,
+          "sigma": 0.2603,
+          "n_batches": 1,
+          "n_segments": 1,
+          "is_A_expert": false
+        },
+        {
+          "slot": 3,
+          "committed": true,
+          "train_A": 0,
+          "train_B": 0,
+          "train_C": 4,
+          "train_total": 4,
+          "mu": 2.3645,
+          "sigma": 0.2365,
+          "n_batches": 1,
+          "n_segments": 4,
+          "is_A_expert": false
+        }
+      ],
+      "block_majority_share": {
+        "A": 0.9997,
+        "B": 0.9997,
+        "C": 0.999
+      },
+      "train_sums_balance": {
+        "A": {
+          "sum": 3906,
+          "expected": 3906,
+          "ok": true
+        },
+        "B": {
+          "sum": 3921,
+          "expected": 3921,
+          "ok": true
+        },
+        "C": {
+          "sum": 3814,
+          "expected": 3906,
+          "ok": false
+        }
+      },
+      "eval_routes": {
+        "A_eval": [
+          298,
+          88,
+          4,
+          0
+        ],
+        "B_eval": [
+          0,
+          435,
+          0,
+          0
+        ],
+        "C_retention": [
+          278,
+          106,
+          3,
+          3
+        ]
+      },
+      "boundary_window": {
+        "c_batches_1_to": 20,
+        "segments_total": 640,
+        "to_A_expert": 629,
+        "frac_to_A_expert": 0.9828,
+        "recruit_events_c_batches_1_to_20": [
+          {
+            "slot": 3,
+            "c_batch_1based": 2,
+            "reason": "novel"
+          },
+          {
+            "slot": 3,
+            "c_batch_1based": 3,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 3,
+            "c_batch_1based": 4,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 3,
+            "c_batch_1based": 6,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 3,
+            "c_batch_1based": 7,
+            "reason": "novel_policy_a_eviction"
+          },
+          {
+            "slot": 3,
+            "c_batch_1based": 10,
+            "reason": "novel_policy_a_eviction"
+          }
+        ]
+      }
+    },
+    "wall_s": 68.2,
+    "arm": "PRIM-DE",
+    "cellkey": "claim.PRIM-DE.s4",
+    "cfgsig": "582b54ed71fd52c3",
+    "complete": true
+  }
+}

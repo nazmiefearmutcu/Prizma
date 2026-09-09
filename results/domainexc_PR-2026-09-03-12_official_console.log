@@ -1,0 +1,21 @@
+[pr12] corpora: A=3906 B=3921 C=3906 segs; eval A=390 B=435 Cret=390; vocab=65; smoke=False; lr=0.003 + backbone_C=0.00075 (carried); baselines=C:\Users\Kullanıcı\Prizma\results\prizma_lm_PR-2026-09-03-11\powered.json
+[pr12] budget projection from first cell: 5.8 min for 5 cells
+[pr12] PRIM-DE seed 0: A_preB=3.030 A_postC=2.768 B_postB=2.893 B_postC=3.490 Cret_postC=2.821 frac_C(1-20)to_A=0.9234 protect=[1] redirects=298 wall=69.5s
+[pr12] PRIM-DE seed 1: A_preB=3.047 A_postC=2.761 B_postB=2.894 B_postC=3.421 Cret_postC=2.814 frac_C(1-20)to_A=0.9859 protect=[1] redirects=284 wall=67.2s
+[pr12] PRIM-DE seed 2: A_preB=3.038 A_postC=2.760 B_postB=2.889 B_postC=3.409 Cret_postC=2.811 frac_C(1-20)to_A=1.0 protect=[1, 2, 3] redirects=1667 wall=66.5s
+[pr12] PRIM-DE seed 3: A_preB=3.053 A_postC=2.794 B_postB=2.897 B_postC=3.409 Cret_postC=2.832 frac_C(1-20)to_A=0.9875 protect=[1, 2] redirects=431 wall=67.2s
+[pr12] PRIM-DE seed 4: A_preB=2.979 A_postC=2.745 B_postB=2.882 B_postC=3.333 Cret_postC=2.796 frac_C(1-20)to_A=0.9828 protect=[1, 2] redirects=367 wall=68.2s
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\Kullanıcı\Prizma\seq\domainexc_claim.py", line 611, in <module>
+    main()
+  File "C:\Users\Kullanıcı\Prizma\seq\domainexc_claim.py", line 606, in main
+    run(smoke=args.smoke, results_path=args.out, force_smoke_path=args.force_smoke_path,
+  File "C:\Users\Kullanıcı\Prizma\seq\domainexc_claim.py", line 520, in run
+    verdict = claim_verdict(prim_de, pr11, alpha=ALPHA)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Kullanıcı\Prizma\seq\domainexc_claim.py", line 159, in claim_verdict
+    forced_b = [r["bpc_B_postC"] for r in pr11["FORCED-RECRUIT"]]
+                                          ~~~~^^^^^^^^^^^^^^^^^^
+KeyError: 'FORCED-RECRUIT'

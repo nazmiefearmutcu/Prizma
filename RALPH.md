@@ -112,6 +112,21 @@ recruits, never B-committed experts; prediction: B3b flips (B-experts protected 
 ~ FORCED_B) while clause (a) holds.** Artifacts: results/prizma_lm_PR-2026-09-03-11/ +
 results/pr11_repaired_flagship_official_console.log.
 
+## PR-12 EXECUTED (2026-09-09 20:4x — S2b rung, powered-cpu, ~7 min)
+
+**VERDICT: CLAIMED (PASS) — the contamination hypothesis is CONFIRMED and fixed.** P1 PASS:
+PRIM-DE B mean 3.4124 vs FORCED 3.4124 (B4 +0.5213 == +0.5214 to 4 decimals — the B-expert
+contamination is FULLY eliminated). P2 PASS: frac 0.976 (untreated 0.575). G1 -0.2638, G2
++0.2975 (Holm p 0.024). Per-cell A/B canaries PASS. **Disclosed side effect:** redirects=0;
+in s2 the eviction-exemption collapsed the candidate pool to the a_expert slot (recycled
+22x) — slot-index frac partially measures a C-warden slot; B-expert protection held in
+EVERY seed (the P1 mechanism). **S2b COMPLETE. NEXT = S2c (PR-2026-09-03-13, the
+EXCLUSION FLAGSHIP): the full 5-arm PR-08 protocol + exclusion lever + the eviction
+refinement (when the only candidate is the a_expert, fall back to no-recruit/argmin —
+preserve A-expert identity). Own prereg, 25 cells ~30 min. If B1-B3 all PASS there, the
+'lifelong routing' wording is revisited WITH evidence.** Artifacts:
+results/domainexc_PR-2026-09-03-12/ + official console logs.
+
 ## BACKLOG
 
 1. **[PR-03 claim] Single-pass citation bar** — status: `done (commit: see git log "PR-03 CLAIMED", 2026-09-05)`
