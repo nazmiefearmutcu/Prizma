@@ -127,6 +127,24 @@ preserve A-expert identity). Own prereg, 25 cells ~30 min. If B1-B3 all PASS the
 'lifelong routing' wording is revisited WITH evidence.** Artifacts:
 results/domainexc_PR-2026-09-03-12/ + official console logs.
 
+## PR-13 EXECUTED (2026-09-09 night — S2c rung, powered-cpu, ~50 min; S2 COMPLETE)
+
+**VERDICT: CLAIM PASS — ALL THREE BARS. The repaired flagship stands; 'lifelong routing'
+REINSTATED WITH EVIDENCE.** B1 -0.2666 CI [-0.2956,-0.2376]; B2 +0.2994 CI [0.1046,0.4941]
+(Holm p 0.0234); B3 frac 0.976 >= 0.5 AND forced_cost +0.0000 (PRIM B-eval == FORCED's);
+B4 PRIM +0.5213 best arm. Both FROZEN canaries bit-identical to PR-08. **INCIDENT: the
+first launch ran at a 10x CLI typo dose (0.0075 vs 7.5e-4) — INVALID, archived under
+results/invalid_dose_archive/ (README explains; nothing deleted); the runner now REFUSES
+unregistered doses (validate_trunk_lr_c, incident typo pinned as a test); the clean re-run
+is the claim ledger.** Mechanism ladder, fully measured: interleaved=partition-bounded
+(PR-06) -> floors exonerated (PR-09) -> trunk plasticity cause+repair (PR-10) ->
+contamination cause+repair (PR-12) -> composition CLAIMED (PR-13). **S2 COMPLETE. NEXT =
+S3 (GPU scale tier): PRIZMA_GPU_CAMPAIGN.ipynb on the owner's Colab — Tier-0 recall gate,
+PR-01 surprise ablation, PR-02 D-frontier, kernel session, PR-LM-1 (designs inherit L1 +
+L2 + the refinement). CPU-side, the next rung is optional polish; the program is
+owner-GPU-gated from here.** Artifacts: results/prizma_lm_PR-2026-09-03-13/ +
+results/pr13_exclusion_flagship_official_console.log + results/invalid_dose_archive/.
+
 ## BACKLOG
 
 1. **[PR-03 claim] Single-pass citation bar** — status: `done (commit: see git log "PR-03 CLAIMED", 2026-09-05)`
