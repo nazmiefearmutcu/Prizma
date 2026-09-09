@@ -1,0 +1,395 @@
+{
+  "meta": {
+    "registry": "PR-2026-09-03-12",
+    "smoke": true,
+    "lane": "SMOKE (plumbing only)",
+    "doc": "docs/preregistry/2026-09-09-domain-exclusive-c.md",
+    "arms": [
+      "PRIM-DE"
+    ],
+    "claim_seeds": [
+      0
+    ],
+    "seg": 256,
+    "batch_segs": 32,
+    "lr_rule": "FROZEN by inheritance: 3e-3 A/B both arms; backbone C dose 7.5e-4 (PR-10/PR-11 carried). NO lr-selection leg.",
+    "lever": "domain-exclusion: protected slots (committed at C start minus the a_expert) receive no C training \u2014 redirected to the a_expert; exempt from Policy A eviction during C; guarded default-off branches in route_pr08",
+    "reused_baselines": {
+      "ledger": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\prizma_lm_PR-2026-09-03-11\\powered.json",
+      "cells": [
+        "claim.PRIM-LM",
+        "claim.FORCED-RECRUIT",
+        "claim.FROZEN-CHECKPOINT"
+      ],
+      "note": "same seeds, same lever, same frozen protocol; read-only; disclosed in doc \u00a72"
+    },
+    "pinned_slices": {
+      "A_train": [
+        "text8",
+        0,
+        1000000
+      ],
+      "A_eval": [
+        "text8",
+        1000000,
+        1100000
+      ],
+      "C_retention": [
+        "text8",
+        900000,
+        1000000
+      ],
+      "C_train": [
+        "text8",
+        1100000,
+        2100000
+      ],
+      "B_train": [
+        "shakespeare",
+        0.0,
+        0.9
+      ],
+      "B_eval": [
+        "shakespeare",
+        0.9,
+        1.0
+      ]
+    },
+    "stream_lengths": {
+      "A_train": 1000000,
+      "B_train": 1003854,
+      "C_train": 1000000,
+      "A_eval": 100000,
+      "B_eval": 111540,
+      "C_retention": 100000
+    },
+    "vocab": 65,
+    "threads": 8,
+    "c_range_repair": "DOC-VS-CODE REPAIR (maintainer addendum 2026-09-08 \u2014 see the doc's dated addendum section): pre-reg section 2 pins Block C = text8[1.0M, 2.0M) while A-eval = text8[1.0M, 1.1M) \u2014 literal C training would consume the A-eval slice and bar B1 would measure training, not retention. The doc's own cited provenance (fusion_probe2 P3) skipped [1.0M, 1.1M) for exactly this reason. Pinned here: C = text8[1.1M, 2.1M) (1.0M chars, the doc's block size, A-eval clean).",
+    "c_retention_prose_note": "DOC PROSE BUG (disclosed, slice implemented as pinned): section 2 calls text8[0.9M, 1.0M) 'held-out ... disjoint from A-train's tail', but that slice IS A-train's tail ([0.9M, 1.0M) is inside [0, 1.0M)). Both B2 arms saw it equally in A-training, so B2 stays a fair adaptation comparison (C-training's in-domain benefit over the frozen floor).",
+    "bars": {
+      "P1_margin": 0.1,
+      "P2_frac_bar": 0.5,
+      "G1_margin": 0.05,
+      "G2_margin": 0.1,
+      "alpha": 0.05,
+      "holm_family": [
+        "G1",
+        "G2"
+      ],
+      "p1_p2_form": "exact means, no CI (the PR-08 B3 form)",
+      "t_isf_convention": "UPPER-TAIL p in (0, 0.5] (the PR-03 lesson)"
+    },
+    "boundary_note": "A-expert := the committed slot with max train_A at C start; frac = TRAINING-ledger fraction of C segments in the first 20 C-batches assigned to it, counting POST-REDIRECT routing",
+    "canary": "doc \u00a72, per cell: bpc_A_preB and bpc_B_postB must equal PR-11's claim.PRIM-LM.s{seed} EXACTLY \u2014 the lever activates only at C.",
+    "budget_projection": {
+      "projected_min": 0.1,
+      "warn": false,
+      "warn_threshold_min": 120.0,
+      "note": "within budget"
+    },
+    "raw_archive": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\runs\\domainexc-PR-2026-09-03-12-20260909T171658Z.json"
+  },
+  "claim.PRIM-DE.s0": {
+    "config": "PRIM-DE",
+    "E": 4,
+    "seed": 0,
+    "lr": 0.003,
+    "bpc_A_preB": 4.941736105231895,
+    "bpc_A_postB": 4.497363641802256,
+    "bpc_B_postB": 5.00345357560622,
+    "bpc_Cret_postB": 4.517602207370866,
+    "a_expert": 0,
+    "domain_protect": {
+      "slots": [],
+      "a_expert": 0,
+      "note": "committed-at-C-start slots other than the A-expert receive NO C training; their would-be segments redirect to the A-expert and they are exempt from Policy A eviction during C (guarded branches in seq/prizma_lm_claim.py route_pr08); trunk-lr C dose 7.5e-4 carried from PR-10/PR-11",
+      "redirects": 0
+    },
+    "bpc_A_postC": 4.273146829449908,
+    "bpc_B_postC": 4.964609502917111,
+    "bpc_Cret_postC": 4.275814596107298,
+    "fgt_A_full": 0.6685892757819865,
+    "b_degradation_B_postC": -0.038844072689109055,
+    "ledger": {
+      "n_committed": 1,
+      "a_expert": 0,
+      "recruits": [
+        {
+          "slot": 0,
+          "at_batch": 0,
+          "corpus": "A",
+          "n_novel_segs": 32,
+          "trigger_z": null,
+          "reason": "empty_pool"
+        }
+      ],
+      "evictions": [],
+      "veto_events": [],
+      "vetoed_novel_segments": 0,
+      "cap_fallback_batches": 0,
+      "cap_fallback_segments": 0,
+      "cap_events": [],
+      "per_expert": [
+        {
+          "slot": 0,
+          "committed": true,
+          "train_A": 64,
+          "train_B": 64,
+          "train_C": 64,
+          "train_total": 192,
+          "mu": 3.9492,
+          "sigma": 0.5311,
+          "n_batches": 6,
+          "n_segments": 192,
+          "is_A_expert": true
+        },
+        {
+          "slot": 1,
+          "committed": false
+        },
+        {
+          "slot": 2,
+          "committed": false
+        },
+        {
+          "slot": 3,
+          "committed": false
+        }
+      ],
+      "block_majority_share": {
+        "A": 1.0,
+        "B": 1.0,
+        "C": 1.0
+      },
+      "train_sums_balance": {
+        "A": {
+          "sum": 64,
+          "expected": 64,
+          "ok": true
+        },
+        "B": {
+          "sum": 64,
+          "expected": 64,
+          "ok": true
+        },
+        "C": {
+          "sum": 64,
+          "expected": 64,
+          "ok": true
+        }
+      },
+      "eval_routes": {
+        "A_eval": [
+          390,
+          0,
+          0,
+          0
+        ],
+        "B_eval": [
+          435,
+          0,
+          0,
+          0
+        ],
+        "C_retention": [
+          390,
+          0,
+          0,
+          0
+        ]
+      },
+      "boundary_window": {
+        "c_batches_1_to": 20,
+        "segments_total": 64,
+        "to_A_expert": 64,
+        "frac_to_A_expert": 1.0,
+        "recruit_events_c_batches_1_to_20": []
+      }
+    },
+    "wall_s": 6.5,
+    "arm": "PRIM-DE",
+    "cellkey": "claim.PRIM-DE.s0",
+    "cfgsig": "79e83a0f42d55bee",
+    "complete": true
+  },
+  "report": {
+    "registry": "PR-2026-09-03-12",
+    "smoke": true,
+    "arms": [
+      "PRIM-DE"
+    ],
+    "claim_seeds": [
+      0
+    ],
+    "lr": 0.003,
+    "backbone_lr_c": 0.00075,
+    "reused_baselines": {
+      "ledger": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\prizma_lm_PR-2026-09-03-11\\powered.json",
+      "cells": [
+        "claim.PRIM-LM",
+        "claim.FORCED-RECRUIT",
+        "claim.FROZEN-CHECKPOINT"
+      ],
+      "note": "same seeds, same lever, same frozen protocol; read-only; disclosed in doc \u00a72"
+    },
+    "pinned_slices": {
+      "A_train": [
+        "text8",
+        0,
+        1000000
+      ],
+      "A_eval": [
+        "text8",
+        1000000,
+        1100000
+      ],
+      "C_retention": [
+        "text8",
+        900000,
+        1000000
+      ],
+      "C_train": [
+        "text8",
+        1100000,
+        2100000
+      ],
+      "B_train": [
+        "shakespeare",
+        0.0,
+        0.9
+      ],
+      "B_eval": [
+        "shakespeare",
+        0.9,
+        1.0
+      ]
+    },
+    "raw_archive": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\runs\\domainexc-PR-2026-09-03-12-20260909T171658Z.json",
+    "cells": {
+      "claim.PRIM-DE.s0": {
+        "config": "PRIM-DE",
+        "E": 4,
+        "seed": 0,
+        "lr": 0.003,
+        "bpc_A_preB": 4.941736105231895,
+        "bpc_A_postB": 4.497363641802256,
+        "bpc_B_postB": 5.00345357560622,
+        "bpc_Cret_postB": 4.517602207370866,
+        "a_expert": 0,
+        "domain_protect": {
+          "slots": [],
+          "a_expert": 0,
+          "note": "committed-at-C-start slots other than the A-expert receive NO C training; their would-be segments redirect to the A-expert and they are exempt from Policy A eviction during C (guarded branches in seq/prizma_lm_claim.py route_pr08); trunk-lr C dose 7.5e-4 carried from PR-10/PR-11",
+          "redirects": 0
+        },
+        "bpc_A_postC": 4.273146829449908,
+        "bpc_B_postC": 4.964609502917111,
+        "bpc_Cret_postC": 4.275814596107298,
+        "fgt_A_full": 0.6685892757819865,
+        "b_degradation_B_postC": -0.038844072689109055,
+        "ledger": {
+          "n_committed": 1,
+          "a_expert": 0,
+          "recruits": [
+            {
+              "slot": 0,
+              "at_batch": 0,
+              "corpus": "A",
+              "n_novel_segs": 32,
+              "trigger_z": null,
+              "reason": "empty_pool"
+            }
+          ],
+          "evictions": [],
+          "veto_events": [],
+          "vetoed_novel_segments": 0,
+          "cap_fallback_batches": 0,
+          "cap_fallback_segments": 0,
+          "cap_events": [],
+          "per_expert": [
+            {
+              "slot": 0,
+              "committed": true,
+              "train_A": 64,
+              "train_B": 64,
+              "train_C": 64,
+              "train_total": 192,
+              "mu": 3.9492,
+              "sigma": 0.5311,
+              "n_batches": 6,
+              "n_segments": 192,
+              "is_A_expert": true
+            },
+            {
+              "slot": 1,
+              "committed": false
+            },
+            {
+              "slot": 2,
+              "committed": false
+            },
+            {
+              "slot": 3,
+              "committed": false
+            }
+          ],
+          "block_majority_share": {
+            "A": 1.0,
+            "B": 1.0,
+            "C": 1.0
+          },
+          "train_sums_balance": {
+            "A": {
+              "sum": 64,
+              "expected": 64,
+              "ok": true
+            },
+            "B": {
+              "sum": 64,
+              "expected": 64,
+              "ok": true
+            },
+            "C": {
+              "sum": 64,
+              "expected": 64,
+              "ok": true
+            }
+          },
+          "eval_routes": {
+            "A_eval": [
+              390,
+              0,
+              0,
+              0
+            ],
+            "B_eval": [
+              435,
+              0,
+              0,
+              0
+            ],
+            "C_retention": [
+              390,
+              0,
+              0,
+              0
+            ]
+          },
+          "boundary_window": {
+            "c_batches_1_to": 20,
+            "segments_total": 64,
+            "to_A_expert": 64,
+            "frac_to_A_expert": 1.0,
+            "recruit_events_c_batches_1_to_20": []
+          }
+        },
+        "wall_s": 6.5,
+        "arm": "PRIM-DE",
+        "cellkey": "claim.PRIM-DE.s0",
+        "cfgsig": "79e83a0f42d55bee",
+        "complete": true
+      }
+    }
+  }
+}

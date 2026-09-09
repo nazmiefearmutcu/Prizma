@@ -84,3 +84,14 @@ baselines are the SAME runs the claim compares against — no new control degree
 the per-cell A/B canary proves the lever starts at C; what would change our mind: only
 dated addenda. The registration's one bet: that B-eval damage flows through expert-head
 contamination (training-time), not through eval-time routing of B segments.
+
+---
+
+## Addendum 2026-09-09 #1 (pre-run, maintainer) — canary mode scope
+
+The §2 per-cell A/B canary runs in CLAIM mode only: it compares against the PR-11
+POWERED ledger, while --smoke cells train at the 64-segment plumbing scale — a
+cross-scale comparison is meaningless (the canary itself refused the smoke run,
+working as designed). Smoke asserts the wiring instead: the domain_protect audit
+present per cell and the redirect counter handled. The claim-mode canary is
+unaffected and runs on all 5 treated cells.

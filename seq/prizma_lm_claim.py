@@ -518,6 +518,12 @@ def route_pr08(model, h, y, corpus, ledger, stream_pos, *, boundary=None, force_
         else:
             cap = min(M_MAX, model.E)
             cands = [s for s in range(cap) if model.committed[s]]
+            # PR-2026-09-03-12 domain-exclusion lever (guarded, DEFAULT-OFF; frozen protocol
+            # docs/preregistry/2026-09-09-domain-exclusive-c.md §2): protected slots are exempt
+            # from the eviction candidate pool during C (B-experts keep their calibration).
+            _dp = getattr(model, "domain_protect", None)
+            if _dp is not None and corpus == "C" and _dp:
+                cands = [s for s in cands if s not in _dp]
             tot = max(float(sum(model.n_segments[s] for s in cands)), 1.0)
             victim = min(cands, key=lambda s: (model.n_segments[s] / tot, -s))
             slot, reason = victim, "novel_policy_a_eviction"
@@ -562,6 +568,22 @@ def route_pr08(model, h, y, corpus, ledger, stream_pos, *, boundary=None, force_
         assign = {}
         for i in range(B):
             assign.setdefault(slots[int(min_idx[i])], []).append(i)
+    # PR-2026-09-03-12 domain-exclusion lever (guarded, DEFAULT-OFF; frozen protocol
+    # docs/preregistry/2026-09-09-domain-exclusive-c.md §2): during C, protected slots
+    # (committed-at-C-start minus the A-expert, pinned on the model at C start) receive NO
+    # training — their would-be segments REDIRECT to the A-expert and the boundary window
+    # counts the post-redirect trained fraction. Attribute absent / corpus != C / empty set
+    # => byte-identical PR-08/PR-11 path (off-identity pinned by tests).
+    protect = getattr(model, "domain_protect", None)
+    if protect is not None and corpus == "C" and protect and boundary is not None:
+        a_slot = boundary.get("a_expert")
+        if a_slot is not None:
+            moved = 0
+            for s in [s for s in list(assign) if s in protect and s != a_slot]:
+                moved += len(assign[s])
+                assign.setdefault(a_slot, []).extend(assign.pop(s))
+            if moved:
+                ledger["domain_protect_redirects"] =                     ledger.get("domain_protect_redirects", 0) + moved
     out = []
     for s, ids in assign.items():
         ids = sorted(ids)
