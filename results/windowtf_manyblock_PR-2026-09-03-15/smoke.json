@@ -1,0 +1,178 @@
+{
+  "meta": {
+    "registry": "PR-2026-09-03-15",
+    "smoke": true,
+    "lane": "SMOKE (plumbing only)",
+    "doc": "docs/preregistry/2026-09-10-windowtf-manyblock-control.md",
+    "arms": [
+      "WINDOW-TF"
+    ],
+    "claim_seeds": [
+      0
+    ],
+    "blocks": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "control": {
+      "config": "TFConfig(vocab, d64, 2L, H4, window=SEG=256) \u2014 the PR-07' WINDOW-TF path verbatim",
+      "lr": 0.003,
+      "note": "no lr schedule, no tissue \u2014 the control's plain learning rule IS the comparison (doc \u00a72, disclosed)"
+    },
+    "stream_lengths": {
+      "A": 1000000,
+      "B": 1003854,
+      "C": 1000000,
+      "D": 1003854,
+      "E": 1000000
+    },
+    "vocab": 65,
+    "threads": 8,
+    "bars": {
+      "P1_margin": 0.1,
+      "alpha": 0.05,
+      "baseline": {
+        "source": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\manyblock_PR-2026-09-03-14\\powered.json",
+        "cells": "claim.EX.s0..s4 (reused, disclosed)",
+        "a_retention_mean": -0.3226
+      }
+    },
+    "t_isf_convention": "UPPER-TAIL p in (0, 0.5] (the PR-03 lesson)",
+    "raw_archive": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\runs\\windowtf-PR-2026-09-03-15-20260909T211756Z.json"
+  },
+  "claim.WINDOW-TF.s0": {
+    "config": "WINDOW-TF",
+    "seed": 0,
+    "lr": 0.003,
+    "traj_A": {
+      "bpc_A": 5.283897801084931,
+      "bpc_B": 5.503944287368277,
+      "bpc_Cret": 5.286113043463521
+    },
+    "block_A": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_B": {
+      "bpc_A": 4.8932365814023715,
+      "bpc_B": 5.154528323279006,
+      "bpc_Cret": 4.901814250510684
+    },
+    "block_B": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_C": {
+      "bpc_A": 4.543082768859283,
+      "bpc_B": 5.035150254913926,
+      "bpc_Cret": 4.542431534943715
+    },
+    "block_C": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_D": {
+      "bpc_A": 4.3873055193016635,
+      "bpc_B": 4.7114286095650355,
+      "bpc_Cret": 4.393750405979719
+    },
+    "block_D": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "traj_E": {
+      "bpc_A": 4.21405375995021,
+      "bpc_B": 4.858665609059771,
+      "bpc_Cret": 4.219949480447155
+    },
+    "block_E": {
+      "wall_note": "sequential training, no schedule (control)"
+    },
+    "bpc_A_preB": 5.283897801084931,
+    "bpc_A_postE": 4.21405375995021,
+    "bpc_A_retention": -1.0698440411347212,
+    "bpc_B_postB": 5.154528323279006,
+    "bpc_B_postC": 5.035150254913926,
+    "bpc_B_postD": 4.7114286095650355,
+    "bpc_B_postE": 4.858665609059771,
+    "b_degradation_B_postC": -0.11937806836508003,
+    "b_recovery_postD": 0.3237216453488907,
+    "wall_s": 14.8,
+    "arm": "WINDOW-TF",
+    "cellkey": "claim.WINDOW-TF.s0",
+    "cfgsig": "75762f26a69baf82",
+    "complete": true
+  },
+  "report": {
+    "registry": "PR-2026-09-03-15",
+    "smoke": true,
+    "arms": [
+      "WINDOW-TF"
+    ],
+    "claim_seeds": [
+      0
+    ],
+    "lr": 0.003,
+    "raw_archive": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\runs\\windowtf-PR-2026-09-03-15-20260909T211756Z.json",
+    "cells": {
+      "claim.WINDOW-TF.s0": {
+        "config": "WINDOW-TF",
+        "seed": 0,
+        "lr": 0.003,
+        "traj_A": {
+          "bpc_A": 5.283897801084931,
+          "bpc_B": 5.503944287368277,
+          "bpc_Cret": 5.286113043463521
+        },
+        "block_A": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_B": {
+          "bpc_A": 4.8932365814023715,
+          "bpc_B": 5.154528323279006,
+          "bpc_Cret": 4.901814250510684
+        },
+        "block_B": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_C": {
+          "bpc_A": 4.543082768859283,
+          "bpc_B": 5.035150254913926,
+          "bpc_Cret": 4.542431534943715
+        },
+        "block_C": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_D": {
+          "bpc_A": 4.3873055193016635,
+          "bpc_B": 4.7114286095650355,
+          "bpc_Cret": 4.393750405979719
+        },
+        "block_D": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "traj_E": {
+          "bpc_A": 4.21405375995021,
+          "bpc_B": 4.858665609059771,
+          "bpc_Cret": 4.219949480447155
+        },
+        "block_E": {
+          "wall_note": "sequential training, no schedule (control)"
+        },
+        "bpc_A_preB": 5.283897801084931,
+        "bpc_A_postE": 4.21405375995021,
+        "bpc_A_retention": -1.0698440411347212,
+        "bpc_B_postB": 5.154528323279006,
+        "bpc_B_postC": 5.035150254913926,
+        "bpc_B_postD": 4.7114286095650355,
+        "bpc_B_postE": 4.858665609059771,
+        "b_degradation_B_postC": -0.11937806836508003,
+        "b_recovery_postD": 0.3237216453488907,
+        "wall_s": 14.8,
+        "arm": "WINDOW-TF",
+        "cellkey": "claim.WINDOW-TF.s0",
+        "cfgsig": "75762f26a69baf82",
+        "complete": true
+      }
+    }
+  }
+}
