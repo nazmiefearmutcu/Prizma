@@ -96,3 +96,14 @@ def test_refinement_inert_on_earlier_blocks_and_when_lever_absent():
     plc.route_pr08(model, h, y, "B", led, stream_pos=0, boundary=boundary)
     assert "domain_protect_suppressed_recruits" not in led
     assert len(led["evictions"]) == 1, "on B the PR-08 eviction path is unchanged"
+
+
+# ── 3. Dose guard (the 2026-09-09 invalid-dose incident: 0.0075 vs 7.5e-4) ──────────────────
+
+def test_dose_guard_refuses_unregistered_doses():
+    assert plc.validate_trunk_lr_c(None) is None            # lever OFF: always valid
+    assert plc.validate_trunk_lr_c(plc.REGISTERED_TRUNK_LR_C) is None
+    with pytest.raises(SystemExit, match="registered dose"):
+        plc.validate_trunk_lr_c(0.0075)                     # the 10x typo that started it
+    with pytest.raises(SystemExit):
+        plc.validate_trunk_lr_c(1e-3)

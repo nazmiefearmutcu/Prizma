@@ -232,6 +232,23 @@ def require_cuda(has_cuda: bool) -> None:
             "Use --smoke for the CPU plumbing run.")
 
 
+REGISTERED_TRUNK_LR_C = 7.5e-4          # the PR-10/PR-11/PR-13 registered C dose (3e-3 x 0.25)
+
+
+def validate_trunk_lr_c(trunk_lr_c):
+    """Pure dose guard (landed after the 2026-09-09 invalid-dose incident): the CLI passes a
+    raw float, and a wrong dose is a silent PROTOCOL VIOLATION, not a tuning choice — the
+    registered C dose is 7.5e-4, full stop. None (lever OFF) is always valid; any other value
+    than REGISTERED_TRUNK_LR_C is refused before anything runs."""
+    if trunk_lr_c is None or trunk_lr_c == REGISTERED_TRUNK_LR_C:
+        return
+    raise SystemExit(
+        f"refusing: --trunk-lr-c {trunk_lr_c} is not the registered dose "
+        f"({REGISTERED_TRUNK_LR_C} = 3e-3 x 0.25). A different dose is a different "
+        f"pre-registration, not a CLI option (the 2026-09-09 invalid-dose incident: a 10x "
+        f"typo reached training and invalidated a 25-cell run).")
+
+
 def needs_cuda(mode: str) -> bool:
     """Pure mode->CUDA-requirement guard (unit-testable without torch): only the --powered A100
     claim campaign demands a CUDA device. --powered-cpu (the doc section-6 CPU-feasible
@@ -987,6 +1004,7 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
     # BAR-0 FIRST: resolve + guard the results path before any heavy import or write.
     path = resolve_results_path(results_path, smoke=smoke, force_smoke_path=force_smoke_path,
                                 ledger_dir=ledger_dir)
+    validate_trunk_lr_c(trunk_lr_c)
 
     import time
 
