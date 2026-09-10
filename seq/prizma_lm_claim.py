@@ -994,7 +994,7 @@ def _pr11_canary(res, seeds, arm):
 
 def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
         powered_cpu: bool = False, trunk_lr_c=None, ledger_dir=None, provenance=None,
-        domain_exclusion=False):
+        domain_exclusion=False, seed_offset=0):
     """Execute the protocol: --smoke (CPU plumbing), --powered (the A100 claim campaign), or
     --powered-cpu (the doc section-6 CPU-feasible fallback: identical to --powered except the
     CUDA guard is skipped and the ledger meta records powered_cpu + the fallback note).
@@ -1029,7 +1029,9 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
         # (--powered-cpu skips that guard by design: the doc section-6 CPU-feasible fallback,
         # doc addendum 2026-09-08 #2 — protocol-identical to powered in every other respect)
         smoke_segs = None
-        seeds = CLAIM_SEEDS
+        seeds = tuple(s + seed_offset for s in CLAIM_SEEDS)
+        # PR-2026-09-03-18 replication mode: seed_offset shifts the FRESH seed set (5-9 for
+        # offset 5). Fingerprints carry the offset; LR selection re-runs and is canaried.
 
     # ---------------- data: the 3-block stream + the pinned eval slices ------------------------
     slices = pin_slices()
@@ -1101,6 +1103,11 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
         res["meta"]["compute_fallback_note"] = POWERED_CPU_FALLBACK_NOTE
     if provenance is not None:
         res["meta"]["pr11_repair"] = provenance   # PR-2026-09-03-11 provenance (orchestrator)
+    if seed_offset:
+        res["meta"]["seed_offset"] = seed_offset
+        res["meta"]["replication_note"] = (
+            f"PR-2026-09-03-18: fresh seeds {seeds[0]}..{seeds[-1]} (offset {seed_offset}); "
+            "the LR-selection canary pins the registered lrs")
     _save(res, path)
     print(f"[pr08] corpora: A={Ax.shape[0]} B={Bx.shape[0]} C={Cx.shape[0]} segs; "
           f"eval A={Aex.shape[0]} B={Bex.shape[0]} Cret={Crx.shape[0]}; vocab={V}; "
@@ -1176,6 +1183,17 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
         _lr_cell("fusion", _sel_fusion)
         _lr_cell("shared", _sel_shared)
         _lr_cell("frozen-checkpoint", _sel_frozenck)
+        if seed_offset:
+            # PR-2026-09-03-18 canary: the selection rule is seed-0-based and
+            # seed-independent by construction — a replication run MUST land on the
+            # registered lrs, or determinism is broken (ABORT before any claim cell).
+            expected = {"fusion": 3e-3, "shared": 3e-3, "frozen-checkpoint": 1e-2}
+            for fam, want in expected.items():
+                if lrs.get(fam) != want:
+                    raise SystemExit(
+                        f"LR-SELECTION CANARY ABORT: {fam} selected lr={lrs.get(fam)} "
+                        f"!= the registered {want} — the replication's determinism is "
+                        f"broken; investigate before any claim cell runs.")
 
     # ---------------- the 5 arms x seeds --------------------------------------------------------
     n_cells_total = len(ARMS) * len(seeds)
@@ -1194,7 +1212,9 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
                                                          # window applies at train time) must
                                                          # invalidate stale resume cells
                           "trunk_lr_c": trunk_lr_c,      # PR-11: the lever is IN the fingerprint
-                          "domain_exclusion": domain_exclusion})  # PR-13: same discipline
+                          "domain_exclusion": domain_exclusion,  # PR-13: same discipline
+                          "seed_offset": seed_offset})   # PR-18: fresh-seed replications never
+                                                         # resume from original-seed cells
                                                          # (a treated rerun never resumes from
                                                          # untreated cells)
             prior = res.get(cellkey)
@@ -1236,6 +1256,19 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
                   f"A_postC={rec['bpc_A_postC']:.3f} B_postB={rec['bpc_B_postB']:.3f} "
                   f"B_postC={rec['bpc_B_postC']:.3f} Cret_postC={rec['bpc_Cret_postC']:.3f} "
                   f"wall={rec['wall_s']}s", flush=True)
+        if not smoke and arm == "FORCED-RECRUIT":
+            # PR-2026-09-03-18 structural canary: FORCED shares the A/B trajectory with
+            # PRIM per seed (the PR-08 determinism property) — assert it loudly.
+            for s in seeds:
+                a, f = res.get(f"claim.PRIM-LM.s{s}"), res.get(f"claim.FORCED-RECRUIT.s{s}")
+                if isinstance(a, dict) and isinstance(f, dict):
+                    for k in ("bpc_A_preB", "bpc_A_postB", "bpc_B_postB"):
+                        if f[k] != a[k]:
+                            raise SystemExit(
+                                f"STRUCTURAL CANARY ABORT: FORCED s{s} {k}={f[k]!r} != "
+                                f"PRIM {a[k]!r} — the shared-A/B property is broken.")
+            print(f"[pr08] structural canary PASS: FORCED A/B phases bit-identical to "
+                  f"PRIM across seeds {seeds[0]}..{seeds[-1]}", flush=True)
         if not smoke and (trunk_lr_c is not None or domain_exclusion) and                 arm in ("FROZEN-TRUNK", "FROZEN-CHECKPOINT"):
             # PR-2026-09-03-11 fail-loud canary: a frozen arm has NO C backbone step, so the
             # lever cannot touch it — bit-identity vs the (read-only) PR-08 powered ledger
@@ -1262,6 +1295,8 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
         report["trunk_lr_c"] = trunk_lr_c         # PR-2026-09-03-11 lever (recorded when set)
     if domain_exclusion:
         report["domain_exclusion"] = True         # PR-2026-09-03-13 lever (recorded when set)
+    if seed_offset:
+        report["seed_offset"] = seed_offset       # PR-2026-09-03-18 (recorded when set)
     if not smoke:
         prim = [res[f"claim.PRIM-LM.s{s}"] for s in seeds]
         frozen_ck = [res[f"claim.FROZEN-CHECKPOINT.s{s}"] for s in seeds]
@@ -1353,6 +1388,10 @@ def _build_parser():
                         "that train a backbone on C (the registered repaired-flagship dose is "
                         "7.5e-4 = 3e-3 x 0.25). Default None = byte-identical PR-08 behavior "
                         "(no audit keys, no canaries).")
+    p.add_argument("--seed-offset", type=int, default=0,
+                   help="PR-2026-09-03-18: shift the claim seeds by this offset (5 => "
+                        "fresh seeds 5-9 for a replication run; the LR-selection canary "
+                        "pins the registered lrs). Default 0 = byte-identical behavior.")
     p.add_argument("--ledger-dir", default=None,
                    help="ledger subdirectory under $PRIZMA_RESULTS (default None = the PR-08 "
                         "default dir; the PR-11 run uses prizma_lm_PR-2026-09-03-11 so the "
@@ -1370,7 +1409,7 @@ def main(argv=None):
     args = _build_parser().parse_args(argv)   # SystemExit non-zero on unknown args: nothing runs
     run(smoke=args.smoke, results_path=args.out, force_smoke_path=args.force_smoke_path,
         powered_cpu=args.powered_cpu, trunk_lr_c=args.trunk_lr_c, ledger_dir=args.ledger_dir,
-        domain_exclusion=args.domain_exclusion)
+        domain_exclusion=args.domain_exclusion, seed_offset=args.seed_offset)
 
 
 if __name__ == "__main__":

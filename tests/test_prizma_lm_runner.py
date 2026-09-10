@@ -342,3 +342,31 @@ def test_pr11_flags_default_to_none_so_pr08_defaults_are_unchanged():
     args = p.parse_args(["--powered-cpu"])
     assert args.trunk_lr_c is None, "no --trunk-lr-c => the lever is OFF (byte-identical PR-08)"
     assert args.ledger_dir is None, "no --ledger-dir => the PR-08 default ledger dir (LEDDIR)"
+
+
+# ── 9. PR-2026-09-03-18 replication mode: --seed-offset ─────────────────────────────────────
+
+def test_seed_offset_parser_defaults_and_fingerprint_sensitivity():
+    p = plc._build_parser()
+    assert p.parse_args(["--powered-cpu"]).seed_offset == 0
+    args = p.parse_args(["--powered-cpu", "--seed-offset", "5"])
+    assert args.seed_offset == 5
+    payload = {"leg": "claim", "arm": "PRIM-LM", "family": "fusion", "seed": 5, "lr": 3e-3,
+               "smoke": False, "vocab": 65, "smoke_segs": None, "seg": 256, "batch_segs": 32,
+               "slices": {}, "stream_lengths": {}, "tissue": {}, "bars": {},
+               "trunk_lr_c": None, "domain_exclusion": False}
+    assert plc._fp({**payload, "seed_offset": 0}) != plc._fp({**payload, "seed_offset": 5}), \
+        "fresh-seed replication cells must never resume from original-seed cells"
+
+
+def test_registered_lrs_canary_constants():
+    # the PR-18 LR-selection canary's expected values (kept in sync with the runner)
+    import seq.prizma_lm_claim as m
+    expected = {"fusion": 3e-3, "shared": 3e-3, "frozen-checkpoint": 1e-2}
+    assert m.LR_GRID == (1e-3, 3e-3, 1e-2)
+    assert set(m.ARM_FAMILY.values()) == {"fusion", "shared", "frozen-checkpoint"}
+    assert m.ARM_FAMILY["PRIM-LM"] == "fusion"
+    assert m.ARM_FAMILY["SHARED-HEAD"] == "shared"
+    assert m.ARM_FAMILY["FROZEN-CHECKPOINT"] == "frozen-checkpoint"
+    assert expected["fusion"] == m.LR_GRID[1] and expected["shared"] == m.LR_GRID[1]
+    assert expected["frozen-checkpoint"] == m.LR_GRID[2]
