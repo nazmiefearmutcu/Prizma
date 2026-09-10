@@ -156,7 +156,7 @@ Details: [`seq/throughput_benchmark.py`](seq/throughput_benchmark.py) | Report: 
 #### 4. Gradient Stability & Theoretical Convergence
 A mathematical analysis in [`docs/quad2_theoretical_convergence.md`](docs/quad2_theoretical_convergence.md) proves:
 * **Jacobian Contractiveness:** The recurrent delta state transition Jacobian spectral norm is strictly bounded by the decay gate: $\| J_t \|_2 \le \alpha_t \le 1.0$, preventing exploding gradients during BPTT.
-* **Gershgorin Capacity Bounds:** Using the Gershgorin Circle Theorem, we derive the capacity limit $N < 1 + 1/\text{cross}(\phi)$, showing that quadratic keys (`quad2`, crosstalk ~0.076) push capacity bounds to $N < 14$ compared to $N < 8$ for linear keys (`none`), resolving the capacity block on MQAR $D=128$.
+* **Gershgorin Capacity Bounds:** Using the Gershgorin Circle Theorem, we derive the capacity limit $N < 1 + 1/\text{cross}(\phi)$: with the repo's **measured** crosstalk for quadratic keys (`quad2` **0.117**, 1.54× the previously quoted `~0.076`), the bound caps $N^* \approx 9.5$ compared to $N < 8$ for linear keys (`none`). Per the addendum in [`docs/quad2_theoretical_convergence.md`](docs/quad2_theoretical_convergence.md), this bound does **not** by itself explain the repo's own MQAR $D=128$ PASS — explaining it is the open job of the capacity-law program (PR-02).
 
 ---
 
@@ -235,10 +235,12 @@ seeds, pre-committed failure branches). Raw per-seed artifacts committed under `
 | PR-20 | Does the boundary-damage gap replicate on fresh seeds at the halving margin? | **NOT-ESTABLISHED (FINAL, pooled fresh n=10)** — the gap is directional in every fresh pair (+0.245 mean) but the 0.25 halving-margin is not CI-established: the fresh gap (~0.25) is ~half the original (~0.55) — the protection's size is seed-dependent. The honest ledger: accumulation parity, schedule-carried protection, tissue-only routing. |
 | PR-21 | WHO owns the revisit recovery — the schedule, the tissue, or is it universal? | **CLAIMED — TISSUE-COSTS-RECOVERY (attribution matrix CLOSED)**: the plain control recovers MORE (+1.15 vs the column's +0.82, CI-established) while the scheduled control matches the column — recovery magnitude is a PLASTICITY trade (volatile learners swing hardest both ways: most damage AND most recovery). The column is the stable learner. |
 
-Pending GPU-tier registrations: PR-01 (powered surprise-gating ablation, frozen protocol),
-PR-02 (crosstalk capacity-law D-frontier), Tier-0 repairs (clean recall gate, B4 closure,
-first GLA/Mamba-2 landscape), kernel decision (≤1.5× TF step time), PR-LM-1 (the flagship
-continual-LM bar — unblocked on the block-drift regime by PR-07′).
+Pending GPU-tier execution/confirmation: PR-01 (powered surprise-gating ablation, frozen
+protocol), PR-02 (crosstalk capacity-law D-frontier), Tier-0 repairs (clean recall gate, B4
+closure, first GLA/Mamba-2 landscape), kernel decision (≤1.5× TF step time), and the A100
+confirmation of PR-LM-1 — the flagship continual-LM bar is REGISTERED (2026-09-08) and already
+executed/claimed on CPU (PR-13, replicated at n=10 fresh by PR-18); only the GPU-tier
+confirmation is pending.
 
 ---
 
@@ -251,9 +253,10 @@ equivalence, and the anti-conservative statistics gate) runs on every push via
 ```bash
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt pytest
-pytest -q          # CPU-only (what CI runs): 211 collected -> 201 passed, 10 skipped, ~3 min.
-                   # 225 collected where MPS is available (216 passed, 9 skipped): several
-                   # kernel-equivalence tests are parametrised over devices.
+pytest -q          # CPU-only (what CI runs): 556 collected -> 546 passed, 10 skipped
+                   # (measured 2026-09-11; the 10 skips = 9 static CUDA skips + 1 scipy skip).
+                   # Several kernel-equivalence tests are parametrised over devices, so a box
+                   # with MPS available collects a different count — re-measure there.
 ```
 
 _The "94 tests" figure this README used to quote was long out of date — CI was already collecting

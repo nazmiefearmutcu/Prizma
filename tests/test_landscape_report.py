@@ -50,7 +50,7 @@ def test_module_imports_torch_free_surface():
     # the renderer must not have pulled torch in just by being imported.
     assert "torch" not in sys.modules or True  # tolerant: other tests may have imported torch already
     # but the module's own source must not import torch.
-    src = open(os.path.join(REPO_ROOT, "seq", "landscape_report.py")).read()
+    src = open(os.path.join(REPO_ROOT, "seq", "landscape_report.py"), encoding="utf-8").read()
     assert "import torch" not in src, "the renderer must be torch-free (no 'import torch')"
 
 
@@ -325,5 +325,5 @@ def test_cli_renders_to_stdout_and_out_path():
             cwd=REPO_ROOT, capture_output=True, text=True)
         assert proc.returncode == 0, proc.stderr
         assert os.path.exists(outmd)
-        body = open(outmd).read()
+        body = open(outmd, encoding="utf-8").read()
         assert "Prizma" in body and SCOPE_RIDER_FRAGMENT in body

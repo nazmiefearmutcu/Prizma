@@ -1,0 +1,138 @@
+{
+ "registry": "manyblock_probe_2026-09-09",
+ "lane": "LANE-EXPLORATORY (quarantined; never cited as a claim)",
+ "seeds": [
+  0
+ ],
+ "results": {
+  "s0": {
+   "blocks": {
+    "init": {
+     "bpc_A": 6.089773584376191,
+     "bpc_B": 6.069679819379984,
+     "bpc_Cret": 6.094617991685695
+    },
+    "post_A": {
+     "bpc_A": 5.7648584569213455,
+     "bpc_B": 5.9663189341420395,
+     "bpc_Cret": 5.756531056966568,
+     "block_train": [
+      8,
+      0,
+      0,
+      0
+     ],
+     "recruits_so_far": 1,
+     "evictions_so_far": 0
+    },
+    "post_B": {
+     "bpc_A": 5.1878910598067955,
+     "bpc_B": 5.502743482359658,
+     "bpc_Cret": 5.218767449081497,
+     "block_train": [
+      8,
+      0,
+      0,
+      0
+     ],
+     "recruits_so_far": 1,
+     "evictions_so_far": 0
+    },
+    "post_C": {
+     "bpc_A": 4.8604140787846974,
+     "bpc_B": 5.3126799514463405,
+     "bpc_Cret": 4.9063134965775665,
+     "block_train": [
+      8,
+      0,
+      0,
+      0
+     ],
+     "recruits_so_far": 1,
+     "evictions_so_far": 0
+    },
+    "post_D": {
+     "bpc_A": 4.63078972265871,
+     "bpc_B": 5.1208769880021965,
+     "bpc_Cret": 4.6806055293770275,
+     "block_train": [
+      8,
+      0,
+      0,
+      0
+     ],
+     "recruits_so_far": 1,
+     "evictions_so_far": 0
+    },
+    "post_E": {
+     "bpc_A": 4.449933798907285,
+     "bpc_B": 5.0830473401531115,
+     "bpc_Cret": 4.507557961940076,
+     "block_train": [
+      8,
+      0,
+      0,
+      0
+     ],
+     "recruits_so_far": 1,
+     "evictions_so_far": 0
+    }
+   },
+   "per_slot": [
+    {
+     "slot": 0,
+     "committed": true,
+     "train": {
+      "A": 8,
+      "B": 8,
+      "C": 8,
+      "D": 8,
+      "E": 8
+     }
+    },
+    {
+     "slot": 1,
+     "committed": false,
+     "train": {
+      "A": 0,
+      "B": 0,
+      "C": 0,
+      "D": 0,
+      "E": 0
+     }
+    },
+    {
+     "slot": 2,
+     "committed": false,
+     "train": {
+      "A": 0,
+      "B": 0,
+      "C": 0,
+      "D": 0,
+      "E": 0
+     }
+    },
+    {
+     "slot": 3,
+     "committed": false,
+     "train": {
+      "A": 0,
+      "B": 0,
+      "C": 0,
+      "D": 0,
+      "E": 0
+     }
+    }
+   ],
+   "ledger_tail": {
+    "recruits": 1,
+    "evictions": 0,
+    "vetoed_novel_segments": 0
+   },
+   "wall_s": 1.7
+  }
+ },
+ "note": "exploratory; informs the PR-14 many-block prereg \u2014 especially whether a literal shakespeare revisit (block D) improves B-eval and whether the B-expert re-engages under plain argmin without domain-exclusion",
+ "smoke": true,
+ "smoke_note": "wiring-only run (8 segments/block, seed 0); numbers are meaningless, never cited"
+}

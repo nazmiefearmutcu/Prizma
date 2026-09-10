@@ -1,0 +1,655 @@
+{
+  "meta": {
+    "registry": "PR-2026-09-03-14",
+    "smoke": true,
+    "lane": "SMOKE (plumbing only)",
+    "doc": "docs/preregistry/2026-09-09-manyblock-accumulation.md",
+    "arms": [
+      "PLAIN",
+      "EX"
+    ],
+    "claim_seeds": [
+      0
+    ],
+    "blocks": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "domain_of": {
+      "A": "text8",
+      "B": "shakes",
+      "C": "text8",
+      "D": "shakes",
+      "E": "text8"
+    },
+    "seg": 256,
+    "batch_segs": 32,
+    "lr_rule": "FROZEN by inheritance: 3e-3 on block A; backbone 7.5e-4 (x0.25, PR-10 dose) on EVERY post-A block; tissue optimizers 3e-3 everywhere.",
+    "lever": "L2 generalized: per-block domain-OWNER election (max cumulative domain-trained count among committed slots; no history => no owner, free routing); protected slots = committed MINUS owner; guarded branches in route_pr08 (owner_slot precedence + redirect + suppression refinement)",
+    "stream_lengths": {
+      "A": 1000000,
+      "B": 1003854,
+      "C": 1000000,
+      "D": 1003854,
+      "E": 1000000
+    },
+    "eval_slices": {
+      "A_eval": "text8[1.0M,1.1M)",
+      "B_eval": "shakes[90%,100%]",
+      "Cret": "text8[0.9M,1.0M)"
+    },
+    "vocab": 65,
+    "threads": 8,
+    "bars": {
+      "P1_margin": 0.1,
+      "P2_frac_bar": 0.5,
+      "P3_margin": 0.05,
+      "G1_allowance": -0.1,
+      "G2_margin": 0.05,
+      "alpha": 0.05,
+      "holm_family": [
+        "P1",
+        "P3"
+      ],
+      "t_isf_convention": "UPPER-TAIL p in (0, 0.5] (the PR-03 lesson)"
+    },
+    "canary": "doc \u00a72, per cell (claim mode): the A/B phases must be bit-identical across arms (divergence begins at C).",
+    "cascade": {
+      "target": "tissue",
+      "kappa": 0.05,
+      "delta": 0.1,
+      "note": "Lane-1 tissue fast/slow cascade (guarded lever, campaign 2026-09-11): zero-init W_fast; forward W + W_fast; the expert optimizer receives ONLY W_fast; after every optimizer step W <- W + kappa*W_fast and W_fast <- (1-delta)*W_fast"
+    },
+    "budget_projection": {
+      "projected_min": 0.4,
+      "warn": false,
+      "warn_threshold_min": 120.0,
+      "note": "within budget"
+    }
+  },
+  "claim.PLAIN.s0": {
+    "config": "PRIM-PLAIN",
+    "E": 4,
+    "seed": 0,
+    "lr": 0.003,
+    "traj_A": {
+      "bpc_A": 4.979377501753308,
+      "bpc_B": 5.35511793096212,
+      "bpc_Cret": 4.98858485667398
+    },
+    "block_A": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        64,
+        0,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 1,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0,
+      "cascade": {
+        "target": "tissue",
+        "kappa": 0.05,
+        "delta": 0.1,
+        "per_slot": [
+          {
+            "slot": 0,
+            "fast_l2": 0.373924762,
+            "fast_absmax": 0.0051299264,
+            "n_batches": 2
+          },
+          {
+            "slot": 1,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 2,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 3,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          }
+        ],
+        "total_fast_l2": 0.373924762,
+        "max_fast_absmax": 0.0051299264
+      }
+    },
+    "traj_B": {
+      "bpc_A": 4.657242114890998,
+      "bpc_B": 5.06008020209994,
+      "bpc_Cret": 4.670896867078149
+    },
+    "block_B": {
+      "domain": "shakes",
+      "owner": null,
+      "train": [
+        64,
+        0,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 1,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0,
+      "cascade": {
+        "target": "tissue",
+        "kappa": 0.05,
+        "delta": 0.1,
+        "per_slot": [
+          {
+            "slot": 0,
+            "fast_l2": 0.6101751924,
+            "fast_absmax": 0.0092849154,
+            "n_batches": 4
+          },
+          {
+            "slot": 1,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 2,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 3,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          }
+        ],
+        "total_fast_l2": 0.6101751924,
+        "max_fast_absmax": 0.0092849154
+      }
+    },
+    "traj_C": {
+      "bpc_A": 4.359556593080673,
+      "bpc_B": 5.014198703713203,
+      "bpc_Cret": 4.3629859165553295
+    },
+    "block_C": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        64,
+        0,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 1,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0,
+      "cascade": {
+        "target": "tissue",
+        "kappa": 0.05,
+        "delta": 0.1,
+        "per_slot": [
+          {
+            "slot": 0,
+            "fast_l2": 0.8017066717,
+            "fast_absmax": 0.0126502542,
+            "n_batches": 6
+          },
+          {
+            "slot": 1,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 2,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 3,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          }
+        ],
+        "total_fast_l2": 0.8017066717,
+        "max_fast_absmax": 0.0126502542
+      }
+    },
+    "traj_D": {
+      "bpc_A": 4.37734211806425,
+      "bpc_B": 4.8679925437152685,
+      "bpc_Cret": 4.382348037368048
+    },
+    "block_D": {
+      "domain": "shakes",
+      "owner": null,
+      "train": [
+        64,
+        0,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 1,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0,
+      "cascade": {
+        "target": "tissue",
+        "kappa": 0.05,
+        "delta": 0.1,
+        "per_slot": [
+          {
+            "slot": 0,
+            "fast_l2": 0.8307670355,
+            "fast_absmax": 0.0153760109,
+            "n_batches": 8
+          },
+          {
+            "slot": 1,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 2,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 3,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          }
+        ],
+        "total_fast_l2": 0.8307670355,
+        "max_fast_absmax": 0.0153760109
+      }
+    },
+    "traj_E": {
+      "bpc_A": 4.213872675448287,
+      "bpc_B": 4.940683510583628,
+      "bpc_Cret": 4.2126632722803246
+    },
+    "block_E": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        64,
+        0,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 1,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0,
+      "cascade": {
+        "target": "tissue",
+        "kappa": 0.05,
+        "delta": 0.1,
+        "per_slot": [
+          {
+            "slot": 0,
+            "fast_l2": 0.9555555582,
+            "fast_absmax": 0.0175837427,
+            "n_batches": 10
+          },
+          {
+            "slot": 1,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 2,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 3,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          }
+        ],
+        "total_fast_l2": 0.9555555582,
+        "max_fast_absmax": 0.0175837427
+      }
+    },
+    "bpc_A_preB": 4.979377501753308,
+    "bpc_A_postB": 4.657242114890998,
+    "bpc_B_postB": 5.06008020209994,
+    "bpc_B_postC": 5.014198703713203,
+    "bpc_B_postD": 4.8679925437152685,
+    "bpc_B_postE": 4.940683510583628,
+    "bpc_A_postE": 4.213872675448287,
+    "bpc_Cret_postC": 4.3629859165553295,
+    "bpc_Cret_postE": 4.2126632722803246,
+    "boundary_window_D": {
+      "frac_to_owner": 0.0
+    },
+    "b_degradation_B_postC": -0.04588149838673683,
+    "wall_s": 11.5,
+    "arm": "PLAIN",
+    "backbone_lr_post_a": 0.00075,
+    "domain_exclusion": false,
+    "cellkey": "claim.PLAIN.s0",
+    "cfgsig": "c0d53dd789a2aed5",
+    "complete": true
+  },
+  "claim.EX.s0": {
+    "config": "PRIM-EX",
+    "E": 4,
+    "seed": 0,
+    "lr": 0.003,
+    "traj_A": {
+      "bpc_A": 4.979377501753308,
+      "bpc_B": 5.35511793096212,
+      "bpc_Cret": 4.98858485667398
+    },
+    "block_A": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        64,
+        0,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 1,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0,
+      "cascade": {
+        "target": "tissue",
+        "kappa": 0.05,
+        "delta": 0.1,
+        "per_slot": [
+          {
+            "slot": 0,
+            "fast_l2": 0.373924762,
+            "fast_absmax": 0.0051299264,
+            "n_batches": 2
+          },
+          {
+            "slot": 1,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 2,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 3,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          }
+        ],
+        "total_fast_l2": 0.373924762,
+        "max_fast_absmax": 0.0051299264
+      }
+    },
+    "traj_B": {
+      "bpc_A": 4.657242114890998,
+      "bpc_B": 5.06008020209994,
+      "bpc_Cret": 4.670896867078149
+    },
+    "block_B": {
+      "domain": "shakes",
+      "owner": null,
+      "train": [
+        64,
+        0,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 1,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0,
+      "cascade": {
+        "target": "tissue",
+        "kappa": 0.05,
+        "delta": 0.1,
+        "per_slot": [
+          {
+            "slot": 0,
+            "fast_l2": 0.6101751924,
+            "fast_absmax": 0.0092849154,
+            "n_batches": 4
+          },
+          {
+            "slot": 1,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 2,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 3,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          }
+        ],
+        "total_fast_l2": 0.6101751924,
+        "max_fast_absmax": 0.0092849154
+      }
+    },
+    "traj_C": {
+      "bpc_A": 4.359556593080673,
+      "bpc_B": 5.014198703713203,
+      "bpc_Cret": 4.3629859165553295
+    },
+    "block_C": {
+      "domain": "text8",
+      "owner": 0,
+      "train": [
+        64,
+        0,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 1.0,
+      "recruits_so_far": 1,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0,
+      "cascade": {
+        "target": "tissue",
+        "kappa": 0.05,
+        "delta": 0.1,
+        "per_slot": [
+          {
+            "slot": 0,
+            "fast_l2": 0.8017066717,
+            "fast_absmax": 0.0126502542,
+            "n_batches": 6
+          },
+          {
+            "slot": 1,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 2,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 3,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          }
+        ],
+        "total_fast_l2": 0.8017066717,
+        "max_fast_absmax": 0.0126502542
+      }
+    },
+    "traj_D": {
+      "bpc_A": 4.37734211806425,
+      "bpc_B": 4.8679925437152685,
+      "bpc_Cret": 4.382348037368048
+    },
+    "block_D": {
+      "domain": "shakes",
+      "owner": 0,
+      "train": [
+        64,
+        0,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 1.0,
+      "recruits_so_far": 1,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0,
+      "cascade": {
+        "target": "tissue",
+        "kappa": 0.05,
+        "delta": 0.1,
+        "per_slot": [
+          {
+            "slot": 0,
+            "fast_l2": 0.8307670355,
+            "fast_absmax": 0.0153760109,
+            "n_batches": 8
+          },
+          {
+            "slot": 1,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 2,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 3,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          }
+        ],
+        "total_fast_l2": 0.8307670355,
+        "max_fast_absmax": 0.0153760109
+      }
+    },
+    "traj_E": {
+      "bpc_A": 4.213872675448287,
+      "bpc_B": 4.940683510583628,
+      "bpc_Cret": 4.2126632722803246
+    },
+    "block_E": {
+      "domain": "text8",
+      "owner": 0,
+      "train": [
+        64,
+        0,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 1.0,
+      "recruits_so_far": 1,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0,
+      "cascade": {
+        "target": "tissue",
+        "kappa": 0.05,
+        "delta": 0.1,
+        "per_slot": [
+          {
+            "slot": 0,
+            "fast_l2": 0.9555555582,
+            "fast_absmax": 0.0175837427,
+            "n_batches": 10
+          },
+          {
+            "slot": 1,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 2,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 3,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          }
+        ],
+        "total_fast_l2": 0.9555555582,
+        "max_fast_absmax": 0.0175837427
+      }
+    },
+    "bpc_A_preB": 4.979377501753308,
+    "bpc_A_postB": 4.657242114890998,
+    "bpc_B_postB": 5.06008020209994,
+    "bpc_B_postC": 5.014198703713203,
+    "bpc_B_postD": 4.8679925437152685,
+    "bpc_B_postE": 4.940683510583628,
+    "bpc_A_postE": 4.213872675448287,
+    "bpc_Cret_postC": 4.3629859165553295,
+    "bpc_Cret_postE": 4.2126632722803246,
+    "boundary_window_D": {
+      "frac_to_owner": 1.0
+    },
+    "b_degradation_B_postC": -0.04588149838673683,
+    "wall_s": 10.5,
+    "arm": "EX",
+    "backbone_lr_post_a": 0.00075,
+    "domain_exclusion": true,
+    "cellkey": "claim.EX.s0",
+    "cfgsig": "373afe619e874704",
+    "complete": true
+  }
+}

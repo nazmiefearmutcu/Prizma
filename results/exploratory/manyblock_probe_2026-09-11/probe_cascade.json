@@ -1,0 +1,599 @@
+{
+ "registry": "manyblock_probe_2026-09-09",
+ "lane": "LANE-EXPLORATORY (quarantined; never cited as a claim)",
+ "seeds": [
+  0,
+  1
+ ],
+ "results": {
+  "s0": {
+   "blocks": {
+    "init": {
+     "bpc_A": 6.07656037780098,
+     "bpc_B": 6.059198197160217,
+     "bpc_Cret": 6.077612939847055
+    },
+    "post_A": {
+     "bpc_A": 3.030435557476119,
+     "bpc_B": 5.604073051646806,
+     "bpc_Cret": 2.9788781715307078,
+     "block_train": [
+      3905,
+      1,
+      0,
+      0
+     ],
+     "recruits_so_far": 2,
+     "evictions_so_far": 0,
+     "cascade": {
+      "target": "tissue",
+      "kappa": 0.05,
+      "delta": 0.1,
+      "per_slot": [
+       {
+        "slot": 0,
+        "fast_l2": 1.1753731966,
+        "fast_absmax": 0.0268311966,
+        "n_batches": 123
+       },
+       {
+        "slot": 1,
+        "fast_l2": 0.2452837527,
+        "fast_absmax": 0.0026999998,
+        "n_batches": 1
+       },
+       {
+        "slot": 2,
+        "fast_l2": 0.0,
+        "fast_absmax": 0.0,
+        "n_batches": 0
+       },
+       {
+        "slot": 3,
+        "fast_l2": 0.0,
+        "fast_absmax": 0.0,
+        "n_batches": 0
+       }
+      ],
+      "total_fast_l2": 1.4206569493,
+      "max_fast_absmax": 0.0268311966
+     }
+    },
+    "post_B": {
+     "bpc_A": 3.220227052406038,
+     "bpc_B": 3.069130102396482,
+     "bpc_Cret": 3.2611128460723524,
+     "block_train": [
+      1,
+      3919,
+      1,
+      0
+     ],
+     "recruits_so_far": 3,
+     "evictions_so_far": 0,
+     "cascade": {
+      "target": "tissue",
+      "kappa": 0.05,
+      "delta": 0.1,
+      "per_slot": [
+       {
+        "slot": 0,
+        "fast_l2": 1.0606517792,
+        "fast_absmax": 0.0268260371,
+        "n_batches": 124
+       },
+       {
+        "slot": 1,
+        "fast_l2": 0.7856849432,
+        "fast_absmax": 0.0269790459,
+        "n_batches": 124
+       },
+       {
+        "slot": 2,
+        "fast_l2": 0.2453186214,
+        "fast_absmax": 0.0026999994,
+        "n_batches": 1
+       },
+       {
+        "slot": 3,
+        "fast_l2": 0.0,
+        "fast_absmax": 0.0,
+        "n_batches": 0
+       }
+      ],
+      "total_fast_l2": 2.0916553438,
+      "max_fast_absmax": 0.0269790459
+     }
+    },
+    "post_C": {
+     "bpc_A": 2.7982257253043117,
+     "bpc_B": 3.9016962332982392,
+     "bpc_Cret": 2.8539141239399,
+     "block_train": [
+      1249,
+      2444,
+      2,
+      141
+     ],
+     "recruits_so_far": 32,
+     "evictions_so_far": 28,
+     "cascade": {
+      "target": "tissue",
+      "kappa": 0.05,
+      "delta": 0.1,
+      "per_slot": [
+       {
+        "slot": 0,
+        "fast_l2": 0.7090994716,
+        "fast_absmax": 0.0250296462,
+        "n_batches": 240
+       },
+       {
+        "slot": 1,
+        "fast_l2": 1.1375412941,
+        "fast_absmax": 0.0269499626,
+        "n_batches": 245
+       },
+       {
+        "slot": 2,
+        "fast_l2": 0.2450211346,
+        "fast_absmax": 0.0026999991,
+        "n_batches": 1
+       },
+       {
+        "slot": 3,
+        "fast_l2": 1.1275652647,
+        "fast_absmax": 0.0268751625,
+        "n_batches": 52
+       }
+      ],
+      "total_fast_l2": 3.219227165,
+      "max_fast_absmax": 0.0269499626
+     }
+    },
+    "post_D": {
+     "bpc_A": 2.996281669247018,
+     "bpc_B": 2.8907366214957624,
+     "bpc_Cret": 3.067074321601871,
+     "block_train": [
+      0,
+      0,
+      3901,
+      -138
+     ],
+     "recruits_so_far": 44,
+     "evictions_so_far": 40,
+     "cascade": {
+      "target": "tissue",
+      "kappa": 0.05,
+      "delta": 0.1,
+      "per_slot": [
+       {
+        "slot": 0,
+        "fast_l2": 0.7090994716,
+        "fast_absmax": 0.0250296462,
+        "n_batches": 240
+       },
+       {
+        "slot": 1,
+        "fast_l2": 1.1375412941,
+        "fast_absmax": 0.0269499626,
+        "n_batches": 245
+       },
+       {
+        "slot": 2,
+        "fast_l2": 0.7374673486,
+        "fast_absmax": 0.0269684065,
+        "n_batches": 124
+       },
+       {
+        "slot": 3,
+        "fast_l2": 0.2453019619,
+        "fast_absmax": 0.0026999994,
+        "n_batches": 1
+       }
+      ],
+      "total_fast_l2": 2.8294100762,
+      "max_fast_absmax": 0.0269684065
+     }
+    },
+    "post_E": {
+     "bpc_A": 2.7056477783234447,
+     "bpc_B": 3.917139177819653,
+     "bpc_Cret": 2.7371460886143097,
+     "block_train": [
+      1386,
+      1986,
+      376,
+      0
+     ],
+     "recruits_so_far": 105,
+     "evictions_so_far": 101,
+     "cascade": {
+      "target": "tissue",
+      "kappa": 0.05,
+      "delta": 0.1,
+      "per_slot": [
+       {
+        "slot": 0,
+        "fast_l2": 0.6510039568,
+        "fast_absmax": 0.0234643202,
+        "n_batches": 356
+       },
+       {
+        "slot": 1,
+        "fast_l2": 0.84336555,
+        "fast_absmax": 0.0264219996,
+        "n_batches": 367
+       },
+       {
+        "slot": 2,
+        "fast_l2": 1.068038106,
+        "fast_absmax": 0.0269759502,
+        "n_batches": 219
+       },
+       {
+        "slot": 3,
+        "fast_l2": 0.2445322871,
+        "fast_absmax": 0.0026999994,
+        "n_batches": 1
+       }
+      ],
+      "total_fast_l2": 2.8069398999,
+      "max_fast_absmax": 0.0269759502
+     }
+    }
+   },
+   "per_slot": [
+    {
+     "slot": 0,
+     "committed": true,
+     "train": {
+      "A": 3905,
+      "B": 1,
+      "C": 1249,
+      "D": 0,
+      "E": 1386
+     }
+    },
+    {
+     "slot": 1,
+     "committed": true,
+     "train": {
+      "A": 1,
+      "B": 3919,
+      "C": 2444,
+      "D": 0,
+      "E": 1986
+     }
+    },
+    {
+     "slot": 2,
+     "committed": true,
+     "train": {
+      "A": 0,
+      "B": 1,
+      "C": 2,
+      "D": 3901,
+      "E": 376
+     }
+    },
+    {
+     "slot": 3,
+     "committed": true,
+     "train": {
+      "A": 0,
+      "B": 0,
+      "C": 141,
+      "D": -138,
+      "E": 0
+     }
+    }
+   ],
+   "ledger_tail": {
+    "recruits": 105,
+    "evictions": 101,
+    "vetoed_novel_segments": 0
+   },
+   "wall_s": 196.3
+  },
+  "s1": {
+   "blocks": {
+    "init": {
+     "bpc_A": 6.094756770219431,
+     "bpc_B": 6.076996261823124,
+     "bpc_Cret": 6.090074361747417
+    },
+    "post_A": {
+     "bpc_A": 3.047572201619577,
+     "bpc_B": 6.690569607131367,
+     "bpc_Cret": 2.989259252479892,
+     "block_train": [
+      3906,
+      0,
+      0,
+      0
+     ],
+     "recruits_so_far": 1,
+     "evictions_so_far": 0,
+     "cascade": {
+      "target": "tissue",
+      "kappa": 0.05,
+      "delta": 0.1,
+      "per_slot": [
+       {
+        "slot": 0,
+        "fast_l2": 1.1578909159,
+        "fast_absmax": 0.0268891435,
+        "n_batches": 123
+       },
+       {
+        "slot": 1,
+        "fast_l2": 0.0,
+        "fast_absmax": 0.0,
+        "n_batches": 0
+       },
+       {
+        "slot": 2,
+        "fast_l2": 0.0,
+        "fast_absmax": 0.0,
+        "n_batches": 0
+       },
+       {
+        "slot": 3,
+        "fast_l2": 0.0,
+        "fast_absmax": 0.0,
+        "n_batches": 0
+       }
+      ],
+      "total_fast_l2": 1.1578909159,
+      "max_fast_absmax": 0.0268891435
+     }
+    },
+    "post_B": {
+     "bpc_A": 3.1679697482254285,
+     "bpc_B": 3.048744583659176,
+     "bpc_Cret": 3.198216970281611,
+     "block_train": [
+      1,
+      3920,
+      0,
+      0
+     ],
+     "recruits_so_far": 2,
+     "evictions_so_far": 0,
+     "cascade": {
+      "target": "tissue",
+      "kappa": 0.05,
+      "delta": 0.1,
+      "per_slot": [
+       {
+        "slot": 0,
+        "fast_l2": 1.0631102324,
+        "fast_absmax": 0.0268915463,
+        "n_batches": 124
+       },
+       {
+        "slot": 1,
+        "fast_l2": 0.7706341147,
+        "fast_absmax": 0.026986178,
+        "n_batches": 123
+       },
+       {
+        "slot": 2,
+        "fast_l2": 0.0,
+        "fast_absmax": 0.0,
+        "n_batches": 0
+       },
+       {
+        "slot": 3,
+        "fast_l2": 0.0,
+        "fast_absmax": 0.0,
+        "n_batches": 0
+       }
+      ],
+      "total_fast_l2": 1.8337443471,
+      "max_fast_absmax": 0.026986178
+     }
+    },
+    "post_C": {
+     "bpc_A": 2.8067425249016913,
+     "bpc_B": 3.9234131428779206,
+     "bpc_Cret": 2.84968403160358,
+     "block_train": [
+      1834,
+      1948,
+      37,
+      2
+     ],
+     "recruits_so_far": 39,
+     "evictions_so_far": 35,
+     "cascade": {
+      "target": "tissue",
+      "kappa": 0.05,
+      "delta": 0.1,
+      "per_slot": [
+       {
+        "slot": 0,
+        "fast_l2": 0.8160459995,
+        "fast_absmax": 0.0259751901,
+        "n_batches": 244
+       },
+       {
+        "slot": 1,
+        "fast_l2": 1.1727887392,
+        "fast_absmax": 0.0269678961,
+        "n_batches": 244
+       },
+       {
+        "slot": 2,
+        "fast_l2": 0.961540699,
+        "fast_absmax": 0.0185248703,
+        "n_batches": 11
+       },
+       {
+        "slot": 3,
+        "fast_l2": 0.2449618578,
+        "fast_absmax": 0.0026999996,
+        "n_batches": 1
+       }
+      ],
+      "total_fast_l2": 3.1953372955,
+      "max_fast_absmax": 0.0269678961
+     }
+    },
+    "post_D": {
+     "bpc_A": 2.999220127777243,
+     "bpc_B": 2.8823827338405774,
+     "bpc_Cret": 3.0688610184930045,
+     "block_train": [
+      0,
+      2655,
+      1096,
+      0
+     ],
+     "recruits_so_far": 110,
+     "evictions_so_far": 106,
+     "cascade": {
+      "target": "tissue",
+      "kappa": 0.05,
+      "delta": 0.1,
+      "per_slot": [
+       {
+        "slot": 0,
+        "fast_l2": 0.8160459995,
+        "fast_absmax": 0.0259751901,
+        "n_batches": 244
+       },
+       {
+        "slot": 1,
+        "fast_l2": 0.7169818878,
+        "fast_absmax": 0.0269546099,
+        "n_batches": 354
+       },
+       {
+        "slot": 2,
+        "fast_l2": 0.7188981175,
+        "fast_absmax": 0.0269789789,
+        "n_batches": 118
+       },
+       {
+        "slot": 3,
+        "fast_l2": 0.2453122735,
+        "fast_absmax": 0.0026999991,
+        "n_batches": 1
+       }
+      ],
+      "total_fast_l2": 2.4972382783,
+      "max_fast_absmax": 0.0269789789
+     }
+    },
+    "post_E": {
+     "bpc_A": 2.6982023512643325,
+     "bpc_B": 3.82106848928624,
+     "bpc_Cret": 2.7445616912358757,
+     "block_train": [
+      1670,
+      1818,
+      294,
+      -1
+     ],
+     "recruits_so_far": 159,
+     "evictions_so_far": 155,
+     "cascade": {
+      "target": "tissue",
+      "kappa": 0.05,
+      "delta": 0.1,
+      "per_slot": [
+       {
+        "slot": 0,
+        "fast_l2": 0.6153100729,
+        "fast_absmax": 0.0224819593,
+        "n_batches": 363
+       },
+       {
+        "slot": 1,
+        "fast_l2": 1.0108799934,
+        "fast_absmax": 0.0269434135,
+        "n_batches": 474
+       },
+       {
+        "slot": 2,
+        "fast_l2": 1.1350636482,
+        "fast_absmax": 0.0269742459,
+        "n_batches": 192
+       },
+       {
+        "slot": 3,
+        "fast_l2": 0.2444679439,
+        "fast_absmax": 0.0026999998,
+        "n_batches": 1
+       }
+      ],
+      "total_fast_l2": 3.0057216584,
+      "max_fast_absmax": 0.0269742459
+     }
+    }
+   },
+   "per_slot": [
+    {
+     "slot": 0,
+     "committed": true,
+     "train": {
+      "A": 3906,
+      "B": 1,
+      "C": 1834,
+      "D": 0,
+      "E": 1670
+     }
+    },
+    {
+     "slot": 1,
+     "committed": true,
+     "train": {
+      "A": 0,
+      "B": 3920,
+      "C": 1948,
+      "D": 2655,
+      "E": 1818
+     }
+    },
+    {
+     "slot": 2,
+     "committed": true,
+     "train": {
+      "A": 0,
+      "B": 0,
+      "C": 37,
+      "D": 1096,
+      "E": 294
+     }
+    },
+    {
+     "slot": 3,
+     "committed": true,
+     "train": {
+      "A": 0,
+      "B": 0,
+      "C": 2,
+      "D": 0,
+      "E": -1
+     }
+    }
+   ],
+   "ledger_tail": {
+    "recruits": 159,
+    "evictions": 155,
+    "vetoed_novel_segments": 0
+   },
+   "wall_s": 203.1
+  }
+ },
+ "note": "exploratory; informs the PR-14 many-block prereg \u2014 especially whether a literal shakespeare revisit (block D) improves B-eval and whether the B-expert re-engages under plain argmin without domain-exclusion",
+ "cascade": {
+  "target": "tissue",
+  "kappa": 0.05,
+  "delta": 0.1,
+  "note": "Lane-1 tissue fast/slow cascade (guarded lever, campaign 2026-09-11): zero-init W_fast; forward W + W_fast; the expert optimizer receives the fast parameters plus the un-split biases (coordinator clarification 2026-09-11); after every optimizer step W <- W + kappa*W_fast and W_fast <- (1-delta)*W_fast"
+ }
+}

@@ -323,6 +323,42 @@ registered program is now COMPLETE with the attribution matrix closed; S3 (owner
 remains the ladder's only next rung.** Artifacts:
 results/recovery_attr_PR-2026-09-03-21/ + official console log.
 
+## CAMPAIGN 2026-09-11 (parallel-lane wave — owner: "çok çok çok daha iyi", stay inside the brain metaphors)
+
+A three-lane wave (surveys → frozen contract → disjoint implementer lanes → coordinator review +
+gates). No new claim was staked; one new mechanism was implemented and honestly probed.
+
+1. **Lane 1 — tissue multi-timescale (fast/slow) cascade (Benna-Fusi lineage), DEFAULT-OFF.**
+   `seq/fusion_probe.py` PCExpertHead gains zero-init `W_fast`; forward = W + W_fast; the expert
+   optimizer receives the fast weights + the un-split biases (coordinator clarification: biases train
+   in both modes, no confound); after each step `W += kappa*W_fast`, `W_fast *= (1-delta)`; flags
+   `--cascade-target {off,tissue} --cascade-kappa --cascade-delta` threaded through both claim
+   runners + the probe; fingerprints + per-block fast-norm diagnostics. `off` is byte-identical
+   (pinned). 14 new tests. **EXPLORATORY PROBE (n=2, seeds 0-1, paired, `--out` preserved the
+   historical artifact): the frozen dose shifts BOTH metrics in the protective direction —
+   recovery_B −0.048 bpc, damage_C −0.063 bpc — within seed/run noise at n=2; NOT a claim-grade
+   effect.** Historical canary PASS (the OFF runs reproduce the committed 2026-09-09 probe.json
+   exactly). Lever stays default-OFF; a future registration would need a dose/target design pass
+   first (`results/exploratory/manyblock_probe_2026-09-11/ANALYSIS.md`).
+2. **Lane 2 — Prizma-Seq CPU kernel (honest efficiency, default-off).** `chunked_delta` gains
+   `fast_reads` (opt-in; read-ratio via `ratio / alpha_i`, removing a second [B,H,C,C] sub+exp;
+   ~1e-5 drift, default path byte-identical); the unit-lower solve passes the strictly-lower matrix
+   directly with `unitriangular=True` (maxdiff exactly 0.0). Closed the long-standing coverage gap:
+   NEW `tests/test_delta.py` (chunked vs reference parity) + `tests/test_fast_reads.py`.
+   Measured interleaved A/B medians: 1.033x / 0.995x / 1.056x (pooled 1.029x) — reported honestly,
+   lever stays opt-in.
+3. **Records truth + registry repair.** INDEX.md rows PR-08/PR-10/PR-11/PR-12 restored from
+   `05ad731^` (they were accidentally deleted by that commit; registry now 12 CLAIMED / 6 NEGATIVE /
+   1 NOT-ESTABLISHED + the exploratory footnote; duplicate PR-03 row collapsed; NOT-ESTABLISHED
+   added to the vocabulary); README Prizma-Seq crosstalk corrected to the measured 0.117 + counts
+   refreshed; notebook stage-6 command/archive/provenance aligned to the PR-13 confirmatory run;
+   locale-robust test reads fixed (cp1254).
+
+**Suite at close: 556 collected -> 546 passed, 10 skipped (CPU, 3:43).** No prereg row changed; the
+next registered rung remains S3 (owner Colab, PRIZMA_GPU_CAMPAIGN.ipynb). New leads: (i) the
+cascade needs a dose/target design pass before any registration; (ii) L2 `fast_reads` could extend
+to `_chunked_delta_eta` (survey-2 C2 extension, not done).
+
 ## BACKLOG
 
 1. **[PR-03 claim] Single-pass citation bar** — status: `done (commit: see git log "PR-03 CLAIMED", 2026-09-05)`

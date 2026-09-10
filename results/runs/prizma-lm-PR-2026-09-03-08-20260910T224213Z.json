@@ -1,0 +1,939 @@
+{
+  "meta": {
+    "registry": "PR-2026-09-03-08",
+    "smoke": true,
+    "lane": "SMOKE (plumbing only)",
+    "doc": "docs/preregistry/2026-09-08-prizma-lm-flagship.md",
+    "arms": [
+      "PRIM-LM",
+      "FROZEN-TRUNK",
+      "SHARED-HEAD",
+      "FROZEN-CHECKPOINT",
+      "FORCED-RECRUIT"
+    ],
+    "arm_family": {
+      "PRIM-LM": "fusion",
+      "FORCED-RECRUIT": "fusion",
+      "FROZEN-TRUNK": "fusion",
+      "SHARED-HEAD": "shared",
+      "FROZEN-CHECKPOINT": "frozen-checkpoint"
+    },
+    "claim_seeds": [
+      0
+    ],
+    "seg": 256,
+    "batch_segs": 32,
+    "lr_grid": [
+      0.001,
+      0.003,
+      0.01
+    ],
+    "lr_select_segs": 200,
+    "lr_rule": "one per arm-family, seed-0 first-200-A-segment loss, then frozen (PR-07' addendum); smoke fixes 3e-3 (probe-2 precedent)",
+    "tissue": {
+      "E_pool": 4,
+      "m_max": 4,
+      "freeze_min_seen": 300,
+      "z_novel": 5.0,
+      "h_small": 64,
+      "h_shared": 256,
+      "floor_ema": 0.05,
+      "fresh_head_seed_formula": "20260908 + 17*slot + n_evictions",
+      "params_backbone": 103056,
+      "params_per_expert": 8385,
+      "params_pool_e4": 33540,
+      "params_shared_h256": 33345,
+      "shared_parity_note": "shared head 33345 vs pool 33540 params (probe-2 P2 budget)"
+    },
+    "pinned_slices": {
+      "A_train": [
+        "text8",
+        0,
+        1000000
+      ],
+      "A_eval": [
+        "text8",
+        1000000,
+        1100000
+      ],
+      "C_retention": [
+        "text8",
+        900000,
+        1000000
+      ],
+      "C_train": [
+        "text8",
+        1100000,
+        2100000
+      ],
+      "B_train": [
+        "shakespeare",
+        0.0,
+        0.9
+      ],
+      "B_eval": [
+        "shakespeare",
+        0.9,
+        1.0
+      ]
+    },
+    "stream_lengths": {
+      "A_train": 1000000,
+      "B_train": 1003854,
+      "C_train": 1000000,
+      "A_eval": 100000,
+      "B_eval": 111540,
+      "C_retention": 100000
+    },
+    "vocab": 65,
+    "threads": 8,
+    "c_range_repair": "DOC-VS-CODE REPAIR (maintainer addendum 2026-09-08 \u2014 see the doc's dated addendum section): pre-reg section 2 pins Block C = text8[1.0M, 2.0M) while A-eval = text8[1.0M, 1.1M) \u2014 literal C training would consume the A-eval slice and bar B1 would measure training, not retention. The doc's own cited provenance (fusion_probe2 P3) skipped [1.0M, 1.1M) for exactly this reason. Pinned here: C = text8[1.1M, 2.1M) (1.0M chars, the doc's block size, A-eval clean).",
+    "c_retention_prose_note": "DOC PROSE BUG (disclosed, slice implemented as pinned): section 2 calls text8[0.9M, 1.0M) 'held-out ... disjoint from A-train's tail', but that slice IS A-train's tail ([0.9M, 1.0M) is inside [0, 1.0M)). Both B2 arms saw it equally in A-training, so B2 stays a fair adaptation comparison (C-training's in-domain benefit over the frozen floor).",
+    "bars": {
+      "B1_margin": 0.05,
+      "B2_margin": 0.1,
+      "B3_frac": 0.5,
+      "B3_window_batches": 20,
+      "B3_forced_cost": 0.1,
+      "alpha": 0.05,
+      "holm_family": [
+        "B1",
+        "B2"
+      ],
+      "t_isf_convention": "UPPER-TAIL p in (0, 0.5] (the PR-03 lesson)"
+    },
+    "boundary_note": "A-expert := the committed slot with max train_A at C start (B3's 'A-recruited expert'); frac = TRAINING-ledger fraction of C segments in the first 20 C-batches assigned to it",
+    "cascade": {
+      "target": "tissue",
+      "kappa": 0.05,
+      "delta": 0.1,
+      "note": "Lane-1 tissue fast/slow cascade (guarded lever, campaign 2026-09-11): zero-init W_fast; forward W + W_fast; the expert optimizer receives ONLY W_fast; after every optimizer step W <- W + kappa*W_fast and W_fast <- (1-delta)*W_fast (delta > kappa = transient plasticity)"
+    },
+    "budget_projection": {
+      "projected_min": 0.5,
+      "warn": false,
+      "warn_threshold_min": 120.0,
+      "note": "within budget"
+    }
+  },
+  "lr_selection": {
+    "smoke_note": "LR selection skipped (fixed 3e-3, probe-2 smoke precedent); the numbers are plumbing-only"
+  },
+  "claim.PRIM-LM.s0": {
+    "config": "PRIM-LM",
+    "E": 4,
+    "seed": 0,
+    "lr": 0.003,
+    "bpc_A_preB": 4.979377501753308,
+    "cascade_after_A": {
+      "target": "tissue",
+      "kappa": 0.05,
+      "delta": 0.1,
+      "per_slot": [
+        {
+          "slot": 0,
+          "fast_l2": 0.373924762,
+          "fast_absmax": 0.0051299264,
+          "n_batches": 2
+        },
+        {
+          "slot": 1,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        },
+        {
+          "slot": 2,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        },
+        {
+          "slot": 3,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        }
+      ],
+      "total_fast_l2": 0.373924762,
+      "max_fast_absmax": 0.0051299264
+    },
+    "bpc_A_postB": 4.517415668814004,
+    "bpc_B_postB": 5.005621274985239,
+    "bpc_Cret_postB": 4.53690074222873,
+    "cascade_after_B": {
+      "target": "tissue",
+      "kappa": 0.05,
+      "delta": 0.1,
+      "per_slot": [
+        {
+          "slot": 0,
+          "fast_l2": 0.5704927444,
+          "fast_absmax": 0.0092849154,
+          "n_batches": 4
+        },
+        {
+          "slot": 1,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        },
+        {
+          "slot": 2,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        },
+        {
+          "slot": 3,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        }
+      ],
+      "total_fast_l2": 0.5704927444,
+      "max_fast_absmax": 0.0092849154
+    },
+    "a_expert": 0,
+    "bpc_A_postC": 4.270141384118153,
+    "bpc_B_postC": 5.0269057909238315,
+    "bpc_Cret_postC": 4.272190697635191,
+    "cascade_after_C": {
+      "target": "tissue",
+      "kappa": 0.05,
+      "delta": 0.1,
+      "per_slot": [
+        {
+          "slot": 0,
+          "fast_l2": 0.6803928614,
+          "fast_absmax": 0.0126502533,
+          "n_batches": 6
+        },
+        {
+          "slot": 1,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        },
+        {
+          "slot": 2,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        },
+        {
+          "slot": 3,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        }
+      ],
+      "total_fast_l2": 0.6803928614,
+      "max_fast_absmax": 0.0126502533
+    },
+    "fgt_A_full": 0.7092361176351547,
+    "b_degradation_B_postC": 0.02128451593859282,
+    "ledger": {
+      "n_committed": 1,
+      "a_expert": 0,
+      "recruits": [
+        {
+          "slot": 0,
+          "at_batch": 0,
+          "corpus": "A",
+          "n_novel_segs": 32,
+          "trigger_z": null,
+          "reason": "empty_pool"
+        }
+      ],
+      "evictions": [],
+      "veto_events": [],
+      "vetoed_novel_segments": 0,
+      "cap_fallback_batches": 0,
+      "cap_fallback_segments": 0,
+      "cap_events": [],
+      "per_expert": [
+        {
+          "slot": 0,
+          "committed": true,
+          "train_A": 64,
+          "train_B": 64,
+          "train_C": 64,
+          "train_total": 192,
+          "mu": 3.9628,
+          "sigma": 0.5331,
+          "n_batches": 6,
+          "n_segments": 192,
+          "is_A_expert": true
+        },
+        {
+          "slot": 1,
+          "committed": false
+        },
+        {
+          "slot": 2,
+          "committed": false
+        },
+        {
+          "slot": 3,
+          "committed": false
+        }
+      ],
+      "block_majority_share": {
+        "A": 1.0,
+        "B": 1.0,
+        "C": 1.0
+      },
+      "train_sums_balance": {
+        "A": {
+          "sum": 64,
+          "expected": 64,
+          "ok": true
+        },
+        "B": {
+          "sum": 64,
+          "expected": 64,
+          "ok": true
+        },
+        "C": {
+          "sum": 64,
+          "expected": 64,
+          "ok": true
+        }
+      },
+      "eval_routes": {
+        "A_eval": [
+          390,
+          0,
+          0,
+          0
+        ],
+        "B_eval": [
+          435,
+          0,
+          0,
+          0
+        ],
+        "C_retention": [
+          390,
+          0,
+          0,
+          0
+        ]
+      },
+      "boundary_window": {
+        "c_batches_1_to": 20,
+        "segments_total": 64,
+        "to_A_expert": 64,
+        "frac_to_A_expert": 1.0,
+        "recruit_events_c_batches_1_to_20": []
+      },
+      "cascade": {
+        "target": "tissue",
+        "kappa": 0.05,
+        "delta": 0.1,
+        "per_slot": [
+          {
+            "slot": 0,
+            "fast_l2": 0.6803928614,
+            "fast_absmax": 0.0126502533,
+            "n_batches": 6
+          },
+          {
+            "slot": 1,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 2,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 3,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          }
+        ],
+        "total_fast_l2": 0.6803928614,
+        "max_fast_absmax": 0.0126502533
+      }
+    },
+    "wall_s": 6.5,
+    "arm": "PRIM-LM",
+    "cellkey": "claim.PRIM-LM.s0",
+    "cfgsig": "2f7f4c89b719cdad",
+    "complete": true
+  },
+  "claim.FROZEN-TRUNK.s0": {
+    "config": "FROZEN-TRUNK",
+    "E": 4,
+    "seed": 0,
+    "lr": 0.003,
+    "bpc_A_preB": 4.979377501753308,
+    "cascade_after_A": {
+      "target": "tissue",
+      "kappa": 0.05,
+      "delta": 0.1,
+      "per_slot": [
+        {
+          "slot": 0,
+          "fast_l2": 0.373924762,
+          "fast_absmax": 0.0051299264,
+          "n_batches": 2
+        },
+        {
+          "slot": 1,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        },
+        {
+          "slot": 2,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        },
+        {
+          "slot": 3,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        }
+      ],
+      "total_fast_l2": 0.373924762,
+      "max_fast_absmax": 0.0051299264
+    },
+    "backbone_frozen_check": true,
+    "bpc_A_postB": 4.659137825851758,
+    "bpc_B_postB": 5.093070026471369,
+    "bpc_Cret_postB": 4.672077525330434,
+    "cascade_after_B": {
+      "target": "tissue",
+      "kappa": 0.05,
+      "delta": 0.1,
+      "per_slot": [
+        {
+          "slot": 0,
+          "fast_l2": 0.6344422102,
+          "fast_absmax": 0.0092849163,
+          "n_batches": 4
+        },
+        {
+          "slot": 1,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        },
+        {
+          "slot": 2,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        },
+        {
+          "slot": 3,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        }
+      ],
+      "total_fast_l2": 0.6344422102,
+      "max_fast_absmax": 0.0092849163
+    },
+    "a_expert": 0,
+    "bpc_A_postC": 4.3862125563259955,
+    "bpc_B_postC": 5.1215822987374455,
+    "bpc_Cret_postC": 4.398517362886822,
+    "cascade_after_C": {
+      "target": "tissue",
+      "kappa": 0.05,
+      "delta": 0.1,
+      "per_slot": [
+        {
+          "slot": 0,
+          "fast_l2": 0.7840942144,
+          "fast_absmax": 0.0126502551,
+          "n_batches": 6
+        },
+        {
+          "slot": 1,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        },
+        {
+          "slot": 2,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        },
+        {
+          "slot": 3,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        }
+      ],
+      "total_fast_l2": 0.7840942144,
+      "max_fast_absmax": 0.0126502551
+    },
+    "fgt_A_full": 0.5931649454273122,
+    "b_degradation_B_postC": 0.028512272266076444,
+    "ledger": {
+      "n_committed": 1,
+      "a_expert": 0,
+      "recruits": [
+        {
+          "slot": 0,
+          "at_batch": 0,
+          "corpus": "A",
+          "n_novel_segs": 32,
+          "trigger_z": null,
+          "reason": "empty_pool"
+        }
+      ],
+      "evictions": [],
+      "veto_events": [],
+      "vetoed_novel_segments": 0,
+      "cap_fallback_batches": 0,
+      "cap_fallback_segments": 0,
+      "cap_events": [],
+      "per_expert": [
+        {
+          "slot": 0,
+          "committed": true,
+          "train_A": 64,
+          "train_B": 64,
+          "train_C": 64,
+          "train_total": 192,
+          "mu": 3.9769,
+          "sigma": 0.5111,
+          "n_batches": 6,
+          "n_segments": 192,
+          "is_A_expert": true
+        },
+        {
+          "slot": 1,
+          "committed": false
+        },
+        {
+          "slot": 2,
+          "committed": false
+        },
+        {
+          "slot": 3,
+          "committed": false
+        }
+      ],
+      "block_majority_share": {
+        "A": 1.0,
+        "B": 1.0,
+        "C": 1.0
+      },
+      "train_sums_balance": {
+        "A": {
+          "sum": 64,
+          "expected": 64,
+          "ok": true
+        },
+        "B": {
+          "sum": 64,
+          "expected": 64,
+          "ok": true
+        },
+        "C": {
+          "sum": 64,
+          "expected": 64,
+          "ok": true
+        }
+      },
+      "eval_routes": {
+        "A_eval": [
+          390,
+          0,
+          0,
+          0
+        ],
+        "B_eval": [
+          435,
+          0,
+          0,
+          0
+        ],
+        "C_retention": [
+          390,
+          0,
+          0,
+          0
+        ]
+      },
+      "boundary_window": {
+        "c_batches_1_to": 20,
+        "segments_total": 64,
+        "to_A_expert": 64,
+        "frac_to_A_expert": 1.0,
+        "recruit_events_c_batches_1_to_20": []
+      },
+      "cascade": {
+        "target": "tissue",
+        "kappa": 0.05,
+        "delta": 0.1,
+        "per_slot": [
+          {
+            "slot": 0,
+            "fast_l2": 0.7840942144,
+            "fast_absmax": 0.0126502551,
+            "n_batches": 6
+          },
+          {
+            "slot": 1,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 2,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 3,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          }
+        ],
+        "total_fast_l2": 0.7840942144,
+        "max_fast_absmax": 0.0126502551
+      }
+    },
+    "wall_s": 5.0,
+    "arm": "FROZEN-TRUNK",
+    "cellkey": "claim.FROZEN-TRUNK.s0",
+    "cfgsig": "0afb45938f9d699c",
+    "complete": true
+  },
+  "claim.SHARED-HEAD.s0": {
+    "config": "SHARED-HEAD",
+    "h_small": 256,
+    "seed": 0,
+    "lr": 0.003,
+    "routing": "none (single shared head, trained on ALL segments)",
+    "bpc_A_preB": 4.628746067811866,
+    "bpc_A_postB": 4.376955486953714,
+    "bpc_B_postB": 4.925680209068557,
+    "bpc_Cret_postB": 4.384694981414782,
+    "bpc_A_postC": 4.267989897031181,
+    "bpc_B_postC": 5.409479769719104,
+    "bpc_Cret_postC": 4.286341662986233,
+    "fgt_A_full": 0.360756170780685,
+    "b_degradation_B_postC": 0.48379956065054674,
+    "wall_s": 5.2,
+    "arm": "SHARED-HEAD",
+    "cellkey": "claim.SHARED-HEAD.s0",
+    "cfgsig": "64db4b4021c664c4",
+    "complete": true
+  },
+  "claim.FROZEN-CHECKPOINT.s0": {
+    "config": "FROZEN-CHECKPOINT",
+    "seed": 0,
+    "lr": 0.003,
+    "routing": "none (plain backbone, frozen after A)",
+    "bpc_A_preB": 5.283897801084931,
+    "bpc_A_postB": 5.283897801084931,
+    "bpc_A_postC": 5.283897801084931,
+    "bpc_B_postB": 5.503944287368277,
+    "bpc_B_postC": 5.503944287368277,
+    "bpc_Cret_postB": 5.286113043463521,
+    "bpc_Cret_postC": 5.286113043463521,
+    "frozen_note": "weights unchanged after A; postB==postC by construction (single evaluation, honestly aliased)",
+    "fgt_A_full": 0.0,
+    "b_degradation_B_postC": 0.0,
+    "wall_s": 2.0,
+    "arm": "FROZEN-CHECKPOINT",
+    "cellkey": "claim.FROZEN-CHECKPOINT.s0",
+    "cfgsig": "075e85797b7317b7",
+    "complete": true
+  },
+  "claim.FORCED-RECRUIT.s0": {
+    "config": "FORCED-RECRUIT",
+    "E": 4,
+    "seed": 0,
+    "lr": 0.003,
+    "bpc_A_preB": 4.979377501753308,
+    "cascade_after_A": {
+      "target": "tissue",
+      "kappa": 0.05,
+      "delta": 0.1,
+      "per_slot": [
+        {
+          "slot": 0,
+          "fast_l2": 0.373924762,
+          "fast_absmax": 0.0051299264,
+          "n_batches": 2
+        },
+        {
+          "slot": 1,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        },
+        {
+          "slot": 2,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        },
+        {
+          "slot": 3,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        }
+      ],
+      "total_fast_l2": 0.373924762,
+      "max_fast_absmax": 0.0051299264
+    },
+    "bpc_A_postB": 4.517415668814004,
+    "bpc_B_postB": 5.005621274985239,
+    "bpc_Cret_postB": 4.53690074222873,
+    "cascade_after_B": {
+      "target": "tissue",
+      "kappa": 0.05,
+      "delta": 0.1,
+      "per_slot": [
+        {
+          "slot": 0,
+          "fast_l2": 0.5704927444,
+          "fast_absmax": 0.0092849154,
+          "n_batches": 4
+        },
+        {
+          "slot": 1,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        },
+        {
+          "slot": 2,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        },
+        {
+          "slot": 3,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        }
+      ],
+      "total_fast_l2": 0.5704927444,
+      "max_fast_absmax": 0.0092849154
+    },
+    "a_expert": 0,
+    "forced_slot": 1,
+    "forced_placement": {
+      "mode": "free_slot"
+    },
+    "bpc_A_postC": 4.373977064947203,
+    "bpc_B_postC": 5.0539126243234085,
+    "bpc_Cret_postC": 4.3806355135073645,
+    "cascade_after_C": {
+      "target": "tissue",
+      "kappa": 0.05,
+      "delta": 0.1,
+      "per_slot": [
+        {
+          "slot": 0,
+          "fast_l2": 0.5704927444,
+          "fast_absmax": 0.0092849154,
+          "n_batches": 4
+        },
+        {
+          "slot": 1,
+          "fast_l2": 0.4158892334,
+          "fast_absmax": 0.0051299268,
+          "n_batches": 2
+        },
+        {
+          "slot": 2,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        },
+        {
+          "slot": 3,
+          "fast_l2": 0.0,
+          "fast_absmax": 0.0,
+          "n_batches": 0
+        }
+      ],
+      "total_fast_l2": 0.9863819778,
+      "max_fast_absmax": 0.0092849154
+    },
+    "fgt_A_full": 0.6054004368061046,
+    "b_degradation_B_postC": 0.04829134933816981,
+    "ledger": {
+      "n_committed": 2,
+      "a_expert": 0,
+      "recruits": [
+        {
+          "slot": 0,
+          "at_batch": 0,
+          "corpus": "A",
+          "n_novel_segs": 32,
+          "trigger_z": null,
+          "reason": "empty_pool"
+        },
+        {
+          "slot": 1,
+          "at_batch": 0,
+          "corpus": "C",
+          "n_novel_segs": 32,
+          "trigger_z_max": null,
+          "reason": "forced_novel_C"
+        }
+      ],
+      "evictions": [],
+      "veto_events": [],
+      "vetoed_novel_segments": 0,
+      "cap_fallback_batches": 0,
+      "cap_fallback_segments": 0,
+      "cap_events": [],
+      "per_expert": [
+        {
+          "slot": 0,
+          "committed": true,
+          "train_A": 64,
+          "train_B": 64,
+          "train_C": 0,
+          "train_total": 128,
+          "mu": 4.0656,
+          "sigma": 0.4481,
+          "n_batches": 4,
+          "n_segments": 128,
+          "is_A_expert": true
+        },
+        {
+          "slot": 1,
+          "committed": true,
+          "train_A": 0,
+          "train_B": 0,
+          "train_C": 64,
+          "train_total": 64,
+          "mu": 3.4639,
+          "sigma": 0.3389,
+          "n_batches": 2,
+          "n_segments": 64,
+          "is_A_expert": false
+        },
+        {
+          "slot": 2,
+          "committed": false
+        },
+        {
+          "slot": 3,
+          "committed": false
+        }
+      ],
+      "block_majority_share": {
+        "A": 1.0,
+        "B": 1.0,
+        "C": 1.0
+      },
+      "train_sums_balance": {
+        "A": {
+          "sum": 64,
+          "expected": 64,
+          "ok": true
+        },
+        "B": {
+          "sum": 64,
+          "expected": 64,
+          "ok": true
+        },
+        "C": {
+          "sum": 64,
+          "expected": 64,
+          "ok": true
+        }
+      },
+      "eval_routes": {
+        "A_eval": [
+          390,
+          0,
+          0,
+          0
+        ],
+        "B_eval": [
+          425,
+          10,
+          0,
+          0
+        ],
+        "C_retention": [
+          390,
+          0,
+          0,
+          0
+        ]
+      },
+      "boundary_window": {
+        "c_batches_1_to": 20,
+        "segments_total": 64,
+        "to_A_expert": 0,
+        "frac_to_A_expert": 0.0,
+        "recruit_events_c_batches_1_to_20": [
+          {
+            "slot": 1,
+            "c_batch_1based": 1,
+            "reason": "forced_novel_C"
+          }
+        ]
+      },
+      "cascade": {
+        "target": "tissue",
+        "kappa": 0.05,
+        "delta": 0.1,
+        "per_slot": [
+          {
+            "slot": 0,
+            "fast_l2": 0.5704927444,
+            "fast_absmax": 0.0092849154,
+            "n_batches": 4
+          },
+          {
+            "slot": 1,
+            "fast_l2": 0.4158892334,
+            "fast_absmax": 0.0051299268,
+            "n_batches": 2
+          },
+          {
+            "slot": 2,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          },
+          {
+            "slot": 3,
+            "fast_l2": 0.0,
+            "fast_absmax": 0.0,
+            "n_batches": 0
+          }
+        ],
+        "total_fast_l2": 0.9863819778,
+        "max_fast_absmax": 0.0092849154
+      }
+    },
+    "wall_s": 5.3,
+    "arm": "FORCED-RECRUIT",
+    "cellkey": "claim.FORCED-RECRUIT.s0",
+    "cfgsig": "8ec3184c581d68b5",
+    "complete": true
+  }
+}
