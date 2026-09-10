@@ -363,13 +363,21 @@ gates). No new claim was staked; one new mechanism was implemented and honestly 
    scale (0/36 false-NOVEL on trained domains, 12/12 detection on a never-trained domain, margins
    ~60–120σ). 7 new tests; calibration caveat recorded (the separation needs recruited,
    domain-pure floors — the committed test uses K=3/d=24/h=48 geometry, not the usual unit-test
-   scale). Prune/merge stay specified-not-implemented (spec §3.1/§3.2).
+   scale). Merge stays specified-not-implemented (spec §3.1).
+5. **Lane 5 — use-it-or-lose-it prune (method-only, `src/prizma.py`).** `prune_slots(window)`
+   releases frozen experts whose recorded routing is zero and re-wires the pool cursor so a later
+   recruit re-uses the slot; guards (never below one trained expert; frozen only; window required)
+   pinned. Under the shipped cumulative `route_log` the predicate is deliberately CONSERVATIVE
+   (zero over the entire recorded history — a superset of any window; any nonzero count protects),
+   so it can never false-prune; `window` is required/validated/audited but window-independent by
+   design. 6 new tests; white-box state construction disclosed. No automatic cadence, default
+   paths untouched.
 
-**Suite at close: 563 collected -> 553 passed, 10 skipped (CPU, 3:45).** No prereg row changed; the
+**Suite at close: 569 collected -> 559 passed, 10 skipped (CPU, 3:43).** No prereg row changed; the
 next registered rung remains S3 (owner Colab, PRIZMA_GPU_CAMPAIGN.ipynb). New leads: (i) the
 cascade needs a dose/target design pass before any registration; (ii) L2 `fast_reads` could extend
-to `_chunked_delta_eta` (survey-2 C2 extension, not done); (iii) prune/merge open-world lifecycle
-(spec exists, not implemented).
+to `_chunked_delta_eta` (survey-2 C2 extension, not done); (iii) merge open-world lifecycle (spec
+§3.1, not implemented; a per-event routing ledger would strengthen prune's predicate).
 
 ## BACKLOG
 

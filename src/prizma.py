@@ -811,6 +811,119 @@ class Prizma:
         self.route_log[victim] = 0
         self.eviction_log.append(rec)
 
+    # ---------------- use-it-or-lose-it prune (docs/EXPERT_ECONOMY.md §3.2) ------ #
+    def _release_slot(self, m, window, kept_by_guard=None):
+        """Reset slot `m` to a FRESH Expert, mirroring the recruit/eviction reset
+        (`_evict_slot`): same deterministic seed formula seed + 100*(m+1), same
+        constructor kwargs, route_log entry zeroed, and one audit record appended to
+        the lazily created prune_log. Construction is what clears the consolidated
+        lifecycle: committed/frozen/omega/n_seen and the precision floors
+        (mu=1e9, var=1.0) come back exactly as __init__ creates them, along with
+        init_recon, the G3a h-statistics and the G3b probation counter."""
+        e = self.experts[m]
+        if not hasattr(self, "prune_log"):
+            self.prune_log = []
+        self.prune_log.append({
+            "slot": int(m),
+            "window": int(window),
+            "route_count_at_release": int(self.route_log[m]),
+            "n_seen_at_release": int(e.n_seen),
+            "mu_at_release": float(e.mu),
+            "kept_by_guard": None if kept_by_guard is None else int(kept_by_guard),
+            "active_before": int(self.active),
+        })
+        self.experts[m] = Expert(
+            self.d, self.h, self.K, self._base_seed + 100 * (m + 1),
+            **self._expert_kwargs)
+        self.route_log[m] = 0
+
+    def prune_slots(self, window=None):
+        """Use-it-or-lose-it slot release (docs/EXPERT_ECONOMY.md §3.2); OPT-IN.
+
+        Releases every expert that is (a) CONSOLIDATED (frozen) and (b) has ZERO
+        routing in the routing window, by resetting its slot to a fresh Expert so a
+        later recruit can re-use it. METHOD-ONLY: no constructor knob, no automatic
+        cadence -- training never calls this; with no call the run is unchanged.
+
+        ROUTE_LOG / WINDOW SEMANTICS (the documented conservative reading).
+        `route_log` is a LIFETIME CUMULATIVE ledger (one int per slot; routings,
+        committed claims and trainings are added as sample counts -- see every
+        `route_log[m] += n` site). It is not an event log: it carries no timestamps
+        or per-event history, so "zero routing in the last `window` routing events"
+        cannot be decided exactly from it. The conservative SOUND reading is used: a
+        slot is releasable only when its recorded count is ZERO -- zero over the
+        entire recorded history, which is a superset of any finite window -- so every
+        release is valid for every `window` and a false prune is impossible by
+        construction. Any nonzero count may (or may not) include routing inside the
+        caller's window; it cannot be proven stale, so the slot is PROTECTED. The
+        consequence is that the predicate is window-independent BY DESIGN under this
+        mapping; `window` is required (None -> ValueError) and validated (positive
+        int) so the operation is always explicit, and it is recorded in `prune_log`
+        for audit. A future per-event routing ledger would refine the predicate
+        without changing this API.
+
+        SAFETY GUARDS (all enforced here and pinned by tests):
+          * frozen only -- uncommitted/probationary experts and fresh pool slots are
+            never released;
+          * never prune below one TRAINED expert (`n_seen > 0`): if every trained
+            expert is a candidate, the most-recently-used candidate is kept (highest
+            recorded route count; ties -> highest slot index, the same
+            recruitment-recency proxy `_evict_victim` uses; under the conservative
+            mapping candidate counts are zero, so the tie-break decides);
+          * `window` required (see above).
+
+        RE-USE: each released slot is a fresh Expert built exactly as the constructor
+        and `_evict_slot` build it (identical seed/kwargs), so a recruit that trains
+        into it starts from the same state as a first-use slot. When the pool cursor
+        is not in the middle of training a domain -- cursor exhausted (`active >= M`),
+        pointing at a frozen expert, or sitting on a fresh never-trained slot -- the
+        cursor is rewound to the LOWEST free slot (released slots included), exactly
+        mirroring the eviction path's `self.active = victim`; otherwise the cursor is
+        left untouched (a recruit in progress is never abandoned) and the released
+        slots remain blank free capacity, rewound at a later safe call (the shipped
+        cursor only advances, so this rewind is what makes released capacity
+        reachable at all).
+
+        Returns the list of released slot indices (ascending)."""
+        if window is None:
+            raise ValueError(
+                "prune_slots requires an explicit routing window (got None): the "
+                "operation is only ever explicit, never automatic")
+        if (isinstance(window, bool) or not isinstance(window, (int, np.integer))
+                or int(window) != window or window <= 0):
+            raise ValueError(f"window must be a positive int, got {window!r}")
+        window = int(window)
+
+        candidates = [m for m in range(self.M)
+                      if self.experts[m].frozen and int(self.route_log[m]) == 0]
+
+        # One-trained-expert guard: if releasing ALL candidates would leave the pool
+        # with no trained expert, keep the most-recently-used candidate.
+        kept = None
+        trained = [m for m in range(self.M) if self.experts[m].n_seen > 0]
+        if candidates and trained and not [m for m in trained if m not in candidates]:
+            kept = max((m for m in candidates if self.experts[m].n_seen > 0),
+                       key=lambda m: (int(self.route_log[m]), m))
+            candidates.remove(kept)
+
+        released = []
+        for m in candidates:
+            self._release_slot(m, window, kept_by_guard=kept)
+            released.append(m)
+
+        # Free-capacity cursor rewind (see docstring): only when the cursor is not
+        # mid-training (exhausted / frozen / fresh). A slot is free iff it is a
+        # pristine, never-routed, uncommitted, unfrozen allocation slot.
+        free = [m for m in range(self.M)
+                if self.experts[m].n_seen == 0 and not self.experts[m].committed
+                and not self.experts[m].frozen and int(self.route_log[m]) == 0]
+        if free:
+            a = self.active
+            if a >= self.M or self.experts[a].frozen or self.experts[a].n_seen == 0:
+                self.active = min(free)
+
+        return released
+
     def _threshold(self, e):
         """Expert e's effective recognition threshold: theta_scale*(mu + z*sigma) under
         dynamic_vigilance, else the shipped expression verbatim (identical float ops --
