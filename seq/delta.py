@@ -267,9 +267,13 @@ def _solve_unit_lower(Amat, RHS):
     SAME nilpotent fallback covers the batched per-channel solve when MPS lacks batched triangular
     solve). Returns X with RHS's shape."""
     C = Amat.shape[-1]
-    M = torch.eye(C, dtype=Amat.dtype, device=Amat.device) + Amat
+    # C1 (campaign 2026-09-11): pass the strictly-lower Amat DIRECTLY with unitriangular=True.
+    # LAPACK's unit-triangular solve IGNORES the diagonal (reads it as 1), so this is exactly
+    # (I + Amat) X = RHS — same result, minus one [..., C, C] eye() + add() per solve. Measured
+    # maxdiff EXACTLY 0.0 vs the old eye()+add expression on CPU (pinned in tests/test_delta.py).
+    # Do NOT drop unitriangular=True: a plain solve would divide by Amat's zero diagonal.
     try:
-        return torch.linalg.solve_triangular(M, RHS, upper=False, unitriangular=True)
+        return torch.linalg.solve_triangular(Amat, RHS, upper=False, unitriangular=True)
     except Exception:
         # exact: (I+A)^{-1} = sum_{j=0}^{C-1} (-A)^j ; apply to RHS iteratively. A is strictly lower
         # (A^C = 0), so the series TERMINATES and is exact — works for arbitrary batched A/RHS.
@@ -369,7 +373,7 @@ def _chunked_delta_eta(q, k, v, beta, alpha, S, chunk, write_mode, beta_e, eta):
 
 def chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode="delta", beta_e=None,
                   n_delta=1, surprise=False, surprise_mode='norm', surprise_gen=None, eta=None,
-                  surprise_norm=None):
+                  surprise_norm=None, fast_reads=False):
     """WY/UT chunk-parallel delta rule. Same semantics as _delta_reference, O(T d^2/C + T C d).
     alpha=None -> pure delta (no decay). write_mode='additive' -> linear-attn ablation (no erase:
     u=beta*v, used for B6 PRIZMA_noDelta). Returns O:[B,H,T,d], S_end:[B,H,d,d].
@@ -398,7 +402,15 @@ def chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode="delt
     write_mode='additive' with eta has NO cross-token erase coupling, so the chunk form gives no
     algebraic benefit there and it delegates to _delta_reference — a rare ablation where exactness,
     not speed, is what matters.) eta is scoped to n_delta==1 (NotImplementedError for n_delta>=2) and
-    is not combined with surprise."""
+    is not combined with surprise.
+    fast_reads: opt-in CPU fast path for the GATED WY/UT branch (default False -> byte-identical to
+    today on every path). When True, the PRE-write read ratio gamma_{i-1}/gamma_j is derived from the
+    already-materialised gamma_i/gamma_j matrix as `ratio / alpha_i` instead of a second full
+    [B,H,C,C] sub+exp (gamma_i = alpha_i * gamma_{i-1} exactly; alpha in [0.5,1] on the production
+    config -> safe). The result is numerically close but NOT byte-identical (float32: max|dO| ~1e-5,
+    well inside the repo's 1e-4 parity bar) — that is why it is opt-in: every existing artifact stays
+    valid without it. Applies only when alpha is not None on the scalar-beta WY/UT path; on every
+    other path (eta / surprise / surprise_norm / n_delta>=2 / pure) it is inert by construction."""
     B, H, T, d = q.shape
 
     # SURPRISE-NORM PATH (PR-2026-09-03-01 A4): must be exact — beta_t depends on the running state
@@ -520,7 +532,14 @@ def chunked_delta(q, k, v, beta, alpha=None, S0=None, chunk=64, write_mode="delt
                 rhs = Bc[..., None] * Vc
             U = _solve_unit_lower(A, rhs)                        # [B,H,C,d]
             # reads are PRE-write -> decayed to gamma_{i-1}
-            read_ratio = torch.exp(clog_prev[..., :, None] - clog[..., None, :])   # gamma_{i-1}/gamma_j
+            # C2 opt-in fast path (default OFF): gamma_{i-1}/gamma_j == (gamma_i/gamma_j)/alpha_i, so
+            # reuse the already-materialised `ratio` and divide by alpha_i (row broadcast) instead of a
+            # second [B,H,C,C] sub+exp. Exact in real arithmetic; ~1e-6..1e-5 float32 drift vs the exp
+            # form -> NOT byte-identical -> default OFF so all existing artifacts stay valid.
+            if fast_reads:
+                read_ratio = ratio / Ac[..., :, None]            # (gamma_i/gamma_j)/alpha_i
+            else:
+                read_ratio = torch.exp(clog_prev[..., :, None] - clog[..., None, :])  # gamma_{i-1}/gamma_j
             O_inter = torch.exp(clog_prev)[..., None] * torch.matmul(Qc, S.transpose(-1, -2))
             QK = torch.matmul(Qc, Kc.transpose(-1, -2)) * read_ratio
             O_intra = torch.matmul(torch.tril(QK, -1), U)

@@ -85,6 +85,14 @@ BLOCKS = ("A", "B", "C", "D", "E")
 DOMAIN_OF = {"A": "text8", "B": "shakes", "C": "text8", "D": "shakes", "E": "text8"}
 TOP_WINDOW_BATCHES = plc.B3_WINDOW_BATCHES       # 20 — the re-engagement window (P2)
 
+# Lane-1 cascade lever (guarded, DEFAULT-OFF; campaign 2026-09-11 CONTRACT.md): aliased from
+# the PR-08 runner's pure constants (same values, same guard function; the lever is threaded
+# through build_model + the per-block fast-component diagnostics).
+CASCADE_TARGETS = plc.CASCADE_TARGETS
+CASCADE_KAPPA_DEFAULT = plc.CASCADE_KAPPA_DEFAULT
+CASCADE_DELTA_DEFAULT = plc.CASCADE_DELTA_DEFAULT
+validate_cascade = plc.validate_cascade
+
 PR11_LEDDIR = "prizma_lm_PR-2026-09-03-11"
 POWERED_CPU_FALLBACK_NOTE = (
     "POWERED VIA THE REGISTERED CPU FALLBACK (PR-14 doc §5; precedent = PR-08 addendum "
@@ -231,11 +239,16 @@ def claim_verdict(plain, ex, *, alpha=ALPHA):
 
 
 # ================================================================================= runner ========
-def run_cell(vocab_size, seed, blocks_data, evals, lr, *, exclusion):
+def run_cell(vocab_size, seed, blocks_data, evals, lr, *, exclusion,
+             cascade_target="off", cascade_kappa=CASCADE_KAPPA_DEFAULT,
+             cascade_delta=CASCADE_DELTA_DEFAULT):
     """PR-14 cell — the 5-block stream. EX pins model.domain_protect at every post-A block
     start (owner elected from the cumulative domain ledger); PLAIN never sets it. The
     A/B phases are bit-identical ACROSS arms (both arms route B freely — a first encounter
-    elects no owner; divergence begins at C)."""
+    elects no owner; divergence begins at C).
+    cascade_target (Lane-1, guarded DEFAULT-OFF): 'tissue' builds the FusionLM with the
+    fast/slow cascade on the expert heads and records per-block fast-component diagnostics
+    (rec['block_<TAG>']['cascade']); 'off' is the byte-identical pre-lever cell."""
     import time
 
     import torch
@@ -243,7 +256,9 @@ def run_cell(vocab_size, seed, blocks_data, evals, lr, *, exclusion):
 
     t0 = time.time()
     E = plc.E_POOL
-    model = fp.build_model(vocab_size, seed, E)
+    model = fp.build_model(vocab_size, seed, E,
+                           cascade=(cascade_target == "tissue"),
+                           cascade_kappa=cascade_kappa, cascade_delta=cascade_delta)
     ledger = plc._fresh_ledger()
     dom_counts = [{"text8": 0, "shakes": 0} for _ in range(E)]
     rec = {"config": ("PRIM-EX" if exclusion else "PRIM-PLAIN"),
@@ -293,6 +308,9 @@ def run_cell(vocab_size, seed, blocks_data, evals, lr, *, exclusion):
         if hasattr(model, "domain_protect"):
             rec[f"block_{tag}"]["protected"] = sorted(model.domain_protect)
             del model.domain_protect
+        diag = fp.cascade_diagnostics(model)
+        if diag is not None:
+            rec[f"block_{tag}"]["cascade"] = diag   # Lane-1: per-block fast-component norms
 
     # claim-facing flat keys (the verdict reads these)
     rec["bpc_A_preB"] = rec["traj_A"]["bpc_A"]           # post-A (= "bpc_A(post_A)")
@@ -328,10 +346,13 @@ def run_canary(plain_rec, ex_rec, seed):
 
 
 def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
-        powered_cpu: bool = False, seed_offset=0, ledger_dir=None):
+        powered_cpu: bool = False, seed_offset=0, ledger_dir=None,
+        cascade_target="off", cascade_kappa=CASCADE_KAPPA_DEFAULT,
+        cascade_delta=CASCADE_DELTA_DEFAULT):
     path = os.path.join(_results_root(), ledger_dir,
                         SMOKE_BASENAME if smoke else POWERED_BASENAME)         if ledger_dir else resolve_results_path(results_path, smoke=smoke,
                                                 force_smoke_path=force_smoke_path)
+    validate_cascade(cascade_target, cascade_kappa, cascade_delta)   # Lane-1 pure guard
 
     import time
 
@@ -419,6 +440,13 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
         res["meta"]["replication_note"] = (
             f"PR-2026-09-03-19: fresh seeds {seeds[0]}..{seeds[-1]} (offset {seed_offset}); "
             "BOTH arms re-run for the cross-arm canary and the fresh G1 comparison")
+    if cascade_target != "off":
+        res["meta"]["cascade"] = {
+            "target": cascade_target, "kappa": cascade_kappa, "delta": cascade_delta,
+            "note": ("Lane-1 tissue fast/slow cascade (guarded lever, campaign 2026-09-11): "
+                     "zero-init W_fast; forward W + W_fast; the expert optimizer receives the "
+                     "fast parameters plus the un-split biases; after every optimizer step "
+                     "W <- W + kappa*W_fast and W_fast <- (1-delta)*W_fast")}
     _save(res, path)
     print(f"[pr14] stream: A/B/C/D/E segs="
           f"{[blocks_data[t][0].shape[0] for t in BLOCKS]}; vocab={V}; smoke={smoke}; "
@@ -440,6 +468,9 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
                           "stream_lengths": res["meta"]["stream_lengths"],
                           "blocks": list(BLOCKS), "domain_of": dict(DOMAIN_OF),
                           "bars": res["meta"]["bars"],
+                          "cascade_target": cascade_target,   # Lane-1: same discipline
+                          "cascade_kappa": cascade_kappa,
+                          "cascade_delta": cascade_delta,
                           "seed_offset": seed_offset})   # PR-19: replication discipline
             prior = res.get(cellkey)
             if isinstance(prior, dict) and prior.get("cfgsig") == cfgsig and prior.get("complete"):
@@ -450,7 +481,9 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
                 raise SystemExit(f"cell {cellkey} exists at a foreign config fingerprint "
                                  f"({prior.get('cfgsig')} != {cfgsig}) — refusing to resume")
             t0 = time.time()
-            rec = run_cell(V, seed, blocks_data, evals, LR_FROZEN, exclusion=exclusion)
+            rec = run_cell(V, seed, blocks_data, evals, LR_FROZEN, exclusion=exclusion,
+                           cascade_target=cascade_target, cascade_kappa=cascade_kappa,
+                           cascade_delta=cascade_delta)
             if arm == "PLAIN":
                 res[cellkey] = {**rec, "arm": arm, "seed": seed, "lr": LR_FROZEN,
                                 "backbone_lr_post_a": BACKBONE_LR_POST_A,
@@ -502,6 +535,9 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
         report["powered_cpu"] = True
     if seed_offset:
         report["seed_offset"] = seed_offset         # PR-2026-09-03-19 (recorded when set)
+    if cascade_target != "off":
+        report["cascade"] = {"target": cascade_target, "kappa": cascade_kappa,
+                             "delta": cascade_delta}   # Lane-1 (recorded when set)
     if not smoke:
         plain = [res[f"claim.PLAIN.s{s}"] for s in seeds]
         ex = [res[f"claim.EX.s{s}"] for s in seeds]
@@ -587,6 +623,17 @@ def _build_parser():
                    help="ledger subdirectory under $PRIZMA_RESULTS (default None = the "
                         "PR-14 dir; the PR-19 run uses manyblock_PR-2026-09-03-19 so the "
                         "PR-14 ledger is never written)")
+    p.add_argument("--cascade-target", choices=CASCADE_TARGETS, default="off",
+                   help="Lane-1 guarded lever (campaign 2026-09-11): 'tissue' enables the "
+                        "multi-timescale fast/slow cascade on the routed expert heads "
+                        "(Benna-Fusi; zero-init W_fast; forward W+W_fast; optimizer receives "
+                        "the fast weights + biases; per-step consolidation + fast decay). "
+                        "Default 'off' = byte-identical pre-lever behavior.")
+    p.add_argument("--cascade-kappa", type=float, default=CASCADE_KAPPA_DEFAULT,
+                   help="Lane-1 cascade consolidation gain kappa in [0,1] (default 0.05).")
+    p.add_argument("--cascade-delta", type=float, default=CASCADE_DELTA_DEFAULT,
+                   help="Lane-1 cascade fast-decay rate delta in [0,1] (default 0.10; "
+                        "delta > kappa = transient plasticity).")
     return p
 
 
@@ -595,7 +642,8 @@ def main(argv=None):
     args = _build_parser().parse_args(argv)
     run(smoke=args.smoke, results_path=args.out, force_smoke_path=args.force_smoke_path,
         powered_cpu=args.powered_cpu, seed_offset=args.seed_offset,
-        ledger_dir=args.ledger_dir)
+        ledger_dir=args.ledger_dir, cascade_target=args.cascade_target,
+        cascade_kappa=args.cascade_kappa, cascade_delta=args.cascade_delta)
 
 
 if __name__ == "__main__":

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import statistics
 import sys
 import time
 import torch
@@ -118,6 +119,47 @@ def benchmark_path(name, fn, device, B, H, T, d, chunk, warmup=5, runs=20):
         return None, None, False
 
 
+def benchmark_interleaved_forward(name_a, fn_a, name_b, fn_b, device, B, H, T, d, chunk,
+                                  pairs=15, warmup=5):
+    """Interleaved, order-balanced A/B forward-only measurement (campaign 2026-09-11, Lane 2).
+
+    Both arms are timed ONE pass at a time on the SAME tensors in the SAME process, alternating
+    which arm goes first every pair (A,B then B,A ...) so slow drift/machine noise hits both arms
+    equally. Reports the MEDIAN (statistics.median) of each arm - single runs are meaningless on
+    this box (~2x run-to-run spread, see benchmark_results.md caveat). Returns (med_a, med_b).
+    No file is written; callers print/interpret."""
+    torch.manual_seed(42)
+    q = torch.randn(B, H, T, d, device=device)
+    k = torch.randn(B, H, T, d, device=device)
+    k = k / k.norm(dim=-1, keepdim=True)
+    v = torch.randn(B, H, T, d, device=device)
+    beta = torch.rand(B, H, T, device=device) * 0.99
+    alpha = 0.5 + 0.5 * torch.rand(B, H, T, device=device)
+
+    for _ in range(warmup):
+        fn_a(q, k, v, beta, alpha, chunk=chunk)
+        fn_b(q, k, v, beta, alpha, chunk=chunk)
+    sync_device(device)
+
+    ta, tb = [], []
+    for i in range(pairs):
+        order = [(fn_a, ta), (fn_b, tb)] if i % 2 == 0 else [(fn_b, tb), (fn_a, ta)]
+        for fn, acc in order:
+            sync_device(device)
+            t0 = time.perf_counter()
+            fn(q, k, v, beta, alpha, chunk=chunk)
+            sync_device(device)
+            acc.append(time.perf_counter() - t0)
+
+    med_a, med_b = statistics.median(ta), statistics.median(tb)
+    print(f"\nFAST_READS A/B - interleaved order-balanced forward-only, median of {pairs} pairs")
+    print(f"  {name_a:<28} median {med_a*1e3:8.3f} ms   min {min(ta)*1e3:8.3f} ms")
+    print(f"  {name_b:<28} median {med_b*1e3:8.3f} ms   min {min(tb)*1e3:8.3f} ms")
+    speedup = med_a / max(med_b, 1e-12)
+    print(f"  median speedup {speedup:.4f}x  (target >= 1.02x; below => machine noise) ")
+    return med_a, med_b
+
+
 def main():
     parser = argparse.ArgumentParser(description="Prizma-Seq Throughput Benchmark")
     parser.add_argument("--batch", type=int, default=8, help="Batch size (B)")
@@ -127,6 +169,14 @@ def main():
     parser.add_argument("--chunk", type=int, default=64, help="Chunk size (C)")
     parser.add_argument("--warmup", type=int, default=5, help="Number of warmup iterations")
     parser.add_argument("--runs", type=int, default=20, help="Number of timed benchmark runs")
+    parser.add_argument("--fast-reads", action="store_true",
+                        help="OPT-IN (campaign 2026-09-11, Lane 2): additionally measure the "
+                             "opt-in `fast_reads=True` chunked_delta variant on the Eager CPU row, "
+                             "print both rows, and run an interleaved A/B median measurement. The "
+                             "default rows are unchanged; benchmark_results.md is NOT written in "
+                             "this mode (publish-by-hand only).")
+    parser.add_argument("--ab-runs", type=int, default=15,
+                        help="Interleaved A/B pairs for the --fast-reads measurement (median).")
     args = parser.parse_args()
 
     B, H, T, d, chunk = args.batch, args.heads, args.seq_len, args.dim, args.chunk
@@ -183,6 +233,31 @@ def main():
             })
     except Exception as e:
         print(f"Skipping CPU Compilation benchmark: {e}")
+
+    # --- 2b. OPT-IN fast_reads measurement (campaign 2026-09-11, Lane 2) ---
+    # The lever is default-OFF and numerically NOT byte-identical (~1e-5 fwd drift), so it must never
+    # silently enter the published table: only --fast-reads adds the extra row, and in that mode
+    # benchmark_results.md is not rewritten (see the writer gate at the bottom). The default Eager
+    # CPU row above ran chunked_delta with the shipped defaults, exactly as before this flag existed.
+    if args.fast_reads:
+        def fast_reads_fn(q, k, v, beta, alpha, chunk=64):
+            return chunked_delta(q, k, v, beta, alpha, chunk=chunk, fast_reads=True)
+
+        print("Benchmarking Eager CPU + fast_reads (opt-in)...")
+        t_fwd_fast, t_bwd_fast, ok_fast = benchmark_path(
+            "Eager CPU fast_reads", fast_reads_fn, cpu_device, B, H, T, d, chunk,
+            args.warmup, args.runs)
+        if ok_fast:
+            results.append({
+                "path": "Eager+fast_reads", "pass": "Forward", "device": "CPU",
+                "time_ms": t_fwd_fast * 1000.0, "tokens_sec": total_tokens / t_fwd_fast,
+                "type": "Measured (opt-in)", "raw_time": t_fwd_fast
+            })
+            results.append({
+                "path": "Eager+fast_reads", "pass": "Backward", "device": "CPU",
+                "time_ms": t_bwd_fast * 1000.0, "tokens_sec": total_tokens / t_bwd_fast,
+                "type": "Measured (opt-in)", "raw_time": t_bwd_fast
+            })
 
     # --- 3. Run GPU measurements (CUDA / MPS) if available ---
     has_gpu = device.type in ("cuda", "mps")
@@ -263,7 +338,7 @@ def main():
     # Sort results for readability: Device, Path, Pass
     def sort_key(r):
         dev_order = {"CPU": 0, "MPS": 1, "CUDA": 2}
-        path_order = {"Eager": 0, "Compiled": 1, "Triton": 2}
+        path_order = {"Eager": 0, "Eager+fast_reads": 1, "Compiled": 2, "Triton": 3}
         pass_order = {"Forward": 0, "Backward": 1}
         return (dev_order.get(r["device"], 9), path_order.get(r["path"], 9), pass_order.get(r["pass"], 9))
     
@@ -285,7 +360,23 @@ def main():
     table_str = "\n".join(markdown_lines)
     print(table_str)
     print("\n" + "=" * 80)
-    
+
+    # --- 5b. Interleaved A/B for the opt-in fast_reads lever (campaign 2026-09-11, Lane 2) ---
+    # Median-of-N, order-balanced, same process/tensors: the ONLY honest way to compare these two
+    # arms on a box with ~2x run-to-run spread. Printed only; never written to the report file.
+    if args.fast_reads:
+        benchmark_interleaved_forward(
+            "default (fast_reads=False)", chunked_delta,
+            "fast_reads=True", fast_reads_fn,
+            cpu_device, B, H, T, d, chunk, pairs=args.ab_runs, warmup=args.warmup)
+
+    if args.fast_reads:
+        # DELIBERATE: the opt-in measurement must never overwrite the published table. Publish by
+        # hand (lane report / docs) only after review.
+        print("\nNOTE: --fast-reads measurement run -> benchmark_results.md NOT written "
+              "(published table is never overwritten by opt-in rows).")
+        return
+
     # Write report file to same directory
     report_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "benchmark_results.md")
     try:

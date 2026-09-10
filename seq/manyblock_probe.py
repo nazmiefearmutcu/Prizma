@@ -22,9 +22,16 @@ Provenance: PR-13 CLAIM PASS (3-block flagship) + the open question "does the re
 column ACCUMULATE across many blocks". This probe informs a PR-14 prereg (notably: whether
 domain-exclusion with per-block owner election is needed for a clean revisit).
 Output: results/exploratory/manyblock_probe_2026-09-09/probe.json (+ console summary).
+Lane-1 cascade CLI (campaign 2026-09-11, guarded DEFAULT-OFF): --cascade-target {off,tissue},
+--cascade-kappa (default 0.05), --cascade-delta (default 0.10), --smoke, --out PATH (explicit
+output; paired campaign runs keep historical files untouched). Off writes probe.json (the
+original behavior), tissue writes probe_cascade.json, --smoke writes probe_smoke.json (8
+segments/block, seed 0 only); per-block fast-component diagnostics are recorded only when the
+cascade is on.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import sys
@@ -44,12 +51,22 @@ LR_FROZEN = 3e-3
 BACKBONE_LR_POST_A = 7.5e-4                # L1 dose generalized: every post-A block
 TOP_WINDOW_BATCHES = 20
 
+# Lane-1 cascade lever (guarded, DEFAULT-OFF; campaign 2026-09-11 CONTRACT.md): the probe
+# threads the same flags/guard as the claim runners; the default invocation is byte-identical
+# to the 2026-09-09 probe (off + probe.json). A cascade run writes probe_cascade.json, a
+# --smoke wiring run writes probe_smoke.json — the files never clobber each other.
+CASCADE_TARGETS = plc.CASCADE_TARGETS
+CASCADE_KAPPA_DEFAULT = plc.CASCADE_KAPPA_DEFAULT
+CASCADE_DELTA_DEFAULT = plc.CASCADE_DELTA_DEFAULT
+validate_cascade = plc.validate_cascade
+
 
 def _slice(text, a, b):
     return text[a:b]
 
 
-def run_seed(seed, data, evals):
+def run_seed(seed, data, evals, *, cascade_target="off",
+             cascade_kappa=CASCADE_KAPPA_DEFAULT, cascade_delta=CASCADE_DELTA_DEFAULT):
     import time
     import torch
     from seq import fusion_probe as fp
@@ -58,7 +75,9 @@ def run_seed(seed, data, evals):
     (Ax, Ay, Bx, By, Cx, Cy, Dx, Dy, Ex, Ey,
      Aex, Aey, Bex, Bey, Crx, Cry) = data
     E = plc.E_POOL
-    model = fp.build_model(V := evals["vocab"], seed, E)
+    model = fp.build_model(V := evals["vocab"], seed, E,
+                           cascade=(cascade_target == "tissue"),
+                           cascade_kappa=cascade_kappa, cascade_delta=cascade_delta)
     led = plc._fresh_ledger()
     tr = {"A": [0] * E, "B": [0] * E, "C": [0] * E, "D": [0] * E, "E": [0] * E}
     blocks = [("A", Ax, Ay, False), ("B", Bx, By, True), ("C", Cx, Cy, True),
@@ -88,6 +107,9 @@ def run_seed(seed, data, evals):
         traj["blocks"][f"post_{tag}"]["block_train"] = tr[tag]
         traj["blocks"][f"post_{tag}"]["recruits_so_far"] = len(led["recruits"])
         traj["blocks"][f"post_{tag}"]["evictions_so_far"] = len(led["evictions"])
+        diag = fp.cascade_diagnostics(model)
+        if diag is not None:
+            traj["blocks"][f"post_{tag}"]["cascade"] = diag   # Lane-1: per-block fast norms
 
     per_slot = [{"slot": s, "committed": bool(model.committed[s]),
                  "train": {"A": tr["A"][s], "B": tr["B"][s], "C": tr["C"][s],
@@ -101,7 +123,34 @@ def run_seed(seed, data, evals):
     return traj
 
 
-def main():
+def _build_parser():
+    p = argparse.ArgumentParser(
+        prog="manyblock_probe",
+        description="LANE-EXPLORATORY probe (2026-09-09): 5-block many-stream dynamics "
+                    "(A=text8[0,1M) B=shakes C=text8[1.1M,2.1M) D=shakes-REVISIT "
+                    "E=text8[2.1M,3.1M)); n=2 seeds 0-1; never cited as a claim. The Lane-1 "
+                    "cascade flags mirror the claim runners (default off = byte-identical).")
+    p.add_argument("--cascade-target", choices=CASCADE_TARGETS, default="off",
+                   help="Lane-1 guarded lever: 'tissue' enables the fast/slow cascade on the "
+                        "routed expert heads (writes probe_cascade.json); default 'off' "
+                        "writes probe.json (the original 2026-09-09 behavior).")
+    p.add_argument("--cascade-kappa", type=float, default=CASCADE_KAPPA_DEFAULT,
+                   help="Lane-1 cascade consolidation gain kappa in [0,1] (default 0.05).")
+    p.add_argument("--cascade-delta", type=float, default=CASCADE_DELTA_DEFAULT,
+                   help="Lane-1 cascade fast-decay rate delta in [0,1] (default 0.10).")
+    p.add_argument("--smoke", action="store_true",
+                   help="tiny wiring run (8 segments/block, seed 0 only; writes "
+                        "probe_smoke.json, never the real probe files)")
+    p.add_argument("--out", default=None,
+                   help="explicit output JSON path (overrides the registry default; used by "
+                        "paired campaign runs so historical probe.json is never overwritten)")
+    return p
+
+
+def main(argv=None):
+    args = _build_parser().parse_args(list(sys.argv[1:] if argv is None else argv))
+    validate_cascade(args.cascade_target, args.cascade_kappa, args.cascade_delta)
+
     from seq import blockdrift_claim as claim
     from seq import fusion_probe as fp
 
@@ -110,7 +159,15 @@ def main():
 
     outdir = os.path.join(os.path.dirname(__file__), "..", "results", "exploratory", REGISTRY)
     os.makedirs(outdir, exist_ok=True)
-    out = os.path.join(outdir, "probe.json")
+    if args.smoke:
+        name = "probe_smoke.json"
+    elif args.cascade_target == "off":
+        name = "probe.json"
+    else:
+        name = "probe_cascade.json"
+    out = args.out if args.out else os.path.join(outdir, name)
+    if args.out:
+        os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
 
     A_all, B_all = claim.fetch_corpora()
     T = A_all
@@ -136,16 +193,24 @@ def main():
             segs(E_tr)[0], segs(E_tr)[1],
             segs(A_ev)[0], segs(A_ev)[1], segs(B_ev)[0], segs(B_ev)[1],
             segs(Cret)[0], segs(Cret)[1])
+    seeds = (0,)
+    if args.smoke:
+        data = tuple(t[:8] for t in data)         # 8 segments/block: wiring only
+    else:
+        seeds = (0, 1)
     evals = {"vocab": V}
 
     print(f"[probe] LANE-EXPLORATORY {REGISTRY}: 5 blocks "
           f"(A=text8[0,1M) B=shakes C=text8[1.1M,2.1M) D=shakes-REVISIT E=text8[2.1M,3.1M)); "
-          f"vocab={V}; n=2; L1 dose {BACKBONE_LR_POST_A} on post-A blocks; NO exclusion",
+          f"vocab={V}; n={len(seeds)}; L1 dose {BACKBONE_LR_POST_A} on post-A blocks; "
+          f"cascade_target={args.cascade_target} (kappa={args.cascade_kappa}, "
+          f"delta={args.cascade_delta}); smoke={args.smoke}",
           flush=True)
 
     seeds_out = {}
-    for seed in (0, 1):
-        traj = run_seed(seed, data, evals)
+    for seed in seeds:
+        traj = run_seed(seed, data, evals, cascade_target=args.cascade_target,
+                        cascade_kappa=args.cascade_kappa, cascade_delta=args.cascade_delta)
         seeds_out[f"s{seed}"] = traj
         b = traj["blocks"]
         print(f"[probe] s{seed}: "
@@ -157,10 +222,24 @@ def main():
               f"evictions={traj['ledger_tail']['evictions']} "
               f"wall={traj['wall_s']}s", flush=True)
 
-    doc = {"registry": REGISTRY, "lane": LANE, "seeds": [0, 1], "results": seeds_out,
+    doc = {"registry": REGISTRY, "lane": LANE, "seeds": [int(s) for s in seeds],
+           "results": seeds_out,
            "note": ("exploratory; informs the PR-14 many-block prereg — especially whether a "
                     "literal shakespeare revisit (block D) improves B-eval and whether the "
                     "B-expert re-engages under plain argmin without domain-exclusion")}
+    if args.smoke:
+        doc["smoke"] = True
+        doc["smoke_note"] = ("wiring-only run (8 segments/block, seed 0); numbers are "
+                             "meaningless, never cited")
+    if args.cascade_target != "off":
+        doc["cascade"] = {"target": args.cascade_target, "kappa": args.cascade_kappa,
+                          "delta": args.cascade_delta,
+                                   "note": ("Lane-1 tissue fast/slow cascade (guarded lever, campaign "
+                                   "2026-09-11): zero-init W_fast; forward W + W_fast; the "
+                                   "expert optimizer receives the fast parameters plus the "
+                                   "un-split biases (coordinator clarification 2026-09-11); "
+                                   "after every optimizer step W <- W + kappa*W_fast and "
+                                   "W_fast <- (1-delta)*W_fast")}
     json.dump(doc, open(out, "w", encoding="utf-8"), indent=1)
     print(f"[probe] written: {out}", flush=True)
 

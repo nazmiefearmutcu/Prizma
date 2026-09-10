@@ -153,6 +153,17 @@ H_SHARED = 256                         # SHARED-HEAD width ~ the E=4 pool budget
 FLOOR_EMA = 0.05                       # precision-floor EMA rate (src/prizma.py mirror)
 FRESH_HEAD_SEED_BASE = 20260908        # pinned eviction re-init seed formula base
 
+# ---- Lane-1 cascade lever (guarded, DEFAULT-OFF; campaign 2026-09-11 CONTRACT.md) ----
+# Tissue multi-timescale (fast/slow) components, Benna-Fusi lineage: per expert head a
+# zero-init W_fast; forward/readout uses W + W_fast; the expert optimizer receives the
+# fast parameters plus the un-split biases (coordinator clarification 2026-09-11: biases
+# stay trainable in both modes, no confound); after every optimizer step W <- W + kappa*W_fast
+# and W_fast <- (1-delta)*W_fast. off => byte-identical pre-lever path. The constants are
+# duplicated (not imported) here so the pure layer stays torch-free; tests pin the values.
+CASCADE_TARGETS = ("off", "tissue")
+CASCADE_KAPPA_DEFAULT = 0.05
+CASCADE_DELTA_DEFAULT = 0.10
+
 ARM_FAMILY = {                         # one LR per arm-family (PR-07' addendum rule)
     "PRIM-LM": "fusion",
     "FORCED-RECRUIT": "fusion",        # probe-2 P3: identical A/B trajectory, forced-C only
@@ -247,6 +258,23 @@ def validate_trunk_lr_c(trunk_lr_c):
         f"({REGISTERED_TRUNK_LR_C} = 3e-3 x 0.25). A different dose is a different "
         f"pre-registration, not a CLI option (the 2026-09-09 invalid-dose incident: a 10x "
         f"typo reached training and invalidated a 25-cell run).")
+
+
+def validate_cascade(cascade_target, cascade_kappa, cascade_delta):
+    """Pure guard for the Lane-1 cascade lever (campaign 2026-09-11 CONTRACT.md): target must
+    be one of CASCADE_TARGETS and kappa/delta must lie in [0,1] (frozen semantics). 'off' is
+    always valid; the values are irrelevant to the computation when off but stay recorded.
+    Returns the validated (target, kappa, delta) triple."""
+    if cascade_target not in CASCADE_TARGETS:
+        raise SystemExit(
+            f"refusing: --cascade-target {cascade_target!r} is not one of {CASCADE_TARGETS} "
+            f"(Lane-1 cascade lever; 'off' = byte-identical pre-lever path).")
+    for name, value in (("--cascade-kappa", cascade_kappa), ("--cascade-delta", cascade_delta)):
+        if not (0.0 <= float(value) <= 1.0):
+            raise SystemExit(
+                f"refusing: {name} {value} is outside [0, 1] (frozen cascade semantics: "
+                f"kappa, delta in [0,1]; delta > kappa = transient plasticity).")
+    return cascade_target, float(cascade_kappa), float(cascade_delta)
 
 
 def needs_cuda(mode: str) -> bool:
@@ -464,6 +492,14 @@ def _count_boundary(boundary, slot, n_segs, stream_pos):
         boundary["to_A_expert"] += int(n_segs)
 
 
+def _cascade_block(rec, tag, diag):
+    """Lane-1 per-block fast-component diagnostics (L2 norm + max |W_fast| per slot): written
+    into the cell record ONLY when the cascade is on, so OFF cells keep their exact pre-lever
+    field set (diagnostics = fp.cascade_diagnostics(model), None on the OFF path)."""
+    if diag is not None:
+        rec[f"cascade_after_{tag}"] = diag
+
+
 def route_pr08(model, h, y, corpus, ledger, stream_pos, *, boundary=None, force_slot=None):
     """Segment-level vigilance routing with the two registered PR-08 mechanisms.
 
@@ -567,7 +603,8 @@ def route_pr08(model, h, y, corpus, ledger, stream_pos, *, boundary=None, force_
             victim_nsegs = model.n_segments[victim]
             vocab_size = model.experts[victim].Wdec.out_features
             torch.manual_seed(FRESH_HEAD_SEED_BASE + 17 * victim + len(ledger["evictions"]))
-            model.experts[victim] = fp.PCExpertHead(64, H_SMALL, vocab_size)
+            model.experts[victim] = fp.PCExpertHead(64, H_SMALL, vocab_size,
+                                                    **fp.expert_cascade_kwargs(model))
             model.mu[victim], model.var[victim] = 1e9, 1.0
             # PR-2026-09-03-09 floor-freeze lever (guarded, DEFAULT-OFF; frozen protocol
             # docs/preregistry/2026-09-09-floorfreeze-routing-repair.md §2): a re-initialized
@@ -670,7 +707,10 @@ def train_pr08(model, xs, ys, lr, corpus, ledger, *, seed=None, frozen=False,
 
 def ledger_snapshot_pr08(model, ledger, tr, ev_routes, expected, boundary, a_expert):
     """Per-block routing ledger (fusion_probe.ledger_snapshot3 shape) + the PR-08 event
-    streams (evictions, vetoes) + the B3 boundary window."""
+    streams (evictions, vetoes) + the B3 boundary window. Lane-1: the fast-component
+    diagnostics are appended ONLY when the cascade is on (OFF ledger shape unchanged)."""
+    from seq import fusion_probe as fp
+
     per_expert = []
     for s in range(model.E):
         if not model.committed[s]:
@@ -693,7 +733,7 @@ def ledger_snapshot_pr08(model, ledger, tr, ev_routes, expected, boundary, a_exp
         balance[blk] = {"sum": nseg, "expected": expected[blk], "ok": nseg == expected[blk]}
     frac = (boundary["to_A_expert"] / boundary["segments_total"]) \
         if boundary["segments_total"] else None
-    return {"n_committed": model.n_committed(),
+    snap = {"n_committed": model.n_committed(),
             "a_expert": a_expert,
             "recruits": ledger["recruits"],
             "evictions": ledger["evictions"],
@@ -717,6 +757,10 @@ def ledger_snapshot_pr08(model, ledger, tr, ev_routes, expected, boundary, a_exp
                     for r in ledger["recruits"] if r.get("corpus") == "C"
                     and r["at_batch"] // BATCH_SEGS < B3_WINDOW_BATCHES],
             }}
+    diag = fp.cascade_diagnostics(model)
+    if diag is not None:
+        snap["cascade"] = diag          # Lane-1: present ONLY when the cascade is on
+    return snap
 
 
 def _forced_placement(model, *, E, stream_pos):
@@ -754,7 +798,8 @@ def _backbone_lr_for_c(trunk_lr_c, frozen_after_A):
 
 
 def run_routed(vocab_size, seed, data, lr, *, frozen_after_A=False, forced_c=False,
-               trunk_lr_c=None, domain_exclusion=False):
+               trunk_lr_c=None, domain_exclusion=False, cascade_target="off",
+               cascade_kappa=CASCADE_KAPPA_DEFAULT, cascade_delta=CASCADE_DELTA_DEFAULT):
     """PRIM-LM / FROZEN-TRUNK / FORCED-RECRUIT cell. A and B phases are identical across
     PRIM-LM and FORCED-RECRUIT (FROZEN-TRUNK shares phase A only; its B-phase backbone is
     frozen by design) (same seed stream -> identical init and trajectory — the probe-2
@@ -765,7 +810,10 @@ def run_routed(vocab_size, seed, data, lr, *, frozen_after_A=False, forced_c=Fal
     applied via _backbone_lr_for_c ONLY when trunk_lr_c is not None AND this arm trains a
     backbone on C (not frozen_after_A) — FROZEN-TRUNK's C call stays parameter-identical to
     PR-08 and carries no audit key. When the lever is applied the cell records
-    rec["backbone_lr_c_applied"] = trunk_lr_c."""
+    rec["backbone_lr_c_applied"] = trunk_lr_c.
+    cascade_target (Lane-1, guarded DEFAULT-OFF): 'tissue' builds the FusionLM with the
+    fast/slow cascade on the expert heads (build_model) and records per-block fast-component
+    diagnostics; 'off' is the byte-identical pre-lever cell."""
     import time
     import torch
     from seq import fusion_probe as fp
@@ -773,7 +821,9 @@ def run_routed(vocab_size, seed, data, lr, *, frozen_after_A=False, forced_c=Fal
     t0 = time.time()
     Ax, Ay, Bx, By, Cx, Cy, Aex, Aey, Bex, Bey, Crx, Cry = data
     E = E_POOL
-    model = fp.build_model(vocab_size, seed, E)
+    model = fp.build_model(vocab_size, seed, E,
+                           cascade=(cascade_target == "tissue"),
+                           cascade_kappa=cascade_kappa, cascade_delta=cascade_delta)
     ledger = _fresh_ledger()
     tr = {"A": [0] * E, "B": [0] * E, "C": [0] * E}
     rec = {"config": ("FROZEN-TRUNK" if frozen_after_A else
@@ -784,6 +834,7 @@ def run_routed(vocab_size, seed, data, lr, *, frozen_after_A=False, forced_c=Fal
     train_pr08(model, Ax, Ay, lr, "A", ledger, seed=seed)
     tr["A"] = model.n_segments[:]
     rec["bpc_A_preB"] = fp.eval_bpc_fusion(model, Aex, Aey)
+    _cascade_block(rec, "A", fp.cascade_diagnostics(model))
 
     # ---- block B (drift, strong) ----
     before = model.n_segments[:]
@@ -799,6 +850,7 @@ def run_routed(vocab_size, seed, data, lr, *, frozen_after_A=False, forced_c=Fal
     rec["bpc_A_postB"] = fp.eval_bpc_fusion(model, Aex, Aey)      # descriptive
     rec["bpc_B_postB"] = fp.eval_bpc_fusion(model, Bex, Bey)
     rec["bpc_Cret_postB"] = fp.eval_bpc_fusion(model, Crx, Cry)   # descriptive
+    _cascade_block(rec, "B", fp.cascade_diagnostics(model))
 
     # ---- block C (drift, mild + RETURNING domain) ----
     a_expert = max((s for s in range(E) if model.committed[s]), key=lambda s: tr["A"][s])
@@ -816,7 +868,8 @@ def run_routed(vocab_size, seed, data, lr, *, frozen_after_A=False, forced_c=Fal
             victim = force_slot
             vocab_size_victim = model.experts[victim].Wdec.out_features
             torch.manual_seed(FRESH_HEAD_SEED_BASE + 17 * victim + len(ledger["evictions"]))
-            model.experts[victim] = fp.PCExpertHead(64, H_SMALL, vocab_size_victim)
+            model.experts[victim] = fp.PCExpertHead(64, H_SMALL, vocab_size_victim,
+                                                    **fp.expert_cascade_kwargs(model))
             model.mu[victim], model.var[victim] = 1e9, 1.0
             model.n_batches[victim] = 0
             model.n_segments[victim] = 0
@@ -857,6 +910,7 @@ def run_routed(vocab_size, seed, data, lr, *, frozen_after_A=False, forced_c=Fal
     rec["bpc_A_postC"] = fp.eval_bpc_fusion(model, Aex, Aey, routes=ev_A)
     rec["bpc_B_postC"] = fp.eval_bpc_fusion(model, Bex, Bey, routes=ev_B)
     rec["bpc_Cret_postC"] = fp.eval_bpc_fusion(model, Crx, Cry, routes=ev_Cr)
+    _cascade_block(rec, "C", fp.cascade_diagnostics(model))
     rec["fgt_A_full"] = rec["bpc_A_preB"] - rec["bpc_A_postC"]          # descriptive
     rec["b_degradation_B_postC"] = rec["bpc_B_postC"] - rec["bpc_B_postB"]  # B4 quantity
     rec["ledger"] = ledger_snapshot_pr08(model, ledger, tr,
@@ -1005,7 +1059,8 @@ def _pr11_canary(res, seeds, arm):
 
 def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
         powered_cpu: bool = False, trunk_lr_c=None, ledger_dir=None, provenance=None,
-        domain_exclusion=False, seed_offset=0):
+        domain_exclusion=False, seed_offset=0, cascade_target="off",
+        cascade_kappa=CASCADE_KAPPA_DEFAULT, cascade_delta=CASCADE_DELTA_DEFAULT):
     """Execute the protocol: --smoke (CPU plumbing), --powered (the A100 claim campaign), or
     --powered-cpu (the doc section-6 CPU-feasible fallback: identical to --powered except the
     CUDA guard is skipped and the ledger meta records powered_cpu + the fallback note).
@@ -1013,11 +1068,17 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
     the arms that train a backbone on C (None = byte-identical PR-08 behavior, including NO
     canary); ledger_dir redirects the ledger subdir (None = LEDDIR, byte-identical);
     provenance (when given) is recorded as meta["pr11_repair"]. The lever value is part of
-    every cell + lr-selection fingerprint."""
+    every cell + lr-selection fingerprint.
+    Lane-1 cascade (guarded, DEFAULT-OFF; campaign 2026-09-11 CONTRACT.md): cascade_target
+    'tissue' enables the fast/slow cascade on the routed expert heads (PRIM-LM /
+    FROZEN-TRUNK / FORCED-RECRUIT cells) with the frozen kappa/delta; 'off' is the
+    byte-identical pre-lever protocol. The values are part of every cell + lr-selection
+    fingerprint and recorded in the ledger meta when on."""
     # BAR-0 FIRST: resolve + guard the results path before any heavy import or write.
     path = resolve_results_path(results_path, smoke=smoke, force_smoke_path=force_smoke_path,
                                 ledger_dir=ledger_dir)
     validate_trunk_lr_c(trunk_lr_c)
+    validate_cascade(cascade_target, cascade_kappa, cascade_delta)
 
     import time
 
@@ -1114,6 +1175,14 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
         res["meta"]["compute_fallback_note"] = POWERED_CPU_FALLBACK_NOTE
     if provenance is not None:
         res["meta"]["pr11_repair"] = provenance   # PR-2026-09-03-11 provenance (orchestrator)
+    if cascade_target != "off":
+        res["meta"]["cascade"] = {
+            "target": cascade_target, "kappa": cascade_kappa, "delta": cascade_delta,
+            "note": ("Lane-1 tissue fast/slow cascade (guarded lever, campaign 2026-09-11): "
+                     "zero-init W_fast; forward W + W_fast; the expert optimizer receives the "
+                     "fast parameters plus the un-split biases; after every optimizer step "
+                     "W <- W + kappa*W_fast and W_fast <- (1-delta)*W_fast "
+                     "(delta > kappa = transient plasticity)")}
     if seed_offset:
         res["meta"]["seed_offset"] = seed_offset
         res["meta"]["replication_note"] = (
@@ -1141,9 +1210,12 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
                           "select_segs": int(xs200.shape[0]), "seed": 0, "vocab": V,
                           "smoke": bool(smoke), "tissue": res["meta"]["tissue"],
                           "slices": res["meta"]["pinned_slices"],
-                          "trunk_lr_c": trunk_lr_c})   # PR-11: the lever is IN the fingerprint
+                          "trunk_lr_c": trunk_lr_c,    # PR-11: the lever is IN the fingerprint
                                                        # (a treated rerun never resumes from
                                                        # untreated lr-selection cells)
+                          "cascade_target": cascade_target,   # Lane-1: same discipline
+                          "cascade_kappa": cascade_kappa,
+                          "cascade_delta": cascade_delta})
             rec = res.get(cellkey)
             if isinstance(rec, dict) and rec.get("cfgsig") == cfgsig and rec.get("complete"):
                 lrs[family] = rec["lr"]
@@ -1166,7 +1238,8 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
         def _sel_fusion():
             grid = {}
             for lr in LR_GRID:
-                m = fp.build_model(V, 0, E_POOL)
+                m = fp.build_model(V, 0, E_POOL, cascade=(cascade_target == "tissue"),
+                                   cascade_kappa=cascade_kappa, cascade_delta=cascade_delta)
                 led = _fresh_ledger()
                 train_pr08(m, xs200, ys200, lr, "A", led, seed=0)
                 grid[lr] = fp.eval_bpc_fusion(m, xs200, ys200)
@@ -1224,6 +1297,9 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
                                                          # invalidate stale resume cells
                           "trunk_lr_c": trunk_lr_c,      # PR-11: the lever is IN the fingerprint
                           "domain_exclusion": domain_exclusion,  # PR-13: same discipline
+                          "cascade_target": cascade_target,      # Lane-1: same discipline
+                          "cascade_kappa": cascade_kappa,
+                          "cascade_delta": cascade_delta,
                           "seed_offset": seed_offset})   # PR-18: fresh-seed replications never
                                                          # resume from original-seed cells
                                                          # (a treated rerun never resumes from
@@ -1245,11 +1321,15 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
                 # PRIM-LM / FROZEN-TRUNK / FORCED-RECRUIT. trunk_lr_c is threaded for all
                 # three; _backbone_lr_for_c nulls it for FROZEN-TRUNK (no C backbone step —
                 # its call stays parameter-identical to PR-08, no audit key: canary-clean).
+                # Lane-1: cascade_target is threaded the same way ('off' = pre-lever cell).
                 rec = run_routed(V, seed, data, lr,
                                  domain_exclusion=(domain_exclusion and arm == "PRIM-LM"),
                                  frozen_after_A=(arm == "FROZEN-TRUNK"),
                                  forced_c=(arm == "FORCED-RECRUIT"),
-                                 trunk_lr_c=trunk_lr_c)
+                                 trunk_lr_c=trunk_lr_c,
+                                 cascade_target=cascade_target,
+                                 cascade_kappa=cascade_kappa,
+                                 cascade_delta=cascade_delta)
             rec.update({"arm": arm, "seed": seed, "lr": lr, "cellkey": cellkey,
                         "cfgsig": cfgsig, "complete": True,
                         "wall_s": round(time.time() - t0, 1)})
@@ -1306,6 +1386,9 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
         report["trunk_lr_c"] = trunk_lr_c         # PR-2026-09-03-11 lever (recorded when set)
     if domain_exclusion:
         report["domain_exclusion"] = True         # PR-2026-09-03-13 lever (recorded when set)
+    if cascade_target != "off":
+        report["cascade"] = {"target": cascade_target, "kappa": cascade_kappa,
+                             "delta": cascade_delta}   # Lane-1 lever (recorded when set)
     if seed_offset:
         report["seed_offset"] = seed_offset       # PR-2026-09-03-18 (recorded when set)
     if not smoke:
@@ -1412,6 +1495,17 @@ def _build_parser():
                         "the PRIM-LM arm (protected slots receive no C training; recruits "
                         "suppressed rather than self-evict the a_expert). Default OFF = "
                         "byte-identical PR-08/PR-11 behavior.")
+    p.add_argument("--cascade-target", choices=CASCADE_TARGETS, default="off",
+                   help="Lane-1 guarded lever (campaign 2026-09-11): 'tissue' enables the "
+                        "multi-timescale fast/slow cascade on the routed expert heads "
+                        "(Benna-Fusi; zero-init W_fast; forward W+W_fast; optimizer receives "
+                        "the fast weights + biases; per-step consolidation + fast decay). "
+                        "Default 'off' = byte-identical pre-lever behavior.")
+    p.add_argument("--cascade-kappa", type=float, default=CASCADE_KAPPA_DEFAULT,
+                   help="Lane-1 cascade consolidation gain kappa in [0,1] (default 0.05).")
+    p.add_argument("--cascade-delta", type=float, default=CASCADE_DELTA_DEFAULT,
+                   help="Lane-1 cascade fast-decay rate delta in [0,1] (default 0.10; "
+                        "delta > kappa = transient plasticity).")
     return p
 
 
@@ -1420,7 +1514,9 @@ def main(argv=None):
     args = _build_parser().parse_args(argv)   # SystemExit non-zero on unknown args: nothing runs
     run(smoke=args.smoke, results_path=args.out, force_smoke_path=args.force_smoke_path,
         powered_cpu=args.powered_cpu, trunk_lr_c=args.trunk_lr_c, ledger_dir=args.ledger_dir,
-        domain_exclusion=args.domain_exclusion, seed_offset=args.seed_offset)
+        domain_exclusion=args.domain_exclusion, seed_offset=args.seed_offset,
+        cascade_target=args.cascade_target, cascade_kappa=args.cascade_kappa,
+        cascade_delta=args.cascade_delta)
 
 
 if __name__ == "__main__":

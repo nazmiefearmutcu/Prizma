@@ -93,15 +93,36 @@ H_SMALL = 64                       # per-expert predictor width, frozen a priori
 LR_SELECT_SEGS = 200               # PR-07' addendum: seed-0 A-segment loss, first 200 segs
 FLOOR_EMA = 0.05                   # precision-floor EMA rate, mirrored from src/prizma.py
 
+# Lane-1 mechanism (guarded, DEFAULT-OFF; campaign 2026-09-11 CONTRACT.md §"Lane 1"):
+# multi-timescale (fast/slow) synaptic components on the tissue expert heads, Benna-Fusi
+# lineage. FROZEN semantics: per head a zero-init W_fast; forward/readout uses W + W_fast;
+# the expert optimizer receives the W_fast parameters PLUS the head's biases (the biases
+# are NOT part of the fast/slow split — they train normally in both modes, so the ON-vs-OFF
+# comparison carries no bias-training confound; coordinator clarification 2026-09-11);
+# after every optimizer step W <- W + kappa*W_fast (consolidation) and
+# W_fast <- (1-delta)*W_fast (fast decay).
+CASCADE_TARGETS = ("off", "tissue")
+CASCADE_KAPPA_DEFAULT = 0.05       # consolidation gain (kappa in [0,1])
+CASCADE_DELTA_DEFAULT = 0.10       # fast decay rate (delta in [0,1]); delta > kappa = transient
+
 
 # ----------------------------- fusion tissue -------------------------------- #
 
 class PCExpertHead(nn.Module):
     """Torch port of the src/prizma.py Expert as an LM head tissue: Wenc (d->h, tanh)
     + Wdec (h->vocab). Init mirrors Expert (normal, std=1/sqrt(fan_in); zero bias).
-    No classifier head, no FA feedback — see module docstring."""
+    No classifier head, no FA feedback — see module docstring.
 
-    def __init__(self, d_model, h_small, vocab):
+    Lane-1 cascade (guarded, DEFAULT-OFF): when `cascade=True` the head gains a zero-init
+    fast component (Wenc_fast/Wdec_fast); forward/readout uses W + W_fast; the expert
+    optimizer receives the fast parameters plus the biases (biases are not part of the
+    fast/slow split and train normally in both modes); after each optimizer step the slow W
+    absorbs kappa of the fast component and the fast component decays by (1 - delta)
+    (Benna-Fusi fast/slow; frozen semantics, campaign CONTRACT.md). `cascade=False` is the
+    byte-identical pre-lever construction and forward path (OFF-identity pinned by tests)."""
+
+    def __init__(self, d_model, h_small, vocab, cascade=False,
+                 cascade_kappa=CASCADE_KAPPA_DEFAULT, cascade_delta=CASCADE_DELTA_DEFAULT):
         super().__init__()
         self.Wenc = nn.Linear(d_model, h_small)
         self.Wdec = nn.Linear(h_small, vocab)
@@ -109,9 +130,54 @@ class PCExpertHead(nn.Module):
         nn.init.zeros_(self.Wenc.bias)
         nn.init.normal_(self.Wdec.weight, std=h_small ** -0.5)
         nn.init.zeros_(self.Wdec.bias)
+        self.cascade = bool(cascade)
+        self.cascade_kappa = float(cascade_kappa)
+        self.cascade_delta = float(cascade_delta)
+        if self.cascade:
+            # zero-init fast components add NO RNG consumption (torch.zeros_like) -> the
+            # seed stream of the off path is preserved exactly
+            self.Wenc_fast = nn.Parameter(torch.zeros_like(self.Wenc.weight))
+            self.Wdec_fast = nn.Parameter(torch.zeros_like(self.Wdec.weight))
+            # the slow W is moved ONLY by the consolidation fold, never by the optimizer
+            self.Wenc.weight.requires_grad_(False)
+            self.Wdec.weight.requires_grad_(False)
+
+    def fast_parameters(self):
+        """The parameters the expert optimizer receives when the cascade is on: the fast
+        weights PLUS the un-split biases (biases train normally, as in the off path, so the
+        ON-vs-OFF comparison isolates the cascade itself). None when off (the caller then
+        optimizes head.parameters() as before)."""
+        if not self.cascade:
+            return None
+        return [self.Wenc_fast, self.Wdec_fast, self.Wenc.bias, self.Wdec.bias]
 
     def forward(self, h):
-        return self.Wdec(torch.tanh(self.Wenc(h)))
+        if not self.cascade:
+            return self.Wdec(torch.tanh(self.Wenc(h)))
+        enc_w = self.Wenc.weight + self.Wenc_fast
+        dec_w = self.Wdec.weight + self.Wdec_fast
+        return F.linear(torch.tanh(F.linear(h, enc_w, self.Wenc.bias)), dec_w, self.Wdec.bias)
+
+    def consolidate(self):
+        """Post-optimizer-step fold (frozen order): W <- W + kappa*W_fast uses the PRE-decay
+        fast value; then W_fast <- (1 - delta)*W_fast. No-op when the cascade is off."""
+        if not self.cascade:
+            return
+        with torch.no_grad():
+            self.Wenc.weight.add_(self.cascade_kappa * self.Wenc_fast)
+            self.Wdec.weight.add_(self.cascade_kappa * self.Wdec_fast)
+            self.Wenc_fast.mul_(1.0 - self.cascade_delta)
+            self.Wdec_fast.mul_(1.0 - self.cascade_delta)
+
+    def fast_norms(self):
+        """L2 norm and max-|.| of the head's fast component (None when off) — the probe's
+        'where does the fast component hold information' diagnostic."""
+        if not self.cascade:
+            return None
+        with torch.no_grad():
+            l2 = float((self.Wenc_fast.pow(2).sum() + self.Wdec_fast.pow(2).sum()).sqrt())
+            absmax = float(max(self.Wenc_fast.abs().max(), self.Wdec_fast.abs().max()))
+        return {"fast_l2": l2, "fast_absmax": absmax}
 
 
 class FusionLM(nn.Module):
@@ -119,13 +185,21 @@ class FusionLM(nn.Module):
     heads. `committed[s]` (plain python, outside the autograd graph) mirrors
     src/prizma.py's committed flag: only committed slots route and train."""
 
-    def __init__(self, vocab, seed, E):
+    def __init__(self, vocab, seed, E, cascade=False,
+                 cascade_kappa=CASCADE_KAPPA_DEFAULT, cascade_delta=CASCADE_DELTA_DEFAULT):
         super().__init__()
         torch.manual_seed(seed)   # same seed stream as claim.build_model -> identical backbone init
         cfg = PrizmaSeqConfig(vocab=vocab, d_model=64, n_layers=2, n_heads=4, chunk=64,
                               window=16, max_len=SEG)
         self.lm = PrizmaSeqLM(cfg)
-        self.experts = nn.ModuleList([PCExpertHead(64, H_SMALL, vocab) for _ in range(E)])
+        self.cascade = bool(cascade)
+        self.cascade_kappa = float(cascade_kappa)
+        self.cascade_delta = float(cascade_delta)
+        self.experts = nn.ModuleList([PCExpertHead(64, H_SMALL, vocab,
+                                                   cascade=self.cascade,
+                                                   cascade_kappa=self.cascade_kappa,
+                                                   cascade_delta=self.cascade_delta)
+                                      for _ in range(E)])
         self.E = E
         self.committed = [False] * E
         # per-slot precision floors over the expert's OWN stream segments (mu/sigma EMAs,
@@ -231,23 +305,33 @@ def _expert_train(model, slot, h, y, ids, lr):
     """LOCAL update: expert `slot` trains only on its routed segments; loss uses
     DETACHED base logits + DETACHED hidden (no gradient reaches the backbone or any
     other expert). Then the post-update precision-floor EMA update, mirrored from
-    src/prizma.py _train_expert bookkeeping (post-update surprise, batch-level)."""
+    src/prizma.py _train_expert bookkeeping (post-update surprise, batch-level).
+
+    Lane-1 cascade (guarded, DEFAULT-OFF): when the head's fast component exists the
+    optimizer receives the fast parameters plus the un-split biases and the cascade fold
+    runs immediately after opt.step() (before the post-update floor recompute). Off path:
+    the exact pre-lever operations in the same order."""
     B, T, _ = h.shape
     idx = torch.tensor(sorted(ids), dtype=torch.long)
     hs = h.detach().reshape(B * T, -1)[(idx[:, None] * T + torch.arange(T)[None, :]).reshape(-1)]
     ys = y[idx].reshape(-1)
     base = model.lm.head(h.detach()).reshape(B * T, -1)[(idx[:, None] * T + torch.arange(T)[None, :]).reshape(-1)]
-    opt = torch.optim.AdamW(model.experts[slot].parameters(), lr=lr)
+    head = model.experts[slot]
+    fast_fn = getattr(head, "fast_parameters", None)
+    fast = fast_fn() if fast_fn is not None else None   # duck-typed heads (tests) stay valid
+    opt = torch.optim.AdamW(fast if fast is not None else head.parameters(), lr=lr)
     opt.zero_grad()
-    comb = base + model.experts[slot](hs)
+    comb = base + head(hs)
     loss = F.cross_entropy(comb, ys)
     loss.backward()
     opt.step()
+    if fast is not None:
+        head.consolidate()                     # W <- W + kappa*W_fast; W_fast <- (1-delta)*W_fast
     model.n_batches[slot] += 1
     model.n_segments[slot] += len(ids)
     # post-update floor update on the SAME segments (bookkeeping, no grad)
     with torch.no_grad():
-        r = float(F.cross_entropy(base + model.experts[slot](hs), ys, reduction="mean").detach())
+        r = float(F.cross_entropy(base + head(hs), ys, reduction="mean").detach())
     model.ce_sum[slot] += r * len(ids)
     # PR-2026-09-03-09 floor-freeze lever (guarded, DEFAULT-OFF; frozen protocol
     # docs/preregistry/2026-09-09-floorfreeze-routing-repair.md §2): when the model carries a
@@ -322,8 +406,47 @@ def eval_bpc_fusion(model, xs, ys, routes=None):
     return (tot_nll / tot_tok) / np.log(2)
 
 
-def build_model(vocab, seed, E):
-    return FusionLM(vocab, seed, E) if E > 0 else _PlainWrap(vocab, seed)
+def build_model(vocab, seed, E, cascade=False,
+                cascade_kappa=CASCADE_KAPPA_DEFAULT, cascade_delta=CASCADE_DELTA_DEFAULT):
+    """FusionLM when E > 0 (cascade threaded), the plain PR-07' model otherwise (E == 0:
+    no tissue -> the cascade is structurally inapplicable and the call is unchanged)."""
+    return FusionLM(vocab, seed, E, cascade=cascade, cascade_kappa=cascade_kappa,
+                    cascade_delta=cascade_delta) if E > 0 else _PlainWrap(vocab, seed)
+
+
+def expert_cascade_kwargs(model):
+    """Constructor kwargs for a FRESH expert head that must inherit `model`'s tissue state
+    (the eviction / forced-recruit re-init sites). Off models pass cascade=False -> the
+    byte-identical pre-lever construction; on models carry the same kappa/delta."""
+    if not getattr(model, "cascade", False):
+        return {"cascade": False}
+    return {"cascade": True, "cascade_kappa": model.cascade_kappa,
+            "cascade_delta": model.cascade_delta}
+
+
+def cascade_diagnostics(model):
+    """Per-slot fast-component diagnostics for the cell record (L2 norm + max |.| of every
+    head's W_fast, plus totals) — None when the cascade is off so OFF ledgers keep their
+    exact pre-lever field set."""
+    if not getattr(model, "cascade", False) or not hasattr(model, "experts"):
+        return None
+    per_slot = []
+    for s in range(model.E):
+        norms = model.experts[s].fast_norms()
+        if norms is None:
+            per_slot.append({"slot": s, "fast_l2": None, "fast_absmax": None})
+        else:
+            per_slot.append({"slot": s,
+                             "fast_l2": round(norms["fast_l2"], 10),
+                             "fast_absmax": round(norms["fast_absmax"], 10),
+                             "n_batches": model.n_batches[s]})
+    l2s = [p["fast_l2"] for p in per_slot if p["fast_l2"] is not None]
+    return {"target": "tissue", "kappa": getattr(model, "cascade_kappa", None),
+            "delta": getattr(model, "cascade_delta", None),
+            "per_slot": per_slot,
+            "total_fast_l2": round(sum(l2s), 10) if l2s else 0.0,
+            "max_fast_absmax": max((p["fast_absmax"] for p in per_slot
+                                    if p["fast_absmax"] is not None), default=0.0)}
 
 
 class _PlainWrap(nn.Module):
@@ -372,11 +495,15 @@ def ledger_snapshot(model, ledger, tr_A, tr_B, ev_A, ev_B):
             if p.get("committed") and p["train_total"] > 0])) if any(
             p.get("committed") and p["train_total"] > 0 for p in per_expert) else None,
     }
-    return {"n_committed": model.n_committed(), "recruits": ledger["recruits"],
+    snap = {"n_committed": model.n_committed(), "recruits": ledger["recruits"],
             "cap_fallback_batches": ledger["cap_fallback_batches"],
             "cap_fallback_segments": ledger["cap_fallback_segments"],
             "cap_events": ledger["cap_events"][:20],
             "per_expert": per_expert, "purity": purity}
+    diag = cascade_diagnostics(model)
+    if diag is not None:
+        snap["cascade"] = diag          # Lane-1 lever: present ONLY when the cascade is on
+    return snap
 
 
 def run_cell(config, E, seed, vocab, data, lr, wall_first):
@@ -984,7 +1111,7 @@ def ledger_snapshot3(model, ledger, tr, ev_routes, expected):
         n = sum(tr[blk])
         block_majority[blk] = (round(max(tr[blk]) / n, 4) if n else None)
         balance[blk] = {"sum": n, "expected": expected[blk], "ok": n == expected[blk]}
-    return {"n_committed": model.n_committed(), "recruits": ledger["recruits"],
+    snap = {"n_committed": model.n_committed(), "recruits": ledger["recruits"],
             "cap_fallback_batches": ledger["cap_fallback_batches"],
             "cap_fallback_segments": ledger["cap_fallback_segments"],
             "cap_events": ledger["cap_events"][:50],
@@ -992,6 +1119,10 @@ def ledger_snapshot3(model, ledger, tr, ev_routes, expected):
             "block_majority_share": block_majority,
             "train_sums_balance": balance,
             "eval_routes": ev_routes}
+    diag = cascade_diagnostics(model)
+    if diag is not None:
+        snap["cascade"] = diag          # Lane-1: present ONLY when the cascade is on
+    return snap
 
 
 def _c_batch0_surprise(model, Cx, Cy):
