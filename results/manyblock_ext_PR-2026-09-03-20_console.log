@@ -1,0 +1,45 @@
+[pr14] stream: A/B/C/D/E segs=[3906, 3921, 3906, 3921, 3906]; vocab=65; smoke=False; lr=0.003 + backbone_postA=0.00075; results=C:\Users\Kullanıcı\Prizma\results\manyblock_PR-2026-09-03-20_ext\powered.json
+[pr14] PLAIN seed 10: B: postB=3.058 postC=3.903 postD=2.900 postE=3.899 | A_postE=2.723 wall=122.7s
+[pr14] PLAIN seed 11: B: postB=3.071 postC=3.859 postD=2.914 postE=3.801 | A_postE=2.717 wall=113.8s
+[pr14] PLAIN seed 12: B: postB=3.093 postC=3.939 postD=2.917 postE=3.837 | A_postE=2.743 wall=117.9s
+[pr14] PLAIN seed 13: B: postB=3.038 postC=3.925 postD=2.884 postE=3.791 | A_postE=2.689 wall=123.3s
+[pr14] PLAIN seed 14: B: postB=3.037 postC=3.828 postD=2.882 postE=3.781 | A_postE=2.708 wall=123.8s
+[pr14] EX seed 10: A_postE=2.726 B: postB=3.058 postC=3.707 postD=2.891 postE=3.881 D_frac_to_owner=0.971875 wall=134.5s
+[pr14] EX seed 11: A_postE=2.725 B: postB=3.071 postC=3.647 postD=2.912 postE=3.709 D_frac_to_owner=0.9703125 wall=158.3s
+[pr14] EX seed 12: A_postE=2.745 B: postB=3.093 postC=3.702 postD=2.915 postE=3.786 D_frac_to_owner=0.9796875 wall=144.6s
+[pr14] EX seed 13: A_postE=2.694 B: postB=3.038 postC=3.684 postD=2.881 postE=3.748 D_frac_to_owner=0.9796875 wall=141.3s
+[pr14] EX seed 14: A_postE=2.715 B: postB=3.037 postC=3.636 postD=2.878 postE=3.713 D_frac_to_owner=0.959375 wall=113.7s
+
+==============================================================================
+  PR-2026-09-03-14 — POWERED CLAIM CAMPAIGN
+==============================================================================
+    claim.EX.s10                   B: postB=3.058 postC=3.707 postD=2.891 postE=3.881 | A_postE=2.726 Cret_postE=2.758 wall=134.5s
+      D: owner=1 frac_to_owner_first20=0.971875 suppressed=0 redirects=226
+    claim.EX.s11                   B: postB=3.071 postC=3.647 postD=2.912 postE=3.709 | A_postE=2.725 Cret_postE=2.749 wall=158.3s
+      D: owner=1 frac_to_owner_first20=0.9703125 suppressed=0 redirects=240
+    claim.EX.s12                   B: postB=3.093 postC=3.702 postD=2.915 postE=3.786 | A_postE=2.745 Cret_postE=2.781 wall=144.6s
+      D: owner=1 frac_to_owner_first20=0.9796875 suppressed=0 redirects=225
+    claim.EX.s13                   B: postB=3.038 postC=3.684 postD=2.881 postE=3.748 | A_postE=2.694 Cret_postE=2.726 wall=141.3s
+      D: owner=1 frac_to_owner_first20=0.9796875 suppressed=0 redirects=239
+    claim.EX.s14                   B: postB=3.037 postC=3.636 postD=2.878 postE=3.713 | A_postE=2.715 Cret_postE=2.750 wall=113.7s
+      D: owner=1 frac_to_owner_first20=0.959375 suppressed=0 redirects=193
+    claim.PLAIN.s10                B: postB=3.058 postC=3.903 postD=2.900 postE=3.899 | A_postE=2.723 Cret_postE=2.755 wall=122.7s
+      D: owner=None frac_to_owner_first20=0.0 suppressed=0 redirects=0
+    claim.PLAIN.s11                B: postB=3.071 postC=3.859 postD=2.914 postE=3.801 | A_postE=2.717 Cret_postE=2.745 wall=113.8s
+      D: owner=None frac_to_owner_first20=0.0 suppressed=0 redirects=0
+    claim.PLAIN.s12                B: postB=3.093 postC=3.939 postD=2.917 postE=3.837 | A_postE=2.743 Cret_postE=2.781 wall=117.9s
+      D: owner=None frac_to_owner_first20=0.0 suppressed=0 redirects=0
+    claim.PLAIN.s13                B: postB=3.038 postC=3.925 postD=2.884 postE=3.791 | A_postE=2.689 Cret_postE=2.720 wall=123.3s
+      D: owner=None frac_to_owner_first20=0.0 suppressed=0 redirects=0
+    claim.PLAIN.s14                B: postB=3.037 postC=3.828 postD=2.882 postE=3.781 | A_postE=2.708 Cret_postE=2.738 wall=123.8s
+      D: owner=None frac_to_owner_first20=0.0 suppressed=0 redirects=0
+    P1: recovery mean=0.7796 (flipped-scale mean=-0.7796, CI=[-0.8208,-0.7385], bar flipped <= -0.1) p_holm=0.0000 -> PASS
+    P2: frac_mean=0.972 (bar >= 0.5) -> PASS
+    P3: A-retention mean=-0.3371 CI=[-0.3582,-0.3159] (bar <= 0.05) p_holm=0.0000 -> PASS
+    G1: harm mean=-0.0039 CI=[-0.0282,0.0204] (allowance 0.10; CI-positional, no p-gate — doc addendum #1) -> PASS
+    G2: Cret drift mean=-0.1153 CI=[-0.1309,-0.0997] (bar <= 0.05; CI-positional, no p-gate — doc addendum #1) -> PASS
+  OUTCOME: CLAIMED
+  CLAIMED — the column accumulates (P3), recovers the re-encountered domain (P1), keeps the re-encounter ledger honest (P2), and the exclusion neither costs the revisit (G1) nor text8 continuity (G2): the lifelong claim rests on 5 blocks (doc §4).
+  ledger: C:\Users\Kullanıcı\Prizma\results\manyblock_PR-2026-09-03-20_ext\powered.json
+  raw archive: C:\Users\Kullanıcı\Prizma\results\runs\manyblock-PR-2026-09-03-14-20260910T194216Z.json
+==============================================================================

@@ -291,6 +291,23 @@ ladder now has BOTH crown jewels replicated: PR-18 (the 3-block flagship, n=10 f
 and PR-19 (the 5-block accumulation, n=10 cumulative fresh). NEXT = S3 (owner Colab).**
 Artifacts: results/manyblock_PR-2026-09-03-19/ + official console logs.
 
+## PR-20 EXECUTED + EXTENDED (2026-09-10 23:1x — the damage-gap replication, final)
+
+**VERDICT: NOT-ESTABLISHED (FINAL at pooled fresh n=10).** The n=5 leg: delta +0.2746,
+CI [0.21, 0.34] — point gap replicates but the 0.25 bar unestablished. The §4
+pre-authorized seeds 10-14 extension ran (both arms, separate ledger per doc addendum
+#1) and the POOLED fresh n=10 (seeds 5-14): delta +0.2453, CI [0.1969, 0.2936] —
+directionally positive in EVERY fresh seed pair, but **the registered halving-margin
+(0.25) is NOT CI-established: the fresh-sample gap (~0.25) is about half the
+original-sample gap (~0.55) — the protection's SIZE is seed-dependent.** No further
+extension pre-authorized. **THE COMPARISON LEDGER'S HONEST FINAL STATE: (1) accumulation
+parity — both the column and the scheduled control hold A and recover B on revisit;
+(2) boundary damage protection — directional, schedule-consistent, halving-withdrawn;
+(3) routing ledger + specialization — tissue-only (structural). The CPU-side registered
+program is COMPLETE. S3 (owner Colab) remains the ladder's next rung.** Artifacts:
+results/damage_gap_repl_PR-2026-09-03-20/ + results/manyblock_PR-2026-09-03-20_ext/ +
+pooled verdict in the PR-20 ledger.
+
 ## BACKLOG
 
 1. **[PR-03 claim] Single-pass citation bar** — status: `done (commit: see git log "PR-03 CLAIMED", 2026-09-05)`

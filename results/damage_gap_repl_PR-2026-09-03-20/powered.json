@@ -101,5 +101,69 @@
       "alpha": 0.05
     },
     "powered_cpu_note": "analysis is CPU-native"
+  },
+  "pooled_fresh_verdict": {
+    "seeds": [
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ],
+    "note": "the doc addendum #1 pooled fresh n=10 adjudication (read-only over the two registered ledgers)",
+    "verdict": {
+      "outcome": "NOT-ESTABLISHED",
+      "verdict": "NOT-ESTABLISHED \u2014 the point gap is positive but n=5 cannot establish the 0.25 margin (doc \u00a74); the seeds 10-14 extension is the next iteration's first action (pre-authorized).",
+      "branches": [
+        "\u00a74: the seeds 10-14 extension (PLAIN + EX at offset 10, n=10 fresh cumulative) is PRE-AUTHORIZED \u2014 the next iteration's first action."
+      ],
+      "P1": {
+        "n_a": 10,
+        "n_b": 10,
+        "delta": 0.24525094680581982,
+        "se": 0.022702322720310454,
+        "df": 15.063723244060983,
+        "ci": [
+          0.19687991373730684,
+          0.2936219798743328
+        ],
+        "p_raw": 0.5814479508335486,
+        "margin": 0.25,
+        "damage_plain_per_seed": [
+          0.8958005221970353,
+          0.8611742769722097,
+          0.920103038717909,
+          0.9172486991983648,
+          0.9863394895828632,
+          0.845559030347101,
+          0.7873822668936041,
+          0.8464793581414445,
+          0.8868844102092197,
+          0.7906799689891
+        ],
+        "damage_ex_per_seed": [
+          0.6375091679328326,
+          0.5827194395034021,
+          0.7012029007714577,
+          0.6544914702531202,
+          0.6316885981671798,
+          0.6492068854072865,
+          0.5756065596794473,
+          0.6092434120402417,
+          0.6453573838953397,
+          0.5981157755403448
+        ],
+        "plain_damage_mean": 0.8737651061248851,
+        "ex_damage_mean": 0.6285141593190653,
+        "note": "delta = mean(PLAIN damage) - mean(EX damage); positive = the exclusion damages less. PASS iff CI lower >= 0.25 (PR-16's own bar, doc \u00a73).",
+        "status": "NOT-ESTABLISHED"
+      },
+      "alpha": 0.05
+    }
   }
 }
