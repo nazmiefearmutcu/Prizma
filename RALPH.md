@@ -277,6 +277,20 @@ NEXT = S3 (owner Colab) — the CPU-side ladder has no pending registered work.*
 Artifacts: results/prizma_lm_PR-2026-09-03-18/ (ledger + pooled_fresh_verdict.json) +
 3 console logs.
 
+## PR-19 EXECUTED (2026-09-10 night — the accumulation replication rung, ~25 min)
+
+**VERDICT: CLAIMED — REPLICATED at n=10 cumulative fresh.** Every bar reproduces on
+fresh seeds 5-9 to 3-4 decimals: P1 recovery +0.8067 (vs +0.82), P2 frac 0.971 (==),
+P3 A-retention -0.3182 (vs -0.32), G1 harm -0.0083 (== PR-14's EXACTLY), G2 -0.1057.
+The cross-arm A/B canary passed per cell; the fresh G1 compared fresh-PLAIN vs fresh-EX
+(BOTH arms re-run per the prereg). **INCIDENT (cosmetic): one projection-pacing crash
+(stale claim.PLAIN.s0 key at offset seeds) fixed BEFORE any cell ran; the PLAIN cells
+from the crashed attempt were already ledgered and resumed.** Runner:
+manyblock_claim gained the guarded --seed-offset/--ledger-dir flags. **The CPU-side
+ladder now has BOTH crown jewels replicated: PR-18 (the 3-block flagship, n=10 fresh)
+and PR-19 (the 5-block accumulation, n=10 cumulative fresh). NEXT = S3 (owner Colab).**
+Artifacts: results/manyblock_PR-2026-09-03-19/ + official console logs.
+
 ## BACKLOG
 
 1. **[PR-03 claim] Single-pass citation bar** — status: `done (commit: see git log "PR-03 CLAIMED", 2026-09-05)`

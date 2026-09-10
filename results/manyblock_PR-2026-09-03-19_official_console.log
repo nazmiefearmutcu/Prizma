@@ -1,0 +1,17 @@
+[pr14] stream: A/B/C/D/E segs=[3906, 3921, 3906, 3921, 3906]; vocab=65; smoke=False; lr=0.003 + backbone_postA=0.00075; results=C:\Users\Kullanıcı\Prizma\results\manyblock_PR-2026-09-03-19\powered.json
+[pr14] PLAIN seed 5: B: postB=3.060 postC=3.956 postD=2.887 postE=3.921 | A_postE=2.714 wall=122.6s
+[pr14] PLAIN seed 6: B: postB=3.050 postC=3.911 postD=2.895 postE=3.757 | A_postE=2.705 wall=115.1s
+[pr14] PLAIN seed 7: B: postB=3.021 postC=3.941 postD=2.887 postE=3.837 | A_postE=2.699 wall=118.5s
+[pr14] PLAIN seed 8: B: postB=3.029 postC=3.947 postD=2.881 postE=3.784 | A_postE=2.694 wall=116.4s
+[pr14] PLAIN seed 9: B: postB=3.058 postC=4.045 postD=2.886 postE=3.720 | A_postE=2.701 wall=114.9s
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\Kullanıcı\Prizma\seq\manyblock_claim.py", line 597, in <module>
+    main()
+  File "C:\Users\Kullanıcı\Prizma\seq\manyblock_claim.py", line 591, in main
+    run(smoke=args.smoke, results_path=args.out, force_smoke_path=args.force_smoke_path,
+  File "C:\Users\Kullanıcı\Prizma\seq\manyblock_claim.py", line 475, in run
+    first_cell_s = rec["wall_s"] + res["claim.PLAIN.s0"]["wall_s"]
+                                   ~~~^^^^^^^^^^^^^^^^^^
+KeyError: 'claim.PLAIN.s0'

@@ -1,0 +1,1404 @@
+{
+  "meta": {
+    "registry": "PR-2026-09-03-14",
+    "smoke": false,
+    "lane": "CLAIM (frozen pre-registration)",
+    "doc": "docs/preregistry/2026-09-09-manyblock-accumulation.md",
+    "arms": [
+      "PLAIN",
+      "EX"
+    ],
+    "claim_seeds": [
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "blocks": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "domain_of": {
+      "A": "text8",
+      "B": "shakes",
+      "C": "text8",
+      "D": "shakes",
+      "E": "text8"
+    },
+    "seg": 256,
+    "batch_segs": 32,
+    "lr_rule": "FROZEN by inheritance: 3e-3 on block A; backbone 7.5e-4 (x0.25, PR-10 dose) on EVERY post-A block; tissue optimizers 3e-3 everywhere.",
+    "lever": "L2 generalized: per-block domain-OWNER election (max cumulative domain-trained count among committed slots; no history => no owner, free routing); protected slots = committed MINUS owner; guarded branches in route_pr08 (owner_slot precedence + redirect + suppression refinement)",
+    "stream_lengths": {
+      "A": 1000000,
+      "B": 1003854,
+      "C": 1000000,
+      "D": 1003854,
+      "E": 1000000
+    },
+    "eval_slices": {
+      "A_eval": "text8[1.0M,1.1M)",
+      "B_eval": "shakes[90%,100%]",
+      "Cret": "text8[0.9M,1.0M)"
+    },
+    "vocab": 65,
+    "threads": 8,
+    "bars": {
+      "P1_margin": 0.1,
+      "P2_frac_bar": 0.5,
+      "P3_margin": 0.05,
+      "G1_allowance": -0.1,
+      "G2_margin": 0.05,
+      "alpha": 0.05,
+      "holm_family": [
+        "P1",
+        "P3"
+      ],
+      "t_isf_convention": "UPPER-TAIL p in (0, 0.5] (the PR-03 lesson)"
+    },
+    "canary": "doc \u00a72, per cell (claim mode): the A/B phases must be bit-identical across arms (divergence begins at C).",
+    "powered_cpu": true,
+    "compute_fallback_note": "POWERED VIA THE REGISTERED CPU FALLBACK (PR-14 doc \u00a75; precedent = PR-08 addendum 2026-09-08 #2 + the PR-09..PR-13 powered-cpu executions).",
+    "seed_offset": 5,
+    "replication_note": "PR-2026-09-03-19: fresh seeds 5..9 (offset 5); BOTH arms re-run for the cross-arm canary and the fresh G1 comparison",
+    "budget_projection": {
+      "projected_min": 20.2,
+      "warn": false,
+      "warn_threshold_min": 120.0,
+      "note": "within budget"
+    }
+  },
+  "claim.PLAIN.s5": {
+    "config": "PRIM-PLAIN",
+    "E": 4,
+    "seed": 5,
+    "lr": 0.003,
+    "traj_A": {
+      "bpc_A": 3.0128833785532323,
+      "bpc_B": 7.432110190214953,
+      "bpc_Cret": 2.950543915145959
+    },
+    "block_A": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        3906,
+        0,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 1,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_B": {
+      "bpc_A": 3.215101877686246,
+      "bpc_B": 3.060411127597871,
+      "bpc_Cret": 3.264648012080161
+    },
+    "block_B": {
+      "domain": "shakes",
+      "owner": null,
+      "train": [
+        0,
+        3920,
+        1,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 3,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_C": {
+      "bpc_A": 2.8052687764616917,
+      "bpc_B": 3.9562116497949065,
+      "bpc_Cret": 2.8426657882821154
+    },
+    "block_C": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        1617,
+        2169,
+        1,
+        53
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 33,
+      "evictions_so_far": 29,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_D": {
+      "bpc_A": 3.0077458493053717,
+      "bpc_B": 2.886977718072115,
+      "bpc_Cret": 3.086745259754253
+    },
+    "block_D": {
+      "domain": "shakes",
+      "owner": null,
+      "train": [
+        0,
+        0,
+        2,
+        2456
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 40,
+      "evictions_so_far": 36,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_E": {
+      "bpc_A": 2.7140137517819047,
+      "bpc_B": 3.9206325115642744,
+      "bpc_Cret": 2.7551502026651717
+    },
+    "block_E": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        1472,
+        2106,
+        -3,
+        171
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 102,
+      "evictions_so_far": 98,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "bpc_A_preB": 3.0128833785532323,
+    "bpc_A_postB": 3.215101877686246,
+    "bpc_B_postB": 3.060411127597871,
+    "bpc_B_postC": 3.9562116497949065,
+    "bpc_B_postD": 2.886977718072115,
+    "bpc_B_postE": 3.9206325115642744,
+    "bpc_A_postE": 2.7140137517819047,
+    "bpc_Cret_postC": 2.8426657882821154,
+    "bpc_Cret_postE": 2.7551502026651717,
+    "boundary_window_D": {
+      "frac_to_owner": 0.0
+    },
+    "b_degradation_B_postC": 0.8958005221970353,
+    "wall_s": 122.6,
+    "arm": "PLAIN",
+    "backbone_lr_post_a": 0.00075,
+    "domain_exclusion": false,
+    "cellkey": "claim.PLAIN.s5",
+    "cfgsig": "158522ed36d313f1",
+    "complete": true
+  },
+  "claim.PLAIN.s6": {
+    "config": "PRIM-PLAIN",
+    "E": 4,
+    "seed": 6,
+    "lr": 0.003,
+    "traj_A": {
+      "bpc_A": 3.0364122809196576,
+      "bpc_B": 7.650653224175878,
+      "bpc_Cret": 2.97079496577306
+    },
+    "block_A": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        3906,
+        0,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 1,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_B": {
+      "bpc_A": 3.172820480968635,
+      "bpc_B": 3.050186144610883,
+      "bpc_Cret": 3.2073342239324765
+    },
+    "block_B": {
+      "domain": "shakes",
+      "owner": null,
+      "train": [
+        0,
+        3920,
+        1,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 3,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_C": {
+      "bpc_A": 2.79180945301151,
+      "bpc_B": 3.9113604215830926,
+      "bpc_Cret": 2.834446425182723
+    },
+    "block_C": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        1623,
+        2177,
+        2,
+        18
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 42,
+      "evictions_so_far": 38,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_D": {
+      "bpc_A": 3.0127588701697063,
+      "bpc_B": 2.8946005078738444,
+      "bpc_Cret": 3.071351732980161
+    },
+    "block_D": {
+      "domain": "shakes",
+      "owner": null,
+      "train": [
+        0,
+        0,
+        2542,
+        -15
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 48,
+      "evictions_so_far": 44,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_E": {
+      "bpc_A": 2.7045894129653565,
+      "bpc_B": 3.7565233798585815,
+      "bpc_Cret": 2.7352484196972173
+    },
+    "block_E": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        1395,
+        2180,
+        142,
+        -2
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 117,
+      "evictions_so_far": 113,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "bpc_A_preB": 3.0364122809196576,
+    "bpc_A_postB": 3.172820480968635,
+    "bpc_B_postB": 3.050186144610883,
+    "bpc_B_postC": 3.9113604215830926,
+    "bpc_B_postD": 2.8946005078738444,
+    "bpc_B_postE": 3.7565233798585815,
+    "bpc_A_postE": 2.7045894129653565,
+    "bpc_Cret_postC": 2.834446425182723,
+    "bpc_Cret_postE": 2.7352484196972173,
+    "boundary_window_D": {
+      "frac_to_owner": 0.0
+    },
+    "b_degradation_B_postC": 0.8611742769722097,
+    "wall_s": 115.1,
+    "arm": "PLAIN",
+    "backbone_lr_post_a": 0.00075,
+    "domain_exclusion": false,
+    "cellkey": "claim.PLAIN.s6",
+    "cfgsig": "adc7ed244ead59e6",
+    "complete": true
+  },
+  "claim.PLAIN.s7": {
+    "config": "PRIM-PLAIN",
+    "E": 4,
+    "seed": 7,
+    "lr": 0.003,
+    "traj_A": {
+      "bpc_A": 3.027775149912262,
+      "bpc_B": 7.479018568148535,
+      "bpc_Cret": 2.964980445782268
+    },
+    "block_A": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        3906,
+        0,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 1,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_B": {
+      "bpc_A": 3.190344592322901,
+      "bpc_B": 3.0213844544048616,
+      "bpc_Cret": 3.218600699791097
+    },
+    "block_B": {
+      "domain": "shakes",
+      "owner": null,
+      "train": [
+        0,
+        3921,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 2,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_C": {
+      "bpc_A": 2.7831779242287205,
+      "bpc_B": 3.9414874931227706,
+      "bpc_Cret": 2.8294265426516008
+    },
+    "block_C": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        1543,
+        2274,
+        1,
+        20
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 35,
+      "evictions_so_far": 31,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_D": {
+      "bpc_A": 2.9990297932545893,
+      "bpc_B": 2.8873445890907616,
+      "bpc_Cret": 3.0592490510141763
+    },
+    "block_D": {
+      "domain": "shakes",
+      "owner": null,
+      "train": [
+        0,
+        0,
+        2957,
+        -18
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 42,
+      "evictions_so_far": 38,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_E": {
+      "bpc_A": 2.699206511218718,
+      "bpc_B": 3.8370730129088213,
+      "bpc_Cret": 2.7400832136175186
+    },
+    "block_E": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        1344,
+        2165,
+        197,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 109,
+      "evictions_so_far": 105,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "bpc_A_preB": 3.027775149912262,
+    "bpc_A_postB": 3.190344592322901,
+    "bpc_B_postB": 3.0213844544048616,
+    "bpc_B_postC": 3.9414874931227706,
+    "bpc_B_postD": 2.8873445890907616,
+    "bpc_B_postE": 3.8370730129088213,
+    "bpc_A_postE": 2.699206511218718,
+    "bpc_Cret_postC": 2.8294265426516008,
+    "bpc_Cret_postE": 2.7400832136175186,
+    "boundary_window_D": {
+      "frac_to_owner": 0.0
+    },
+    "b_degradation_B_postC": 0.920103038717909,
+    "wall_s": 118.5,
+    "arm": "PLAIN",
+    "backbone_lr_post_a": 0.00075,
+    "domain_exclusion": false,
+    "cellkey": "claim.PLAIN.s7",
+    "cfgsig": "35bf2d00cfe0bf64",
+    "complete": true
+  },
+  "claim.PLAIN.s8": {
+    "config": "PRIM-PLAIN",
+    "E": 4,
+    "seed": 8,
+    "lr": 0.003,
+    "traj_A": {
+      "bpc_A": 3.034876438805035,
+      "bpc_B": 7.345847905524071,
+      "bpc_Cret": 2.974188044124538
+    },
+    "block_A": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        3906,
+        0,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 1,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_B": {
+      "bpc_A": 3.1694586064437598,
+      "bpc_B": 3.029481337512395,
+      "bpc_Cret": 3.19703985398997
+    },
+    "block_B": {
+      "domain": "shakes",
+      "owner": null,
+      "train": [
+        1,
+        3919,
+        1,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 3,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_C": {
+      "bpc_A": 2.7831594382986586,
+      "bpc_B": 3.94673003671076,
+      "bpc_Cret": 2.834295718990678
+    },
+    "block_C": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        1548,
+        2237,
+        3,
+        20
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 46,
+      "evictions_so_far": 42,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_D": {
+      "bpc_A": 2.9855957115657805,
+      "bpc_B": 2.881118813966628,
+      "bpc_Cret": 3.0693501300963595
+    },
+    "block_D": {
+      "domain": "shakes",
+      "owner": null,
+      "train": [
+        0,
+        0,
+        2327,
+        -18
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 53,
+      "evictions_so_far": 49,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_E": {
+      "bpc_A": 2.694187471843566,
+      "bpc_B": 3.7835293909043344,
+      "bpc_Cret": 2.7267639246154056
+    },
+    "block_E": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        1623,
+        1896,
+        187,
+        -1
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 123,
+      "evictions_so_far": 119,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "bpc_A_preB": 3.034876438805035,
+    "bpc_A_postB": 3.1694586064437598,
+    "bpc_B_postB": 3.029481337512395,
+    "bpc_B_postC": 3.94673003671076,
+    "bpc_B_postD": 2.881118813966628,
+    "bpc_B_postE": 3.7835293909043344,
+    "bpc_A_postE": 2.694187471843566,
+    "bpc_Cret_postC": 2.834295718990678,
+    "bpc_Cret_postE": 2.7267639246154056,
+    "boundary_window_D": {
+      "frac_to_owner": 0.0
+    },
+    "b_degradation_B_postC": 0.9172486991983648,
+    "wall_s": 116.4,
+    "arm": "PLAIN",
+    "backbone_lr_post_a": 0.00075,
+    "domain_exclusion": false,
+    "cellkey": "claim.PLAIN.s8",
+    "cfgsig": "6a989f4f3dfa5a5b",
+    "complete": true
+  },
+  "claim.PLAIN.s9": {
+    "config": "PRIM-PLAIN",
+    "E": 4,
+    "seed": 9,
+    "lr": 0.003,
+    "traj_A": {
+      "bpc_A": 2.999007045682635,
+      "bpc_B": 5.294980815157834,
+      "bpc_Cret": 2.940045850715695
+    },
+    "block_A": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        3905,
+        1,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 2,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_B": {
+      "bpc_A": 3.1508875811300654,
+      "bpc_B": 3.0583699062371092,
+      "bpc_Cret": 3.184284886809341
+    },
+    "block_B": {
+      "domain": "shakes",
+      "owner": null,
+      "train": [
+        0,
+        3920,
+        1,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 3,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_C": {
+      "bpc_A": 2.7837339838272643,
+      "bpc_B": 4.0447093958199725,
+      "bpc_Cret": 2.8200366426994163
+    },
+    "block_C": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        1668,
+        2029,
+        135,
+        1
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 32,
+      "evictions_so_far": 28,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_D": {
+      "bpc_A": 3.0202471605971875,
+      "bpc_B": 2.8856247309531398,
+      "bpc_Cret": 3.096748825555359
+    },
+    "block_D": {
+      "domain": "shakes",
+      "owner": null,
+      "train": [
+        0,
+        0,
+        -133,
+        3885
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 42,
+      "evictions_so_far": 38,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_E": {
+      "bpc_A": 2.7009039429403163,
+      "bpc_B": 3.719823196242364,
+      "bpc_Cret": 2.7336002473346745
+    },
+    "block_E": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        1534,
+        1929,
+        -2,
+        302
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 94,
+      "evictions_so_far": 90,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "bpc_A_preB": 2.999007045682635,
+    "bpc_A_postB": 3.1508875811300654,
+    "bpc_B_postB": 3.0583699062371092,
+    "bpc_B_postC": 4.0447093958199725,
+    "bpc_B_postD": 2.8856247309531398,
+    "bpc_B_postE": 3.719823196242364,
+    "bpc_A_postE": 2.7009039429403163,
+    "bpc_Cret_postC": 2.8200366426994163,
+    "bpc_Cret_postE": 2.7336002473346745,
+    "boundary_window_D": {
+      "frac_to_owner": 0.0
+    },
+    "b_degradation_B_postC": 0.9863394895828632,
+    "wall_s": 114.9,
+    "arm": "PLAIN",
+    "backbone_lr_post_a": 0.00075,
+    "domain_exclusion": false,
+    "cellkey": "claim.PLAIN.s9",
+    "cfgsig": "c0c2adb9188bf12d",
+    "complete": true
+  },
+  "claim.EX.s5": {
+    "config": "PRIM-EX",
+    "E": 4,
+    "seed": 5,
+    "lr": 0.003,
+    "traj_A": {
+      "bpc_A": 3.0128833785532323,
+      "bpc_B": 7.432110190214953,
+      "bpc_Cret": 2.950543915145959
+    },
+    "block_A": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        3906,
+        0,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 1,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_B": {
+      "bpc_A": 3.215101877686246,
+      "bpc_B": 3.060411127597871,
+      "bpc_Cret": 3.264648012080161
+    },
+    "block_B": {
+      "domain": "shakes",
+      "owner": null,
+      "train": [
+        0,
+        3920,
+        1,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 3,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_C": {
+      "bpc_A": 2.814980472710924,
+      "bpc_B": 3.697920295530704,
+      "bpc_Cret": 2.8506039253508164
+    },
+    "block_C": {
+      "domain": "text8",
+      "owner": 0,
+      "train": [
+        3834,
+        0,
+        0,
+        3
+      ],
+      "frac_to_owner_first20": 0.9984375,
+      "recruits_so_far": 29,
+      "evictions_so_far": 25,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 260,
+      "protected": [
+        1,
+        2
+      ]
+    },
+    "traj_D": {
+      "bpc_A": 3.035471586973252,
+      "bpc_B": 2.88135760021416,
+      "bpc_Cret": 3.09697766302471
+    },
+    "block_D": {
+      "domain": "shakes",
+      "owner": 1,
+      "train": [
+        0,
+        3810,
+        16,
+        2
+      ],
+      "frac_to_owner_first20": 0.96875,
+      "recruits_so_far": 75,
+      "evictions_so_far": 71,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 260,
+      "protected": [
+        0,
+        2,
+        3
+      ]
+    },
+    "traj_E": {
+      "bpc_A": 2.7109182087081933,
+      "bpc_B": 3.816059696610055,
+      "bpc_Cret": 2.7491189951178403
+    },
+    "block_E": {
+      "domain": "text8",
+      "owner": 0,
+      "train": [
+        2502,
+        1232,
+        14,
+        -4
+      ],
+      "frac_to_owner_first20": 0.875,
+      "recruits_so_far": 135,
+      "evictions_so_far": 131,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 260,
+      "protected": [
+        1,
+        2,
+        3
+      ]
+    },
+    "bpc_A_preB": 3.0128833785532323,
+    "bpc_A_postB": 3.215101877686246,
+    "bpc_B_postB": 3.060411127597871,
+    "bpc_B_postC": 3.697920295530704,
+    "bpc_B_postD": 2.88135760021416,
+    "bpc_B_postE": 3.816059696610055,
+    "bpc_A_postE": 2.7109182087081933,
+    "bpc_Cret_postC": 2.8506039253508164,
+    "bpc_Cret_postE": 2.7491189951178403,
+    "boundary_window_D": {
+      "frac_to_owner": 0.96875
+    },
+    "b_degradation_B_postC": 0.6375091679328326,
+    "wall_s": 121.3,
+    "arm": "EX",
+    "backbone_lr_post_a": 0.00075,
+    "domain_exclusion": true,
+    "cellkey": "claim.EX.s5",
+    "cfgsig": "1d562cae411f1e9a",
+    "complete": true
+  },
+  "claim.EX.s6": {
+    "config": "PRIM-EX",
+    "E": 4,
+    "seed": 6,
+    "lr": 0.003,
+    "traj_A": {
+      "bpc_A": 3.0364122809196576,
+      "bpc_B": 7.650653224175878,
+      "bpc_Cret": 2.97079496577306
+    },
+    "block_A": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        3906,
+        0,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 1,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_B": {
+      "bpc_A": 3.172820480968635,
+      "bpc_B": 3.050186144610883,
+      "bpc_Cret": 3.2073342239324765
+    },
+    "block_B": {
+      "domain": "shakes",
+      "owner": null,
+      "train": [
+        0,
+        3920,
+        1,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 3,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_C": {
+      "bpc_A": 2.801492171507016,
+      "bpc_B": 3.632905584114285,
+      "bpc_Cret": 2.841459941186195
+    },
+    "block_C": {
+      "domain": "text8",
+      "owner": 0,
+      "train": [
+        3825,
+        0,
+        0,
+        4
+      ],
+      "frac_to_owner_first20": 0.99375,
+      "recruits_so_far": 32,
+      "evictions_so_far": 28,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 177,
+      "protected": [
+        1,
+        2
+      ]
+    },
+    "traj_D": {
+      "bpc_A": 3.0340521674116783,
+      "bpc_B": 2.8816526354633094,
+      "bpc_Cret": 3.08910002857062
+    },
+    "block_D": {
+      "domain": "shakes",
+      "owner": 1,
+      "train": [
+        0,
+        3838,
+        9,
+        1
+      ],
+      "frac_to_owner_first20": 0.98125,
+      "recruits_so_far": 69,
+      "evictions_so_far": 65,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 177,
+      "protected": [
+        0,
+        2,
+        3
+      ]
+    },
+    "traj_E": {
+      "bpc_A": 2.706977862158499,
+      "bpc_B": 3.759005193095485,
+      "bpc_Cret": 2.738789505436065
+    },
+    "block_E": {
+      "domain": "text8",
+      "owner": 0,
+      "train": [
+        2583,
+        1129,
+        -7,
+        39
+      ],
+      "frac_to_owner_first20": 0.88125,
+      "recruits_so_far": 127,
+      "evictions_so_far": 123,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 177,
+      "protected": [
+        1,
+        2,
+        3
+      ]
+    },
+    "bpc_A_preB": 3.0364122809196576,
+    "bpc_A_postB": 3.172820480968635,
+    "bpc_B_postB": 3.050186144610883,
+    "bpc_B_postC": 3.632905584114285,
+    "bpc_B_postD": 2.8816526354633094,
+    "bpc_B_postE": 3.759005193095485,
+    "bpc_A_postE": 2.706977862158499,
+    "bpc_Cret_postC": 2.841459941186195,
+    "bpc_Cret_postE": 2.738789505436065,
+    "boundary_window_D": {
+      "frac_to_owner": 0.98125
+    },
+    "b_degradation_B_postC": 0.5827194395034021,
+    "wall_s": 121.3,
+    "arm": "EX",
+    "backbone_lr_post_a": 0.00075,
+    "domain_exclusion": true,
+    "cellkey": "claim.EX.s6",
+    "cfgsig": "bc23d6c315b4dc92",
+    "complete": true
+  },
+  "claim.EX.s7": {
+    "config": "PRIM-EX",
+    "E": 4,
+    "seed": 7,
+    "lr": 0.003,
+    "traj_A": {
+      "bpc_A": 3.027775149912262,
+      "bpc_B": 7.479018568148535,
+      "bpc_Cret": 2.964980445782268
+    },
+    "block_A": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        3906,
+        0,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 1,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_B": {
+      "bpc_A": 3.190344592322901,
+      "bpc_B": 3.0213844544048616,
+      "bpc_Cret": 3.218600699791097
+    },
+    "block_B": {
+      "domain": "shakes",
+      "owner": null,
+      "train": [
+        0,
+        3921,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 2,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_C": {
+      "bpc_A": 2.803218672706422,
+      "bpc_B": 3.7225873551763193,
+      "bpc_Cret": 2.838916824026301
+    },
+    "block_C": {
+      "domain": "text8",
+      "owner": 0,
+      "train": [
+        3817,
+        0,
+        1,
+        30
+      ],
+      "frac_to_owner_first20": 0.9921875,
+      "recruits_so_far": 29,
+      "evictions_so_far": 25,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 287,
+      "protected": [
+        1
+      ]
+    },
+    "traj_D": {
+      "bpc_A": 3.0508456823536827,
+      "bpc_B": 2.876950277125445,
+      "bpc_Cret": 3.0959491467991134
+    },
+    "block_D": {
+      "domain": "shakes",
+      "owner": 1,
+      "train": [
+        0,
+        3827,
+        2,
+        3
+      ],
+      "frac_to_owner_first20": 0.96875,
+      "recruits_so_far": 69,
+      "evictions_so_far": 65,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 287,
+      "protected": [
+        0,
+        2,
+        3
+      ]
+    },
+    "traj_E": {
+      "bpc_A": 2.7001998124531164,
+      "bpc_B": 3.95198806585385,
+      "bpc_Cret": 2.737969329875686
+    },
+    "block_E": {
+      "domain": "text8",
+      "owner": 0,
+      "train": [
+        2543,
+        1094,
+        -2,
+        173
+      ],
+      "frac_to_owner_first20": 0.8875,
+      "recruits_so_far": 120,
+      "evictions_so_far": 116,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 287,
+      "protected": [
+        1,
+        2,
+        3
+      ]
+    },
+    "bpc_A_preB": 3.027775149912262,
+    "bpc_A_postB": 3.190344592322901,
+    "bpc_B_postB": 3.0213844544048616,
+    "bpc_B_postC": 3.7225873551763193,
+    "bpc_B_postD": 2.876950277125445,
+    "bpc_B_postE": 3.95198806585385,
+    "bpc_A_postE": 2.7001998124531164,
+    "bpc_Cret_postC": 2.838916824026301,
+    "bpc_Cret_postE": 2.737969329875686,
+    "boundary_window_D": {
+      "frac_to_owner": 0.96875
+    },
+    "b_degradation_B_postC": 0.7012029007714577,
+    "wall_s": 121.3,
+    "arm": "EX",
+    "backbone_lr_post_a": 0.00075,
+    "domain_exclusion": true,
+    "cellkey": "claim.EX.s7",
+    "cfgsig": "6ea75929f1307d1d",
+    "complete": true
+  },
+  "claim.EX.s8": {
+    "config": "PRIM-EX",
+    "E": 4,
+    "seed": 8,
+    "lr": 0.003,
+    "traj_A": {
+      "bpc_A": 3.034876438805035,
+      "bpc_B": 7.345847905524071,
+      "bpc_Cret": 2.974188044124538
+    },
+    "block_A": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        3906,
+        0,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 1,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_B": {
+      "bpc_A": 3.1694586064437598,
+      "bpc_B": 3.029481337512395,
+      "bpc_Cret": 3.19703985398997
+    },
+    "block_B": {
+      "domain": "shakes",
+      "owner": null,
+      "train": [
+        1,
+        3919,
+        1,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 3,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_C": {
+      "bpc_A": 2.8059887152413743,
+      "bpc_B": 3.683972807765515,
+      "bpc_Cret": 2.8515749411615126
+    },
+    "block_C": {
+      "domain": "text8",
+      "owner": 0,
+      "train": [
+        3825,
+        0,
+        0,
+        3
+      ],
+      "frac_to_owner_first20": 0.9890625,
+      "recruits_so_far": 35,
+      "evictions_so_far": 31,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 222,
+      "protected": [
+        1,
+        2
+      ]
+    },
+    "traj_D": {
+      "bpc_A": 3.0219194105308507,
+      "bpc_B": 2.8688946255735277,
+      "bpc_Cret": 3.096712802686683
+    },
+    "block_D": {
+      "domain": "shakes",
+      "owner": 1,
+      "train": [
+        0,
+        3834,
+        14,
+        0
+      ],
+      "frac_to_owner_first20": 0.9703125,
+      "recruits_so_far": 77,
+      "evictions_so_far": 73,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 222,
+      "protected": [
+        0,
+        2,
+        3
+      ]
+    },
+    "traj_E": {
+      "bpc_A": 2.694359115820901,
+      "bpc_B": 3.7687561966410446,
+      "bpc_Cret": 2.726978139149622
+    },
+    "block_E": {
+      "domain": "text8",
+      "owner": 0,
+      "train": [
+        2692,
+        1052,
+        0,
+        -1
+      ],
+      "frac_to_owner_first20": 0.8671875,
+      "recruits_so_far": 136,
+      "evictions_so_far": 132,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 222,
+      "protected": [
+        1,
+        2,
+        3
+      ]
+    },
+    "bpc_A_preB": 3.034876438805035,
+    "bpc_A_postB": 3.1694586064437598,
+    "bpc_B_postB": 3.029481337512395,
+    "bpc_B_postC": 3.683972807765515,
+    "bpc_B_postD": 2.8688946255735277,
+    "bpc_B_postE": 3.7687561966410446,
+    "bpc_A_postE": 2.694359115820901,
+    "bpc_Cret_postC": 2.8515749411615126,
+    "bpc_Cret_postE": 2.726978139149622,
+    "boundary_window_D": {
+      "frac_to_owner": 0.9703125
+    },
+    "b_degradation_B_postC": 0.6544914702531202,
+    "wall_s": 118.6,
+    "arm": "EX",
+    "backbone_lr_post_a": 0.00075,
+    "domain_exclusion": true,
+    "cellkey": "claim.EX.s8",
+    "cfgsig": "fe70b4648307f799",
+    "complete": true
+  },
+  "claim.EX.s9": {
+    "config": "PRIM-EX",
+    "E": 4,
+    "seed": 9,
+    "lr": 0.003,
+    "traj_A": {
+      "bpc_A": 2.999007045682635,
+      "bpc_B": 5.294980815157834,
+      "bpc_Cret": 2.940045850715695
+    },
+    "block_A": {
+      "domain": "text8",
+      "owner": null,
+      "train": [
+        3905,
+        1,
+        0,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 2,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_B": {
+      "bpc_A": 3.1508875811300654,
+      "bpc_B": 3.0583699062371092,
+      "bpc_Cret": 3.184284886809341
+    },
+    "block_B": {
+      "domain": "shakes",
+      "owner": null,
+      "train": [
+        0,
+        3920,
+        1,
+        0
+      ],
+      "frac_to_owner_first20": 0.0,
+      "recruits_so_far": 3,
+      "evictions_so_far": 0,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 0
+    },
+    "traj_C": {
+      "bpc_A": 2.8077810355242088,
+      "bpc_B": 3.690058504404289,
+      "bpc_Cret": 2.8369891331121044
+    },
+    "block_C": {
+      "domain": "text8",
+      "owner": 0,
+      "train": [
+        3821,
+        0,
+        0,
+        3
+      ],
+      "frac_to_owner_first20": 0.9734375,
+      "recruits_so_far": 33,
+      "evictions_so_far": 29,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 216,
+      "protected": [
+        1,
+        2
+      ]
+    },
+    "traj_D": {
+      "bpc_A": 3.053957076054067,
+      "bpc_B": 2.8852501171569434,
+      "bpc_Cret": 3.1243571528724003
+    },
+    "block_D": {
+      "domain": "shakes",
+      "owner": 1,
+      "train": [
+        0,
+        3828,
+        13,
+        1
+      ],
+      "frac_to_owner_first20": 0.9640625,
+      "recruits_so_far": 75,
+      "evictions_so_far": 71,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 216,
+      "protected": [
+        0,
+        2,
+        3
+      ]
+    },
+    "traj_E": {
+      "bpc_A": 2.707718477662627,
+      "bpc_B": 3.687495278138729,
+      "bpc_Cret": 2.737991724662715
+    },
+    "block_E": {
+      "domain": "text8",
+      "owner": 0,
+      "train": [
+        2525,
+        1228,
+        2,
+        -3
+      ],
+      "frac_to_owner_first20": 0.8984375,
+      "recruits_so_far": 128,
+      "evictions_so_far": 124,
+      "suppressed_so_far": 0,
+      "redirects_so_far": 216,
+      "protected": [
+        1,
+        2,
+        3
+      ]
+    },
+    "bpc_A_preB": 2.999007045682635,
+    "bpc_A_postB": 3.1508875811300654,
+    "bpc_B_postB": 3.0583699062371092,
+    "bpc_B_postC": 3.690058504404289,
+    "bpc_B_postD": 2.8852501171569434,
+    "bpc_B_postE": 3.687495278138729,
+    "bpc_A_postE": 2.707718477662627,
+    "bpc_Cret_postC": 2.8369891331121044,
+    "bpc_Cret_postE": 2.737991724662715,
+    "boundary_window_D": {
+      "frac_to_owner": 0.9640625
+    },
+    "b_degradation_B_postC": 0.6316885981671798,
+    "wall_s": 118.8,
+    "arm": "EX",
+    "backbone_lr_post_a": 0.00075,
+    "domain_exclusion": true,
+    "cellkey": "claim.EX.s9",
+    "cfgsig": "6c89204316c78af0",
+    "complete": true
+  }
+}

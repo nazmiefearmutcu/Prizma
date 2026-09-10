@@ -426,6 +426,7 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
 
     # ---------------- the 2 arms x seeds (PLAIN first; per-cell cross-arm canary) --------------
     first_cell_s = None
+    all_walls = []
     canaries = []
     for arm in ARMS:
         exclusion = (arm == "EX")
@@ -457,11 +458,13 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
                                 "cfgsig": cfgsig, "complete": True,
                                 "wall_s": round(time.time() - t0, 1)}
                 _save(res, path)
+                all_walls.append(rec["wall_s"])
                 print(f"[pr14] {arm} seed {seed}: B: postB={rec['bpc_B_postB']:.3f} "
                       f"postC={rec['bpc_B_postC']:.3f} postD={rec['bpc_B_postD']:.3f} "
                       f"postE={rec['bpc_B_postE']:.3f} | A_postE={rec['bpc_A_postE']:.3f} "
                       f"wall={rec['wall_s']}s", flush=True)
                 continue
+            all_walls.append(rec["wall_s"])
             # EX: run the canary against the JUST-COMPLETED PLAIN cell BEFORE storing
             canaries.append(run_canary(res[f"claim.PLAIN.s{seed}"], rec, seed))
             rec.update({"arm": arm, "seed": seed, "lr": LR_FROZEN,
@@ -472,7 +475,9 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
             res[cellkey] = rec
             _save(res, path)                    # crash-safe after every cell
             if first_cell_s is None:
-                first_cell_s = rec["wall_s"] + res["claim.PLAIN.s0"]["wall_s"]
+                # PR-19 fix: pace the projection on the RUNNING MEAN of completed cells
+                # (the old key pinned claim.PLAIN.s0, which does not exist at offset seeds)
+                first_cell_s = sum(all_walls) / len(all_walls)
                 proj = plc.budget_projection(first_cell_s, n_cells_total=len(ARMS) * len(seeds))
                 res.setdefault("meta", {})["budget_projection"] = proj
                 _save(res, path)

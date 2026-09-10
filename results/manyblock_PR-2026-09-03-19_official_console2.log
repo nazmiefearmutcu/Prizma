@@ -1,0 +1,45 @@
+[pr14] stream: A/B/C/D/E segs=[3906, 3921, 3906, 3921, 3906]; vocab=65; smoke=False; lr=0.003 + backbone_postA=0.00075; results=C:\Users\Kullanıcı\Prizma\results\manyblock_PR-2026-09-03-19\powered.json
+[pr14] PLAIN seed 5: resumed from ledger (bpc_B_postD=2.887)
+[pr14] PLAIN seed 6: resumed from ledger (bpc_B_postD=2.895)
+[pr14] PLAIN seed 7: resumed from ledger (bpc_B_postD=2.887)
+[pr14] PLAIN seed 8: resumed from ledger (bpc_B_postD=2.881)
+[pr14] PLAIN seed 9: resumed from ledger (bpc_B_postD=2.886)
+[pr14] EX seed 5: resumed from ledger (bpc_B_postD=2.881)
+[pr14] EX seed 6: resumed from ledger (bpc_B_postD=2.882)
+[pr14] EX seed 7: A_postE=2.700 B: postB=3.021 postC=3.723 postD=2.877 postE=3.952 D_frac_to_owner=0.96875 wall=121.3s
+[pr14] EX seed 8: A_postE=2.694 B: postB=3.029 postC=3.684 postD=2.869 postE=3.769 D_frac_to_owner=0.9703125 wall=118.6s
+[pr14] EX seed 9: A_postE=2.708 B: postB=3.058 postC=3.690 postD=2.885 postE=3.687 D_frac_to_owner=0.9640625 wall=118.8s
+
+==============================================================================
+  PR-2026-09-03-14 — POWERED CLAIM CAMPAIGN
+==============================================================================
+    claim.EX.s5                    B: postB=3.060 postC=3.698 postD=2.881 postE=3.816 | A_postE=2.711 Cret_postE=2.749 wall=121.3s
+      D: owner=1 frac_to_owner_first20=0.96875 suppressed=0 redirects=260
+    claim.EX.s6                    B: postB=3.050 postC=3.633 postD=2.882 postE=3.759 | A_postE=2.707 Cret_postE=2.739 wall=121.3s
+      D: owner=1 frac_to_owner_first20=0.98125 suppressed=0 redirects=177
+    claim.EX.s7                    B: postB=3.021 postC=3.723 postD=2.877 postE=3.952 | A_postE=2.700 Cret_postE=2.738 wall=121.3s
+      D: owner=1 frac_to_owner_first20=0.96875 suppressed=0 redirects=287
+    claim.EX.s8                    B: postB=3.029 postC=3.684 postD=2.869 postE=3.769 | A_postE=2.694 Cret_postE=2.727 wall=118.6s
+      D: owner=1 frac_to_owner_first20=0.9703125 suppressed=0 redirects=222
+    claim.EX.s9                    B: postB=3.058 postC=3.690 postD=2.885 postE=3.687 | A_postE=2.708 Cret_postE=2.738 wall=118.8s
+      D: owner=1 frac_to_owner_first20=0.9640625 suppressed=0 redirects=216
+    claim.PLAIN.s5                 B: postB=3.060 postC=3.956 postD=2.887 postE=3.921 | A_postE=2.714 Cret_postE=2.755 wall=122.6s
+      D: owner=None frac_to_owner_first20=0.0 suppressed=0 redirects=0
+    claim.PLAIN.s6                 B: postB=3.050 postC=3.911 postD=2.895 postE=3.757 | A_postE=2.705 Cret_postE=2.735 wall=115.1s
+      D: owner=None frac_to_owner_first20=0.0 suppressed=0 redirects=0
+    claim.PLAIN.s7                 B: postB=3.021 postC=3.941 postD=2.887 postE=3.837 | A_postE=2.699 Cret_postE=2.740 wall=118.5s
+      D: owner=None frac_to_owner_first20=0.0 suppressed=0 redirects=0
+    claim.PLAIN.s8                 B: postB=3.029 postC=3.947 postD=2.881 postE=3.784 | A_postE=2.694 Cret_postE=2.727 wall=116.4s
+      D: owner=None frac_to_owner_first20=0.0 suppressed=0 redirects=0
+    claim.PLAIN.s9                 B: postB=3.058 postC=4.045 postD=2.886 postE=3.720 | A_postE=2.701 Cret_postE=2.734 wall=114.9s
+      D: owner=None frac_to_owner_first20=0.0 suppressed=0 redirects=0
+    P1: recovery mean=0.8067 (flipped-scale mean=-0.8067, CI=[-0.8495,-0.7638], bar flipped <= -0.1) p_holm=0.0000 -> PASS
+    P2: frac_mean=0.971 (bar >= 0.5) -> PASS
+    P3: A-retention mean=-0.3182 CI=[-0.3438,-0.2926] (bar <= 0.05) p_holm=0.0000 -> PASS
+    G1: harm mean=-0.0083 CI=[-0.0166,-0.0000] (allowance 0.10; CI-positional, no p-gate — doc addendum #1) -> PASS
+    G2: Cret drift mean=-0.1057 CI=[-0.1189,-0.0925] (bar <= 0.05; CI-positional, no p-gate — doc addendum #1) -> PASS
+  OUTCOME: CLAIMED
+  CLAIMED — the column accumulates (P3), recovers the re-encountered domain (P1), keeps the re-encounter ledger honest (P2), and the exclusion neither costs the revisit (G1) nor text8 continuity (G2): the lifelong claim rests on 5 blocks (doc §4).
+  ledger: C:\Users\Kullanıcı\Prizma\results\manyblock_PR-2026-09-03-19\powered.json
+  raw archive: C:\Users\Kullanıcı\Prizma\results\runs\manyblock-PR-2026-09-03-14-20260910T185254Z.json
+==============================================================================
