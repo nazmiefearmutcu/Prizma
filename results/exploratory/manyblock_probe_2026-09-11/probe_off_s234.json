@@ -1,0 +1,390 @@
+{
+ "registry": "manyblock_probe_2026-09-09",
+ "lane": "LANE-EXPLORATORY (quarantined; never cited as a claim)",
+ "seeds": [
+  2,
+  3,
+  4
+ ],
+ "results": {
+  "s2": {
+   "blocks": {
+    "init": {
+     "bpc_A": 5.9975360819035,
+     "bpc_B": 5.992918629651648,
+     "bpc_Cret": 5.989097233663115
+    },
+    "post_A": {
+     "bpc_A": 3.037672453366155,
+     "bpc_B": 5.757886414678588,
+     "bpc_Cret": 2.979807410550603,
+     "block_train": [
+      3905,
+      1,
+      0,
+      0
+     ],
+     "recruits_so_far": 2,
+     "evictions_so_far": 0
+    },
+    "post_B": {
+     "bpc_A": 3.2097843787368245,
+     "bpc_B": 3.0797765480444865,
+     "bpc_Cret": 3.248043688637654,
+     "block_train": [
+      0,
+      3920,
+      1,
+      0
+     ],
+     "recruits_so_far": 3,
+     "evictions_so_far": 0
+    },
+    "post_C": {
+     "bpc_A": 2.791327517053526,
+     "bpc_B": 4.0381941648011015,
+     "bpc_Cret": 2.829591303795052,
+     "block_train": [
+      1560,
+      2246,
+      20,
+      1
+     ],
+     "recruits_so_far": 38,
+     "evictions_so_far": 34
+    },
+    "post_D": {
+     "bpc_A": 3.0453236175377394,
+     "bpc_B": 2.872024352411607,
+     "bpc_Cret": 3.100933899007419,
+     "block_train": [
+      0,
+      0,
+      2088,
+      1
+     ],
+     "recruits_so_far": 43,
+     "evictions_so_far": 39
+    },
+    "post_E": {
+     "bpc_A": 2.7019692899120673,
+     "bpc_B": 3.815531353255007,
+     "bpc_Cret": 2.733461920365642,
+     "block_train": [
+      1487,
+      1891,
+      371,
+      -1
+     ],
+     "recruits_so_far": 104,
+     "evictions_so_far": 100
+    }
+   },
+   "per_slot": [
+    {
+     "slot": 0,
+     "committed": true,
+     "train": {
+      "A": 3905,
+      "B": 0,
+      "C": 1560,
+      "D": 0,
+      "E": 1487
+     }
+    },
+    {
+     "slot": 1,
+     "committed": true,
+     "train": {
+      "A": 1,
+      "B": 3920,
+      "C": 2246,
+      "D": 0,
+      "E": 1891
+     }
+    },
+    {
+     "slot": 2,
+     "committed": true,
+     "train": {
+      "A": 0,
+      "B": 1,
+      "C": 20,
+      "D": 2088,
+      "E": 371
+     }
+    },
+    {
+     "slot": 3,
+     "committed": true,
+     "train": {
+      "A": 0,
+      "B": 0,
+      "C": 1,
+      "D": 1,
+      "E": -1
+     }
+    }
+   ],
+   "ledger_tail": {
+    "recruits": 104,
+    "evictions": 100,
+    "vetoed_novel_segments": 3
+   },
+   "wall_s": 212.6
+  },
+  "s3": {
+   "blocks": {
+    "init": {
+     "bpc_A": 6.075886353979266,
+     "bpc_B": 6.046637666052767,
+     "bpc_Cret": 6.076207726934404
+    },
+    "post_A": {
+     "bpc_A": 3.0526445221019287,
+     "bpc_B": 7.476484301389206,
+     "bpc_Cret": 2.9986587481820326,
+     "block_train": [
+      3906,
+      0,
+      0,
+      0
+     ],
+     "recruits_so_far": 1,
+     "evictions_so_far": 0
+    },
+    "post_B": {
+     "bpc_A": 3.178023857522718,
+     "bpc_B": 3.0705867314005784,
+     "bpc_Cret": 3.2190944646276116,
+     "block_train": [
+      0,
+      3920,
+      1,
+      0
+     ],
+     "recruits_so_far": 3,
+     "evictions_so_far": 0
+    },
+    "post_C": {
+     "bpc_A": 2.8171474505839464,
+     "bpc_B": 3.9783713273254655,
+     "bpc_Cret": 2.8614842851648907,
+     "block_train": [
+      1469,
+      2313,
+      3,
+      40
+     ],
+     "recruits_so_far": 41,
+     "evictions_so_far": 37
+    },
+    "post_D": {
+     "bpc_A": 3.01484115496582,
+     "bpc_B": 2.9066679303247405,
+     "bpc_Cret": 3.091748600200249,
+     "block_train": [
+      0,
+      0,
+      2784,
+      -37
+     ],
+     "recruits_so_far": 50,
+     "evictions_so_far": 46
+    },
+    "post_E": {
+     "bpc_A": 2.7274639169354375,
+     "bpc_B": 3.804137210857883,
+     "bpc_Cret": 2.750751253352423,
+     "block_train": [
+      1386,
+      1966,
+      380,
+      -1
+     ],
+     "recruits_so_far": 110,
+     "evictions_so_far": 106
+    }
+   },
+   "per_slot": [
+    {
+     "slot": 0,
+     "committed": true,
+     "train": {
+      "A": 3906,
+      "B": 0,
+      "C": 1469,
+      "D": 0,
+      "E": 1386
+     }
+    },
+    {
+     "slot": 1,
+     "committed": true,
+     "train": {
+      "A": 0,
+      "B": 3920,
+      "C": 2313,
+      "D": 0,
+      "E": 1966
+     }
+    },
+    {
+     "slot": 2,
+     "committed": true,
+     "train": {
+      "A": 0,
+      "B": 1,
+      "C": 3,
+      "D": 2784,
+      "E": 380
+     }
+    },
+    {
+     "slot": 3,
+     "committed": true,
+     "train": {
+      "A": 0,
+      "B": 0,
+      "C": 40,
+      "D": -37,
+      "E": -1
+     }
+    }
+   ],
+   "ledger_tail": {
+    "recruits": 110,
+    "evictions": 106,
+    "vetoed_novel_segments": 0
+   },
+   "wall_s": 214.0
+  },
+  "s4": {
+   "blocks": {
+    "init": {
+     "bpc_A": 6.059296501774376,
+     "bpc_B": 6.042635712793297,
+     "bpc_Cret": 6.053260034203815
+    },
+    "post_A": {
+     "bpc_A": 2.9793155225298893,
+     "bpc_B": 5.360004104357226,
+     "bpc_Cret": 2.934478936352256,
+     "block_train": [
+      3905,
+      1,
+      0,
+      0
+     ],
+     "recruits_so_far": 2,
+     "evictions_so_far": 0
+    },
+    "post_B": {
+     "bpc_A": 3.1587733931387136,
+     "bpc_B": 3.0291712974688427,
+     "bpc_Cret": 3.1928337510285396,
+     "block_train": [
+      0,
+      3919,
+      1,
+      1
+     ],
+     "recruits_so_far": 4,
+     "evictions_so_far": 0
+    },
+    "post_C": {
+     "bpc_A": 2.7710126829120125,
+     "bpc_B": 3.903123978705689,
+     "bpc_Cret": 2.811466731331601,
+     "block_train": [
+      1623,
+      2185,
+      1,
+      18
+     ],
+     "recruits_so_far": 35,
+     "evictions_so_far": 31
+    },
+    "post_D": {
+     "bpc_A": 2.9946611305276387,
+     "bpc_B": 2.8763850290610593,
+     "bpc_Cret": 3.0429159627332885,
+     "block_train": [
+      0,
+      0,
+      -1,
+      2380
+     ],
+     "recruits_so_far": 40,
+     "evictions_so_far": 36
+    },
+    "post_E": {
+     "bpc_A": 2.6905220646972015,
+     "bpc_B": 3.890616774080879,
+     "bpc_Cret": 2.710370781756761,
+     "block_train": [
+      1639,
+      1970,
+      2,
+      158
+     ],
+     "recruits_so_far": 92,
+     "evictions_so_far": 88
+    }
+   },
+   "per_slot": [
+    {
+     "slot": 0,
+     "committed": true,
+     "train": {
+      "A": 3905,
+      "B": 0,
+      "C": 1623,
+      "D": 0,
+      "E": 1639
+     }
+    },
+    {
+     "slot": 1,
+     "committed": true,
+     "train": {
+      "A": 1,
+      "B": 3919,
+      "C": 2185,
+      "D": 0,
+      "E": 1970
+     }
+    },
+    {
+     "slot": 2,
+     "committed": true,
+     "train": {
+      "A": 0,
+      "B": 1,
+      "C": 1,
+      "D": -1,
+      "E": 2
+     }
+    },
+    {
+     "slot": 3,
+     "committed": true,
+     "train": {
+      "A": 0,
+      "B": 1,
+      "C": 18,
+      "D": 2380,
+      "E": 158
+     }
+    }
+   ],
+   "ledger_tail": {
+    "recruits": 92,
+    "evictions": 88,
+    "vetoed_novel_segments": 0
+   },
+   "wall_s": 196.8
+  }
+ },
+ "note": "exploratory; informs the PR-14 many-block prereg \u2014 especially whether a literal shakespeare revisit (block D) improves B-eval and whether the B-expert re-engages under plain argmin without domain-exclusion"
+}

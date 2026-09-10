@@ -334,12 +334,15 @@ gates). No new claim was staked; one new mechanism was implemented and honestly 
    in both modes, no confound); after each step `W += kappa*W_fast`, `W_fast *= (1-delta)`; flags
    `--cascade-target {off,tissue} --cascade-kappa --cascade-delta` threaded through both claim
    runners + the probe; fingerprints + per-block fast-norm diagnostics. `off` is byte-identical
-   (pinned). 14 new tests. **EXPLORATORY PROBE (n=2, seeds 0-1, paired, `--out` preserved the
-   historical artifact): the frozen dose shifts BOTH metrics in the protective direction —
-   recovery_B −0.048 bpc, damage_C −0.063 bpc — within seed/run noise at n=2; NOT a claim-grade
-   effect.** Historical canary PASS (the OFF runs reproduce the committed 2026-09-09 probe.json
-   exactly). Lever stays default-OFF; a future registration would need a dose/target design pass
-   first (`results/exploratory/manyblock_probe_2026-09-11/ANALYSIS.md`).
+   (pinned). 14 new tests. **EXPLORATORY PROBE (paired, seeds 0-1 first then FRESH 2-4, pooled n=5;
+   `--out`/`--seeds` kept the historical artifact untouched): the frozen dose shifts BOTH metrics in
+   the protective direction — pooled Δrecovery_B −0.019 [95% CI −0.071, +0.033], Δdamage_C −0.032
+   [−0.083, +0.019]; damage lower in 4/5 pairs, recovery lower in 4/5 — a small, direction-consistent
+   effect (~1/10 of the registered schedule's PR-16 damage gap) that SHRANK on the fresh seeds and
+   whose CIs straddle zero. NOT claim-grade; the lever stays default-OFF and a dose/target design
+   pass + a powered n is the prerequisite for any registration
+   (`results/exploratory/manyblock_probe_2026-09-11/ANALYSIS.md`).** Historical canary PASS (the OFF
+   runs reproduce the committed 2026-09-09 probe.json exactly).
 2. **Lane 2 — Prizma-Seq CPU kernel (honest efficiency, default-off).** `chunked_delta` gains
    `fast_reads` (opt-in; read-ratio via `ratio / alpha_i`, removing a second [B,H,C,C] sub+exp;
    ~1e-5 drift, default path byte-identical); the unit-lower solve passes the strictly-lower matrix

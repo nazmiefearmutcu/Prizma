@@ -23,8 +23,8 @@ column ACCUMULATE across many blocks". This probe informs a PR-14 prereg (notabl
 domain-exclusion with per-block owner election is needed for a clean revisit).
 Output: results/exploratory/manyblock_probe_2026-09-09/probe.json (+ console summary).
 Lane-1 cascade CLI (campaign 2026-09-11, guarded DEFAULT-OFF): --cascade-target {off,tissue},
---cascade-kappa (default 0.05), --cascade-delta (default 0.10), --smoke, --out PATH (explicit
-output; paired campaign runs keep historical files untouched). Off writes probe.json (the
+--cascade-kappa (default 0.05), --cascade-delta (default 0.10), --smoke, --seeds N..., --out PATH
+(explicit output; paired campaign runs keep historical files untouched). Off writes probe.json (the
 original behavior), tissue writes probe_cascade.json, --smoke writes probe_smoke.json (8
 segments/block, seed 0 only); per-block fast-component diagnostics are recorded only when the
 cascade is on.
@@ -141,6 +141,9 @@ def _build_parser():
     p.add_argument("--smoke", action="store_true",
                    help="tiny wiring run (8 segments/block, seed 0 only; writes "
                         "probe_smoke.json, never the real probe files)")
+    p.add_argument("--seeds", type=int, nargs="*", default=None,
+                   help="explicit seed list (default: 0 1; a --smoke run always uses seed 0). "
+                        "Fresh seeds (e.g. 2 3 4) extend the paired exploratory comparison.")
     p.add_argument("--out", default=None,
                    help="explicit output JSON path (overrides the registry default; used by "
                         "paired campaign runs so historical probe.json is never overwritten)")
@@ -196,6 +199,8 @@ def main(argv=None):
     seeds = (0,)
     if args.smoke:
         data = tuple(t[:8] for t in data)         # 8 segments/block: wiring only
+    elif args.seeds:
+        seeds = tuple(int(s) for s in args.seeds)
     else:
         seeds = (0, 1)
     evals = {"vocab": V}

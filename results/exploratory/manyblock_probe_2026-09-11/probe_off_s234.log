@@ -1,0 +1,5 @@
+[probe] LANE-EXPLORATORY manyblock_probe_2026-09-09: 5 blocks (A=text8[0,1M) B=shakes C=text8[1.1M,2.1M) D=shakes-REVISIT E=text8[2.1M,3.1M)); vocab=65; n=3; L1 dose 0.00075 on post-A blocks; cascade_target=off (kappa=0.05, delta=0.1); smoke=False
+[probe] s2: A: 5.998->2.702 | B: 3.080 ->postC 4.038 ->postD 2.872 ->postE 3.816 | Cret: 2.830->2.733 | recruits=104 evictions=100 wall=212.6s
+[probe] s3: A: 6.076->2.727 | B: 3.071 ->postC 3.978 ->postD 2.907 ->postE 3.804 | Cret: 2.861->2.751 | recruits=110 evictions=106 wall=214.0s
+[probe] s4: A: 6.059->2.691 | B: 3.029 ->postC 3.903 ->postD 2.876 ->postE 3.891 | Cret: 2.811->2.710 | recruits=92 evictions=88 wall=196.8s
+[probe] written: results\exploratory\manyblock_probe_2026-09-11\probe_off_s234.json
