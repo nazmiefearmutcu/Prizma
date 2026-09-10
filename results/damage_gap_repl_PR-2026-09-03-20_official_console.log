@@ -1,0 +1,14 @@
+[pr20] source: C:\Users\Kullanıcı\Prizma\results\manyblock_PR-2026-09-03-19\powered.json
+
+==============================================================================
+  PR-2026-09-03-20 — DAMAGE-GAP REPLICATION (confirmatory analysis)
+==============================================================================
+    PLAIN damage/seed: [0.8958005221970353, 0.8611742769722097, 0.920103038717909, 0.9172486991983648, 0.9863394895828632]
+    EX damage/seed:    [0.6375091679328326, 0.5827194395034021, 0.7012029007714577, 0.6544914702531202, 0.6316885981671798]
+    P1: delta mean=0.2746 CI=[0.2100,0.3392] (bar: CI lower >= 0.25) p_raw=0.2026 -> NOT-ESTABLISHED
+  OUTCOME: NOT-ESTABLISHED
+  NOT-ESTABLISHED — the point gap is positive but n=5 cannot establish the 0.25 margin (doc §4); the seeds 10-14 extension is the next iteration's first action (pre-authorized).
+  branch: §4: the seeds 10-14 extension (PLAIN + EX at offset 10, n=10 fresh cumulative) is PRE-AUTHORIZED — the next iteration's first action.
+  ledger: C:\Users\Kullanıcı\Prizma\results\damage_gap_repl_PR-2026-09-03-20\powered.json
+  raw archive: C:\Users\Kullanıcı\Prizma\results\runs\damage-gap-repl-PR-2026-09-03-20-20260910T191939Z.json
+==============================================================================

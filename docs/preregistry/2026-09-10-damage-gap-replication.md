@@ -54,3 +54,9 @@ implementation with the same shape; the shared comparator alias is kept for pari
 Zero new data, zero new degrees of freedom: the bar is PR-16's own bar; the cells are
 PR-19's registered artifacts; the lever states are in both ledgers' fingerprints. What
 would change our mind: only dated addenda.
+
+---
+
+## Addendum 2026-09-10 #1 (pre-extension, maintainer) — the n=10 pooled adjudication mechanics
+
+The seeds 10-14 extension runs in a SEPARATE ledger (results/manyblock_PR-2026-09-03-20_ext/) because the per-cell fingerprints carry seed_offset (a mixed-offset single ledger would refuse resume — the fail-safe is by design). The pooled fresh n=10 (seeds 5-14) adjudication then reads BOTH registered ledgers read-only (PR-19's seeds 5-9 + the extension's seeds 10-14), recomputes the damages per seed, and applies the SAME Welch bar (CI lower >= 0.25). The extension's own in-run verdict covers seeds 10-14 alone; the pooled verdict is the registered adjudication, saved back into the PR-20 ledger as pooled_fresh_verdict.

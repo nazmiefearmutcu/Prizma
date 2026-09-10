@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "registry": "PR-2026-09-03-20",
+    "smoke": false,
+    "lane": "CLAIM (frozen pre-registration; confirmatory ANALYSIS)",
+    "doc": "docs/preregistry/2026-09-10-damage-gap-replication.md",
+    "source": {
+      "ledger": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\manyblock_PR-2026-09-03-19\\powered.json",
+      "cells": "claim.PLAIN.s5..s9 / claim.EX.s5..s9 (reused, disclosed)",
+      "note": "both arms share A/B training per seed \u2014 the PR-19 cross-arm canary proved it; the postB baselines are therefore bit-identical across arms"
+    },
+    "damage_def": "bpc_B_postC - bpc_B_postB per seed (the degradation from block C)",
+    "bars": {
+      "P1_margin": 0.25,
+      "alpha": 0.05,
+      "t_isf_convention": "UPPER-TAIL p in (0, 0.5] (the PR-03 lesson)"
+    },
+    "post_hoc_disclosure": "the gap was descriptively visible in the PR-19 console (~+0.31) before this freeze; the bar is PR-16's own 0.25",
+    "raw_archive": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\runs\\damage-gap-repl-PR-2026-09-03-20-20260910T191939Z.json"
+  },
+  "verdict": {
+    "outcome": "NOT-ESTABLISHED",
+    "verdict": "NOT-ESTABLISHED \u2014 the point gap is positive but n=5 cannot establish the 0.25 margin (doc \u00a74); the seeds 10-14 extension is the next iteration's first action (pre-authorized).",
+    "branches": [
+      "\u00a74: the seeds 10-14 extension (PLAIN + EX at offset 10, n=10 fresh cumulative) is PRE-AUTHORIZED \u2014 the next iteration's first action."
+    ],
+    "P1": {
+      "n_a": 5,
+      "n_b": 5,
+      "delta": 0.2746108900080779,
+      "se": 0.028000343632460366,
+      "df": 7.962278829124527,
+      "ci": [
+        0.20998869804390624,
+        0.3392330819722496
+      ],
+      "p_raw": 0.20258603502807748,
+      "margin": 0.25,
+      "damage_plain_per_seed": [
+        0.8958005221970353,
+        0.8611742769722097,
+        0.920103038717909,
+        0.9172486991983648,
+        0.9863394895828632
+      ],
+      "damage_ex_per_seed": [
+        0.6375091679328326,
+        0.5827194395034021,
+        0.7012029007714577,
+        0.6544914702531202,
+        0.6316885981671798
+      ],
+      "plain_damage_mean": 0.9161332053336764,
+      "ex_damage_mean": 0.6415223153255984,
+      "note": "delta = mean(PLAIN damage) - mean(EX damage); positive = the exclusion damages less. PASS iff CI lower >= 0.25 (PR-16's own bar, doc \u00a73).",
+      "status": "NOT-ESTABLISHED"
+    },
+    "alpha": 0.05
+  },
+  "report": {
+    "registry": "PR-2026-09-03-20",
+    "smoke": false,
+    "raw_archive": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\runs\\damage-gap-repl-PR-2026-09-03-20-20260910T191939Z.json",
+    "verdict": {
+      "outcome": "NOT-ESTABLISHED",
+      "verdict": "NOT-ESTABLISHED \u2014 the point gap is positive but n=5 cannot establish the 0.25 margin (doc \u00a74); the seeds 10-14 extension is the next iteration's first action (pre-authorized).",
+      "branches": [
+        "\u00a74: the seeds 10-14 extension (PLAIN + EX at offset 10, n=10 fresh cumulative) is PRE-AUTHORIZED \u2014 the next iteration's first action."
+      ],
+      "P1": {
+        "n_a": 5,
+        "n_b": 5,
+        "delta": 0.2746108900080779,
+        "se": 0.028000343632460366,
+        "df": 7.962278829124527,
+        "ci": [
+          0.20998869804390624,
+          0.3392330819722496
+        ],
+        "p_raw": 0.20258603502807748,
+        "margin": 0.25,
+        "damage_plain_per_seed": [
+          0.8958005221970353,
+          0.8611742769722097,
+          0.920103038717909,
+          0.9172486991983648,
+          0.9863394895828632
+        ],
+        "damage_ex_per_seed": [
+          0.6375091679328326,
+          0.5827194395034021,
+          0.7012029007714577,
+          0.6544914702531202,
+          0.6316885981671798
+        ],
+        "plain_damage_mean": 0.9161332053336764,
+        "ex_damage_mean": 0.6415223153255984,
+        "note": "delta = mean(PLAIN damage) - mean(EX damage); positive = the exclusion damages less. PASS iff CI lower >= 0.25 (PR-16's own bar, doc \u00a73).",
+        "status": "NOT-ESTABLISHED"
+      },
+      "alpha": 0.05
+    },
+    "powered_cpu_note": "analysis is CPU-native"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "meta": {
+    "registry": "PR-2026-09-03-20",
+    "smoke": false,
+    "lane": "CLAIM (frozen pre-registration; confirmatory ANALYSIS)",
+    "doc": "docs/preregistry/2026-09-10-damage-gap-replication.md",
+    "source": {
+      "ledger": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\manyblock_PR-2026-09-03-19\\powered.json",
+      "cells": "claim.PLAIN.s5..s9 / claim.EX.s5..s9 (reused, disclosed)",
+      "note": "both arms share A/B training per seed \u2014 the PR-19 cross-arm canary proved it; the postB baselines are therefore bit-identical across arms"
+    },
+    "damage_def": "bpc_B_postC - bpc_B_postB per seed (the degradation from block C)",
+    "bars": {
+      "P1_margin": 0.25,
+      "alpha": 0.05,
+      "t_isf_convention": "UPPER-TAIL p in (0, 0.5] (the PR-03 lesson)"
+    },
+    "post_hoc_disclosure": "the gap was descriptively visible in the PR-19 console (~+0.31) before this freeze; the bar is PR-16's own 0.25"
+  }
+}
