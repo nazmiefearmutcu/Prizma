@@ -506,3 +506,22 @@ run canary-checked by bit-identity against earlier ledgers; suite 392 -> 478P/10
 GPU-tier program unchanged (PRIZMA_GPU_CAMPAIGN.ipynb): Tier-0 -> PR-01 -> PR-02 (+ the
 confirmatory repaired-flagship stage); PR-LM-1 designs inherit L1 (C-block trunk-lr
 scaling) + L2 (domain-exclusive C-routing) + the eviction refinement.
+
+
+---
+
+## Addendum 2026-09-10 (night) — PR-14..PR-17: many-block accumulation, true revisit, and the attribution that names the mechanism
+
+Four more pre-registered claims (CPU at the registered fallback; suite 478 -> 504P/10S):
+
+| id | Question | Verdict |
+|---|---|---|
+| PR-14 | Does the repaired column ACCUMULATE across a 5-block stream with a literal revisit? | **CLAIMED — ALL FIVE BARS**: revisit recovery +0.82 bpc (8x the bar), re-engagement frac 0.971, A-retention -0.32 through 5 blocks, exclusion costs nothing (harm -0.008), text8 accumulates. The lifelong claim rests on 5 blocks. |
+| PR-15 | Can the memory-matched WINDOW-TF control hold A on the same curriculum? | **NEGATIVE for the claim as registered — the bar was NOT discriminating**: the control holds A too, because the curriculum re-exposes text8 at C and E. LESSON: retention bars need non-recurring domains. The run measured the real gap: boundary drift damage TF ~+1.15 vs column ~+0.60. |
+| PR-16 | Is that boundary-damage gap CI-establishable? | **CLAIMED** — delta +0.3685, CI [0.27, 0.47] (bar: CI lower >= 0.25). |
+| PR-17 | WHICH component carries the damage protection — the lr schedule or the tissue? | **ATTRIBUTION: SCHEDULE-CARRIED** — a plain TF with the schedule alone matches the column's damage bit-for-bit (C2 ~0) while establishing C1 (+0.37). Dated correction to PR-16's interpretation. The tissue's established uniqueness: the routing ledger (PR-13 B3), specialization purity, bounded-M economy. |
+
+Disclosed incident: the first PR-13 launch ran at a 10x CLI dose typo — INVALID, archived
+(results/invalid_dose_archive/); the runner now refuses unregistered doses. The GPU-tier
+program (PRIZMA_GPU_CAMPAIGN.ipynb) remains the next rung; its repaired-flagship stage
+carries the registered levers.

@@ -242,6 +242,24 @@ head-to-head leads: the routing-ledger head-to-head (a plain TF has no ledger �
 tissue's home turf), the D/E-boundary audit, and S3 (owner Colab).** Artifacts:
 results/windowtf_sched_PR-2026-09-03-17/ + official console log.
 
+## NIGHT-CLOSE (2026-09-10 03:1x — clock-rule wind-down, records consolidated)
+
+The 2026-09-09/10 campaign is COMPLETE through S2.5: PR-09 NEG (floors exonerated) ->
+PR-10 CLAIMED (trunk-lr repair) -> PR-11 NEG (clause-b; flagging the leak) -> PR-12
+CLAIMED (domain-exclusion) -> PR-13 CLAIM PASS ALL BARS (the flagship stands; 'lifelong
+routing' reinstated) -> PR-14 CLAIMED ALL FIVE BARS (5-block accumulation + true revisit)
+-> PR-15 NEG (the retention bar was non-discriminating — lesson recorded) -> PR-16
+CLAIMED (boundary damage: the head-to-head gap) -> PR-17 SCHEDULE-CARRIED (the
+attribution: the lr schedule protects, NOT the tissue; the tissue owns the routing
+ledger). Registry: 12 CLAIMED / 6 NEGATIVE. Suite 504P/10S. Records consolidated:
+PRIZMA_SEQ_REPORT.md carries all addenda; README's outcomes table is complete (PR-03..
+PR-17); the notebook is current. **MORNING/NEXT-SESSION STATE: S3 = the owner's Colab
+run of PRIZMA_GPU_CAMPAIGN.ipynb (stages 1-5 the payload; stage 6 confirmatory
+repaired-flagship). CPU-side: no registered work pending; new registrations only when a
+mechanism lead justifies one (leads: routing-ledger head-to-head design — structurally
+tissue-only; D/E audit non-discriminating). Publication stays the owner's one decision
+(tools/ship_prizma.py).** This file is current; good night.
+
 ## BACKLOG
 
 1. **[PR-03 claim] Single-pass citation bar** — status: `done (commit: see git log "PR-03 CLAIMED", 2026-09-05)`
