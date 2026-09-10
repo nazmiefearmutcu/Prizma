@@ -174,3 +174,21 @@ def test_route_pr08_redirect_targets_the_owner_slot():
     assert 1 not in got, f"protected slot 1 received segments: {got}"
     assert got.get(2, 0) > 0, "redirected segments must land on the OWNER slot (2)"
     assert led["domain_protect_redirects"] == 4,         f"all 4 segments must be counted as redirects: {led['domain_protect_redirects']}"
+
+
+# ── PR-2026-09-03-19: replication mode (--seed-offset) ──────────────────────────────────────
+
+def test_seed_offset_parser_defaults_and_fingerprint_sensitivity():
+    p = mbc._build_parser()
+    assert p.parse_args(["--powered-cpu"]).seed_offset == 0
+    args = p.parse_args(["--powered-cpu", "--seed-offset", "5",
+                         "--ledger-dir", "manyblock_PR-2026-09-03-19"])
+    assert args.seed_offset == 5
+    assert args.ledger_dir == "manyblock_PR-2026-09-03-19"
+    payload = {"leg": "claim", "arm": "EX", "seed": 5, "lr": 3e-3,
+               "backbone_lr_post_a": 7.5e-4, "domain_exclusion": True, "smoke": False,
+               "vocab": 65, "smoke_segs": None, "seg": 256, "batch_segs": 32,
+               "stream_lengths": {}, "blocks": list(mbc.BLOCKS),
+               "domain_of": dict(mbc.DOMAIN_OF), "bars": {}}
+    assert mbc._fp({**payload, "seed_offset": 0}) != mbc._fp({**payload, "seed_offset": 5}), \
+        "fresh-seed replication cells must never resume from original-seed cells"

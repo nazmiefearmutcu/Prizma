@@ -328,8 +328,10 @@ def run_canary(plain_rec, ex_rec, seed):
 
 
 def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
-        powered_cpu: bool = False):
-    path = resolve_results_path(results_path, smoke=smoke, force_smoke_path=force_smoke_path)
+        powered_cpu: bool = False, seed_offset=0, ledger_dir=None):
+    path = os.path.join(_results_root(), ledger_dir,
+                        SMOKE_BASENAME if smoke else POWERED_BASENAME)         if ledger_dir else resolve_results_path(results_path, smoke=smoke,
+                                                force_smoke_path=force_smoke_path)
 
     import time
 
@@ -349,7 +351,10 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
         if needs_cuda("powered-cpu" if powered_cpu else "powered"):
             require_cuda(torch.cuda.is_available())
         smoke_chars = None
-        seeds = CLAIM_SEEDS
+        seeds = tuple(s + seed_offset for s in CLAIM_SEEDS)
+        # PR-2026-09-03-19 replication mode: seed_offset shifts the FRESH seed set (5-9 for
+        # offset 5). Fingerprints carry the offset (fresh-seed cells never resume from
+        # original-seed cells).
 
     # ---------------- the 5-block stream (doc §2, exact slices) -------------------------------
     A_all, B_all = claim.fetch_corpora()
@@ -409,6 +414,11 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
     if powered_cpu:
         res["meta"]["powered_cpu"] = True
         res["meta"]["compute_fallback_note"] = POWERED_CPU_FALLBACK_NOTE
+    if seed_offset:
+        res["meta"]["seed_offset"] = seed_offset
+        res["meta"]["replication_note"] = (
+            f"PR-2026-09-03-19: fresh seeds {seeds[0]}..{seeds[-1]} (offset {seed_offset}); "
+            "BOTH arms re-run for the cross-arm canary and the fresh G1 comparison")
     _save(res, path)
     print(f"[pr14] stream: A/B/C/D/E segs="
           f"{[blocks_data[t][0].shape[0] for t in BLOCKS]}; vocab={V}; smoke={smoke}; "
@@ -428,7 +438,8 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
                           "seg": plc.SEG, "batch_segs": plc.BATCH_SEGS,
                           "stream_lengths": res["meta"]["stream_lengths"],
                           "blocks": list(BLOCKS), "domain_of": dict(DOMAIN_OF),
-                          "bars": res["meta"]["bars"]})
+                          "bars": res["meta"]["bars"],
+                          "seed_offset": seed_offset})   # PR-19: replication discipline
             prior = res.get(cellkey)
             if isinstance(prior, dict) and prior.get("cfgsig") == cfgsig and prior.get("complete"):
                 print(f"[pr14] {arm} seed {seed}: resumed from ledger "
@@ -484,6 +495,8 @@ def run(*, smoke: bool, results_path=None, force_smoke_path: bool = False,
               "cells": {k: res[k] for k in sorted(res) if k.startswith("claim.")}}
     if powered_cpu:
         report["powered_cpu"] = True
+    if seed_offset:
+        report["seed_offset"] = seed_offset         # PR-2026-09-03-19 (recorded when set)
     if not smoke:
         plain = [res[f"claim.PLAIN.s{s}"] for s in seeds]
         ex = [res[f"claim.EX.s{s}"] for s in seeds]
@@ -561,6 +574,14 @@ def _build_parser():
     p.add_argument("--force-smoke-path", action="store_true",
                    help="let a --smoke run write the powered ledger it was pointed at "
                         "(default: REFUSED — separate ledgers)")
+    p.add_argument("--seed-offset", type=int, default=0,
+                   help="PR-2026-09-03-19: shift the claim seeds by this offset (5 => "
+                        "fresh seeds 5-9 for a replication run; BOTH arms re-run). Default "
+                        "0 = byte-identical behavior.")
+    p.add_argument("--ledger-dir", default=None,
+                   help="ledger subdirectory under $PRIZMA_RESULTS (default None = the "
+                        "PR-14 dir; the PR-19 run uses manyblock_PR-2026-09-03-19 so the "
+                        "PR-14 ledger is never written)")
     return p
 
 
@@ -568,7 +589,8 @@ def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     args = _build_parser().parse_args(argv)
     run(smoke=args.smoke, results_path=args.out, force_smoke_path=args.force_smoke_path,
-        powered_cpu=args.powered_cpu)
+        powered_cpu=args.powered_cpu, seed_offset=args.seed_offset,
+        ledger_dir=args.ledger_dir)
 
 
 if __name__ == "__main__":
