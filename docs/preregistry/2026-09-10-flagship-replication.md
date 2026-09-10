@@ -59,3 +59,15 @@ ledger is separate via --ledger-dir). Smoke on CPU first.
 The replication is the strongest post-claim hardening available on CPU: fresh seeds, same
 frozen text, verdict pre-committed in BOTH directions (a fresh-seed failure DOWNGRADES the
 claim — recorded before unblinding). What would change our mind: only dated addenda.
+
+---
+
+## Addendum 2026-09-10 #1 (pre-adjudication, maintainer) — canary seed scope
+
+The PR-08 bit-identity canaries reference seeds 0-4 only. On this registration's FRESH
+seeds (5-9) there is no PR-08 counterpart, so the FROZEN-arm canary SKIPS those seeds
+(recorded per cell as cells_skipped_fresh_seed) instead of aborting; a PRESENT
+reference with any mismatch still aborts loudly. On fresh seeds the frozen arms'
+honesty is carried by the in-run structural checks (FROZEN-TRUNK's
+backbone_frozen_check parameter identity; FROZEN-CHECKPOINT's zero-delta construction)
+plus the LR-selection canary (which PASSED: 3e-3/3e-3/1e-2 reproduced exactly).

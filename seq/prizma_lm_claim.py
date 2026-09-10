@@ -965,15 +965,25 @@ def _pr11_canary(res, seeds, arm):
             f"claim.{arm}.s{{0..4}}. The registered protocol aborts before any further arm "
             "runs; run this where the PR-08 ledger exists.")
     pr08 = load_results(pr08_path)
-    checked = []
+    checked, skipped = [], []
     for seed in seeds:
         cellkey = f"claim.{arm}.s{seed}"
         fresh = res.get(cellkey)
         ref = pr08.get(cellkey)
-        if not isinstance(fresh, dict) or not isinstance(ref, dict):
+        if not isinstance(fresh, dict):
             raise SystemExit(
-                f"CANARY ABORT (PR-2026-09-03-11): missing cell for comparison ({cellkey} "
-                "absent here or in the PR-08 ledger) — refusing to proceed to any further arm.")
+                f"CANARY ABORT (PR-2026-09-03-11): the fresh cell {cellkey} is absent — "
+                "refusing to proceed to any further arm.")
+        if not isinstance(ref, dict):
+            # PR-2026-09-03-18 scope note: the reference ledger carries seeds 0-4 only. A
+            # FRESH seed (offset mode) has no PR-08 counterpart — the bit-identity canary
+            # is SKIPPED for it (recorded), not an abort: the frozen arms' honesty on fresh
+            # seeds is carried by the in-run structural checks (backbone_frozen_check
+            # parameter identity; FROZEN-CHECKPOINT's zero-delta construction) and by the
+            # LR-selection canary. A PRESENT reference with any mismatch still aborts.
+            skipped.append({"seed": seed, "reason": "no PR-08 counterpart at this seed "
+                            "(fresh-seed replication; doc 2026-09-10-flagship-replication)"})
+            continue
         mm = ffc.canary_mismatches(fresh, ref)
         if mm:
             raise SystemExit(
@@ -984,6 +994,7 @@ def _pr11_canary(res, seeds, arm):
                 f"Ledger: {pr08_path}")
         checked.append(cellkey)
     rec = {"ok": True, "arm": arm, "pr08_ledger": pr08_path, "cells_checked": checked,
+           "cells_skipped_fresh_seed": skipped,
            "ignored_fields": sorted(ffc.CANARY_IGNORE),
            "note": (f"every science field of {arm} == PR-08 claim.{arm} EXACTLY "
                     "(no C backbone step -> the lever is structurally inapplicable here)")}
