@@ -308,6 +308,21 @@ program is COMPLETE. S3 (owner Colab) remains the ladder's next rung.** Artifact
 results/damage_gap_repl_PR-2026-09-03-20/ + results/manyblock_PR-2026-09-03-20_ext/ +
 pooled verdict in the PR-20 ledger.
 
+## PR-21 EXECUTED (2026-09-11 00:2x — the attribution matrix CLOSES, ~seconds)
+
+**VERDICT: CLAIMED — TISSUE-COSTS-RECOVERY. The attribution matrix is CLOSED.** C1
+PARITY: SCHED-TF recovery == COLUMN (-0.04). C2 ESTABLISHED: PLAIN-TF recovery +1.147
+vs COLUMN +0.820 (delta -0.328, CI [-0.422, -0.233]) — the PLAIN control recovers MORE.
+**The honest mechanism story, fully attributed at claim grade: recovery magnitude is a
+PLASTICITY property — the plain fast-learner swings hardest both ways (most boundary
+damage +1.15, most revisit recovery +1.15); the schedule trades recovery for damage
+protection; the tissue trades a little more recovery for the routing ledger. The column
+is the STABLE learner; the plain TF is the VOLATILE learner.** The pre-committed branch
+fired: the ledger-vs-recovery trade-off is a recorded design lead. **The CPU-side
+registered program is now COMPLETE with the attribution matrix closed; S3 (owner Colab)
+remains the ladder's only next rung.** Artifacts:
+results/recovery_attr_PR-2026-09-03-21/ + official console log.
+
 ## BACKLOG
 
 1. **[PR-03 claim] Single-pass citation bar** — status: `done (commit: see git log "PR-03 CLAIMED", 2026-09-05)`

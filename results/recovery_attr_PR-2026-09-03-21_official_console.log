@@ -1,0 +1,16 @@
+[pr21] sources loaded: ['COLUMN', 'SCHED-TF', 'PLAIN-TF']
+
+==============================================================================
+  PR-2026-09-03-21 — REVISIT-RECOVERY ATTRIBUTION (confirmatory analysis)
+==============================================================================
+    COLUMN recovery/seed: [0.78, 0.792, 0.881, 0.814, 0.829] mean=0.8195
+    SCHED-TF recovery/seed: [0.831, 0.84, 0.921, 0.852, 0.853] mean=0.8595
+    PLAIN-TF recovery/seed: [1.101, 1.13, 1.15, 1.079, 1.275] mean=1.1471
+    C1 (SCHED - COLUMN): delta=-0.0400 CI=[-0.0949,0.0148] -> PARITY
+    C2 (PLAIN - COLUMN): delta=-0.3276 CI=[-0.4221,-0.2332] -> ESTABLISHED
+  OUTCOME: TISSUE-COSTS-RECOVERY
+  TISSUE-COSTS-RECOVERY — the plain control recovers MORE than the column: the ledger machinery's honesty price, recorded as a design lead (doc §4).
+  branch: §4: the ledger-vs-recovery trade-off becomes a design lead — a new registration would test ledger machinery that does not tax recovery.
+  ledger: C:\Users\Kullanıcı\Prizma\results\recovery_attr_PR-2026-09-03-21\powered.json
+  raw archive: C:\Users\Kullanıcı\Prizma\results\runs\recovery-attr-PR-2026-09-03-21-20260910T211612Z.json
+==============================================================================

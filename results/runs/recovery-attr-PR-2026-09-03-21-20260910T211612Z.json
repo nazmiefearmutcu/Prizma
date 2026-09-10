@@ -1,0 +1,20 @@
+{
+  "meta": {
+    "registry": "PR-2026-09-03-21",
+    "smoke": false,
+    "lane": "CLAIM (frozen pre-registration; confirmatory ANALYSIS)",
+    "doc": "docs/preregistry/2026-09-11-recovery-attribution.md",
+    "sources": {
+      "COLUMN": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\manyblock_PR-2026-09-03-14\\powered.json",
+      "SCHED-TF": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\windowtf_sched_PR-2026-09-03-17\\powered.json",
+      "PLAIN-TF": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\windowtf_manyblock_PR-2026-09-03-15\\powered.json"
+    },
+    "recovery_def": "bpc_B(post_C) - bpc_B(post_D) per seed (the revisit improvement)",
+    "thresholds": {
+      "gap_point": 0.1,
+      "ci_rule": "CI excludes 0 AND |point| >= 0.10",
+      "alpha": 0.05
+    },
+    "note": "all three arms share the stream and the eval slices; COLUMN/SCHED-TF/PLAIN-TF differ only in the registered components (doc \u00a72)"
+  }
+}

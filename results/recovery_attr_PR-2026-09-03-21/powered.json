@@ -1,0 +1,175 @@
+{
+  "meta": {
+    "registry": "PR-2026-09-03-21",
+    "smoke": false,
+    "lane": "CLAIM (frozen pre-registration; confirmatory ANALYSIS)",
+    "doc": "docs/preregistry/2026-09-11-recovery-attribution.md",
+    "sources": {
+      "COLUMN": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\manyblock_PR-2026-09-03-14\\powered.json",
+      "SCHED-TF": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\windowtf_sched_PR-2026-09-03-17\\powered.json",
+      "PLAIN-TF": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\windowtf_manyblock_PR-2026-09-03-15\\powered.json"
+    },
+    "recovery_def": "bpc_B(post_C) - bpc_B(post_D) per seed (the revisit improvement)",
+    "thresholds": {
+      "gap_point": 0.1,
+      "ci_rule": "CI excludes 0 AND |point| >= 0.10",
+      "alpha": 0.05
+    },
+    "note": "all three arms share the stream and the eval slices; COLUMN/SCHED-TF/PLAIN-TF differ only in the registered components (doc \u00a72)",
+    "raw_archive": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\runs\\recovery-attr-PR-2026-09-03-21-20260910T211612Z.json"
+  },
+  "verdict": {
+    "outcome": "TISSUE-COSTS-RECOVERY",
+    "verdict": "TISSUE-COSTS-RECOVERY \u2014 the plain control recovers MORE than the column: the ledger machinery's honesty price, recorded as a design lead (doc \u00a74).",
+    "branches": [
+      "\u00a74: the ledger-vs-recovery trade-off becomes a design lead \u2014 a new registration would test ledger machinery that does not tax recovery."
+    ],
+    "C1": {
+      "delta": -0.04002250825038878,
+      "ci": [
+        -0.09485239426602265,
+        0.014807377765245107
+      ],
+      "position": "PARITY",
+      "note": "delta = mean(SCHED-TF recovery) - mean(COLUMN recovery)",
+      "attribution": "PARITY"
+    },
+    "C2": {
+      "delta": -0.32760663965191694,
+      "ci": [
+        -0.4220583750111792,
+        -0.23315490429265467
+      ],
+      "position": "ESTABLISHED",
+      "note": "delta = mean(PLAIN-TF recovery) - mean(COLUMN recovery)",
+      "attribution": "PLAIN-ADVANTAGED (lower recovery) => TISSUE-COSTS-RECOVERY"
+    },
+    "recovery_per_seed": {
+      "COLUMN": [
+        0.7803720421301819,
+        0.7924986867080617,
+        0.8809580224837097,
+        0.8141520473144808,
+        0.8294485116422989
+      ],
+      "SCHED-TF": [
+        0.8314101291528191,
+        0.8397720758754872,
+        0.9213860372005938,
+        0.8517357805316776,
+        0.8532378287700988
+      ],
+      "PLAIN-TF": [
+        1.101396544056041,
+        1.1302982957451464,
+        1.1496964205707947,
+        1.0786242635323835,
+        1.2754469846339518
+      ]
+    },
+    "post_D_absolute": {
+      "COLUMN": [
+        2.874568993480726,
+        2.8794312933117183,
+        2.86987406163048,
+        2.897486299264289,
+        2.8653624767283756
+      ],
+      "SCHED-TF": [
+        2.9047958228651525,
+        2.9085472871495837,
+        2.904194429187267,
+        2.9256825346296895,
+        2.89519317194959
+      ],
+      "PLAIN-TF": [
+        2.7596876443909175,
+        2.75005826065025,
+        2.747974808257685,
+        2.765225994975492,
+        2.751169488396327
+      ]
+    },
+    "alpha": 0.05
+  },
+  "report": {
+    "registry": "PR-2026-09-03-21",
+    "smoke": false,
+    "raw_archive": "C:\\Users\\Kullan\u0131c\u0131\\Prizma\\results\\runs\\recovery-attr-PR-2026-09-03-21-20260910T211612Z.json",
+    "verdict": {
+      "outcome": "TISSUE-COSTS-RECOVERY",
+      "verdict": "TISSUE-COSTS-RECOVERY \u2014 the plain control recovers MORE than the column: the ledger machinery's honesty price, recorded as a design lead (doc \u00a74).",
+      "branches": [
+        "\u00a74: the ledger-vs-recovery trade-off becomes a design lead \u2014 a new registration would test ledger machinery that does not tax recovery."
+      ],
+      "C1": {
+        "delta": -0.04002250825038878,
+        "ci": [
+          -0.09485239426602265,
+          0.014807377765245107
+        ],
+        "position": "PARITY",
+        "note": "delta = mean(SCHED-TF recovery) - mean(COLUMN recovery)",
+        "attribution": "PARITY"
+      },
+      "C2": {
+        "delta": -0.32760663965191694,
+        "ci": [
+          -0.4220583750111792,
+          -0.23315490429265467
+        ],
+        "position": "ESTABLISHED",
+        "note": "delta = mean(PLAIN-TF recovery) - mean(COLUMN recovery)",
+        "attribution": "PLAIN-ADVANTAGED (lower recovery) => TISSUE-COSTS-RECOVERY"
+      },
+      "recovery_per_seed": {
+        "COLUMN": [
+          0.7803720421301819,
+          0.7924986867080617,
+          0.8809580224837097,
+          0.8141520473144808,
+          0.8294485116422989
+        ],
+        "SCHED-TF": [
+          0.8314101291528191,
+          0.8397720758754872,
+          0.9213860372005938,
+          0.8517357805316776,
+          0.8532378287700988
+        ],
+        "PLAIN-TF": [
+          1.101396544056041,
+          1.1302982957451464,
+          1.1496964205707947,
+          1.0786242635323835,
+          1.2754469846339518
+        ]
+      },
+      "post_D_absolute": {
+        "COLUMN": [
+          2.874568993480726,
+          2.8794312933117183,
+          2.86987406163048,
+          2.897486299264289,
+          2.8653624767283756
+        ],
+        "SCHED-TF": [
+          2.9047958228651525,
+          2.9085472871495837,
+          2.904194429187267,
+          2.9256825346296895,
+          2.89519317194959
+        ],
+        "PLAIN-TF": [
+          2.7596876443909175,
+          2.75005826065025,
+          2.747974808257685,
+          2.765225994975492,
+          2.751169488396327
+        ]
+      },
+      "alpha": 0.05
+    },
+    "powered_cpu_note": "analysis is CPU-native"
+  }
+}
