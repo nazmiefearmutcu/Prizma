@@ -260,6 +260,23 @@ mechanism lead justifies one (leads: routing-ledger head-to-head design — stru
 tissue-only; D/E audit non-discriminating). Publication stays the owner's one decision
 (tools/ship_prizma.py).** This file is current; good night.
 
+## PR-18 EXECUTED (2026-09-10 night — the replication rung, powered-cpu, ~60 min over two legs)
+
+**VERDICT: CLAIMED — REPLICATED at n=10 fresh (seeds 5-14); the flagship claim now stands
+on 15 cumulative seeds.** The seeds-5-9 leg: B1 PASS (-0.268), B3 PASS (0.959/+0.0003),
+B2 INCONCLUSIVE (mean +0.526 but a one-seed floor-variance CI [0.003, 1.049]) — the §5
+pre-authorized extension (seeds 10-14) ran and PASSED alone (B2 +0.839, CI [0.627,
+1.052]); the POOLED fresh adjudication (n=10): B1 -0.2759, B2 +0.6826 CI [0.4325, 0.9328]
+(Holm p 0.0003), B3 0.965/+0.0001. LR-selection canary PASS (3e-3/3e-3/1e-2 exact);
+structural FORCED==PRIM canary PASS; the FROZEN bit-identity canaries were RECORDED-SKIP
+on fresh seeds (doc addendum #1). **INCIDENTS (cosmetic): two post-verdict printer
+crashes (stale keys) + one planned-canary abort at FROZEN-TRUNK s5 (the fresh-seed scope
+gap, fixed with the skip-record semantics) — claim cells never recomputed.** Runner:
+prizma_lm_claim gained the guarded --seed-offset flag. **S2 is now REPLICATED-COMPLETE.
+NEXT = S3 (owner Colab) — the CPU-side ladder has no pending registered work.**
+Artifacts: results/prizma_lm_PR-2026-09-03-18/ (ledger + pooled_fresh_verdict.json) +
+3 console logs.
+
 ## BACKLOG
 
 1. **[PR-03 claim] Single-pass citation bar** — status: `done (commit: see git log "PR-03 CLAIMED", 2026-09-05)`

@@ -1,0 +1,87 @@
+[pr08] corpora: A=3906 B=3921 C=3906 segs; eval A=390 B=435 Cret=390; vocab=65; smoke=False; results=C:\Users\Kullanıcı\Prizma\results\prizma_lm_PR-2026-09-03-18\powered.json
+[pr08] PRIM-LM seed 5: resumed from ledger (bpc_A_postC=2.749)
+[pr08] PRIM-LM seed 6: resumed from ledger (bpc_A_postC=2.757)
+[pr08] PRIM-LM seed 7: resumed from ledger (bpc_A_postC=2.762)
+[pr08] PRIM-LM seed 8: resumed from ledger (bpc_A_postC=2.744)
+[pr08] PRIM-LM seed 9: resumed from ledger (bpc_A_postC=2.759)
+[pr08] FROZEN-TRUNK seed 5: resumed from ledger (bpc_A_postC=2.811)
+[pr08] FROZEN-TRUNK seed 6: resumed from ledger (bpc_A_postC=2.824)
+[pr08] FROZEN-TRUNK seed 7: resumed from ledger (bpc_A_postC=2.826)
+[pr08] FROZEN-TRUNK seed 8: resumed from ledger (bpc_A_postC=2.832)
+[pr08] FROZEN-TRUNK seed 9: resumed from ledger (bpc_A_postC=2.833)
+[pr11] CANARY PASS (FROZEN-TRUNK): 0 cells bit-identical to the PR-08 powered ledger (C:\Users\Kullanıcı\Prizma\results\prizma_lm_PR-2026-09-03-08\powered.json)
+[pr08] budget projection from first cell: 32.3 min for 25 cells
+[pr08] SHARED-HEAD seed 5: A_preB=3.063 A_postC=2.782 B_postB=2.925 B_postC=4.909 Cret_postC=2.853 wall=77.4s
+[pr08] SHARED-HEAD seed 6: A_preB=3.071 A_postC=2.796 B_postB=2.945 B_postC=4.723 Cret_postC=2.854 wall=78.6s
+[pr08] SHARED-HEAD seed 7: A_preB=3.064 A_postC=2.796 B_postB=2.909 B_postC=4.797 Cret_postC=2.852 wall=73.8s
+[pr08] SHARED-HEAD seed 8: A_preB=3.068 A_postC=2.778 B_postB=2.920 B_postC=4.992 Cret_postC=2.856 wall=77.0s
+[pr08] SHARED-HEAD seed 9: A_preB=3.024 A_postC=2.804 B_postB=2.970 B_postC=4.907 Cret_postC=2.850 wall=76.1s
+[pr08] FROZEN-CHECKPOINT seed 5: A_preB=3.884 A_postC=3.884 B_postB=6.285 B_postC=6.285 Cret_postC=3.879 wall=25.4s
+[pr08] FROZEN-CHECKPOINT seed 6: A_preB=3.141 A_postC=3.141 B_postB=6.287 B_postC=6.287 Cret_postC=3.086 wall=22.6s
+[pr08] FROZEN-CHECKPOINT seed 7: A_preB=3.056 A_postC=3.056 B_postB=6.175 B_postC=6.175 Cret_postC=2.999 wall=22.7s
+[pr08] FROZEN-CHECKPOINT seed 8: A_preB=3.080 A_postC=3.080 B_postB=5.988 B_postC=5.988 Cret_postC=3.015 wall=25.1s
+[pr08] FROZEN-CHECKPOINT seed 9: A_preB=3.716 A_postC=3.716 B_postB=6.095 B_postC=6.095 Cret_postC=3.704 wall=23.8s
+[pr11] CANARY PASS (FROZEN-CHECKPOINT): 0 cells bit-identical to the PR-08 powered ledger (C:\Users\Kullanıcı\Prizma\results\prizma_lm_PR-2026-09-03-08\powered.json)
+[pr08] FORCED-RECRUIT seed 5: A_preB=3.013 A_postC=2.759 B_postB=2.903 B_postC=3.432 Cret_postC=2.816 wall=74.8s
+[pr08] FORCED-RECRUIT seed 6: A_preB=3.036 A_postC=2.758 B_postB=2.889 B_postC=3.413 Cret_postC=2.812 wall=73.7s
+[pr08] FORCED-RECRUIT seed 7: A_preB=3.028 A_postC=2.764 B_postB=2.895 B_postC=3.482 Cret_postC=2.815 wall=74.3s
+[pr08] FORCED-RECRUIT seed 8: A_preB=3.035 A_postC=2.745 B_postB=2.886 B_postC=3.447 Cret_postC=2.811 wall=74.1s
+[pr08] FORCED-RECRUIT seed 9: A_preB=2.999 A_postC=2.754 B_postB=2.906 B_postC=3.421 Cret_postC=2.800 wall=71.7s
+[pr08] structural canary PASS: FORCED A/B phases bit-identical to PRIM across seeds 5..9
+
+==============================================================================
+  PR-2026-09-03-08 — POWERED CLAIM CAMPAIGN
+==============================================================================
+    claim.FORCED-RECRUIT.s5            lr=3e-03 A_preB=3.013 A_postC=2.759 B_postB=2.903 B_postC=3.432 Cret=2.816 wall=74.8s
+      ledger: committed=3 a_expert=0 recruits=3 evictions=0 vetoed_segs=0 frac_C(1-20)to_A=0.0
+    claim.FORCED-RECRUIT.s6            lr=3e-03 A_preB=3.036 A_postC=2.758 B_postB=2.889 B_postC=3.413 Cret=2.812 wall=73.7s
+      ledger: committed=3 a_expert=0 recruits=3 evictions=0 vetoed_segs=0 frac_C(1-20)to_A=0.0
+    claim.FORCED-RECRUIT.s7            lr=3e-03 A_preB=3.028 A_postC=2.764 B_postB=2.895 B_postC=3.482 Cret=2.815 wall=74.3s
+      ledger: committed=3 a_expert=0 recruits=3 evictions=0 vetoed_segs=0 frac_C(1-20)to_A=0.0
+    claim.FORCED-RECRUIT.s8            lr=3e-03 A_preB=3.035 A_postC=2.745 B_postB=2.886 B_postC=3.447 Cret=2.811 wall=74.1s
+      ledger: committed=3 a_expert=0 recruits=3 evictions=0 vetoed_segs=0 frac_C(1-20)to_A=0.0
+    claim.FORCED-RECRUIT.s9            lr=3e-03 A_preB=2.999 A_postC=2.754 B_postB=2.906 B_postC=3.421 Cret=2.800 wall=71.7s
+      ledger: committed=4 a_expert=0 recruits=4 evictions=0 vetoed_segs=0 frac_C(1-20)to_A=0.0
+    claim.FROZEN-CHECKPOINT.s5         lr=1e-02 A_preB=3.884 A_postC=3.884 B_postB=6.285 B_postC=6.285 Cret=3.879 wall=25.4s
+    claim.FROZEN-CHECKPOINT.s6         lr=1e-02 A_preB=3.141 A_postC=3.141 B_postB=6.287 B_postC=6.287 Cret=3.086 wall=22.6s
+    claim.FROZEN-CHECKPOINT.s7         lr=1e-02 A_preB=3.056 A_postC=3.056 B_postB=6.175 B_postC=6.175 Cret=2.999 wall=22.7s
+    claim.FROZEN-CHECKPOINT.s8         lr=1e-02 A_preB=3.080 A_postC=3.080 B_postB=5.988 B_postC=5.988 Cret=3.015 wall=25.1s
+    claim.FROZEN-CHECKPOINT.s9         lr=1e-02 A_preB=3.716 A_postC=3.716 B_postB=6.095 B_postC=6.095 Cret=3.704 wall=23.8s
+    claim.FROZEN-TRUNK.s5              lr=3e-03 A_preB=3.013 A_postC=2.811 B_postB=3.525 B_postC=6.047 Cret=2.864 wall=64.7s
+      ledger: committed=4 a_expert=0 recruits=15 evictions=11 vetoed_segs=0 frac_C(1-20)to_A=0.9484
+    claim.FROZEN-TRUNK.s6              lr=3e-03 A_preB=3.036 A_postC=2.824 B_postB=3.527 B_postC=4.745 Cret=2.878 wall=61.9s
+      ledger: committed=4 a_expert=0 recruits=12 evictions=8 vetoed_segs=0 frac_C(1-20)to_A=0.975
+    claim.FROZEN-TRUNK.s7              lr=3e-03 A_preB=3.028 A_postC=2.826 B_postB=3.529 B_postC=5.484 Cret=2.865 wall=61.0s
+      ledger: committed=4 a_expert=0 recruits=19 evictions=15 vetoed_segs=0 frac_C(1-20)to_A=0.9703
+    claim.FROZEN-TRUNK.s8              lr=3e-03 A_preB=3.035 A_postC=2.832 B_postB=3.510 B_postC=5.289 Cret=2.889 wall=63.9s
+      ledger: committed=4 a_expert=0 recruits=17 evictions=13 vetoed_segs=0 frac_C(1-20)to_A=0.9609
+    claim.FROZEN-TRUNK.s9              lr=3e-03 A_preB=2.999 A_postC=2.833 B_postB=3.552 B_postC=5.338 Cret=2.887 wall=60.9s
+      ledger: committed=4 a_expert=0 recruits=17 evictions=13 vetoed_segs=0 frac_C(1-20)to_A=0.95
+    claim.PRIM-LM.s5                   lr=3e-03 A_preB=3.013 A_postC=2.749 B_postB=2.903 B_postC=3.432 Cret=2.807 wall=82.3s
+      ledger: committed=4 a_expert=0 recruits=41 evictions=37 vetoed_segs=0 frac_C(1-20)to_A=0.8625
+    claim.PRIM-LM.s6                   lr=3e-03 A_preB=3.036 A_postC=2.757 B_postB=2.889 B_postC=3.413 Cret=2.810 wall=73.5s
+      ledger: committed=4 a_expert=0 recruits=36 evictions=32 vetoed_segs=0 frac_C(1-20)to_A=0.9766
+    claim.PRIM-LM.s7                   lr=3e-03 A_preB=3.028 A_postC=2.762 B_postB=2.895 B_postC=3.482 Cret=2.814 wall=74.9s
+      ledger: committed=4 a_expert=0 recruits=35 evictions=31 vetoed_segs=0 frac_C(1-20)to_A=0.9906
+    claim.PRIM-LM.s8                   lr=3e-03 A_preB=3.035 A_postC=2.744 B_postB=2.886 B_postC=3.447 Cret=2.816 wall=71.5s
+      ledger: committed=4 a_expert=0 recruits=35 evictions=31 vetoed_segs=0 frac_C(1-20)to_A=0.9875
+    claim.PRIM-LM.s9                   lr=3e-03 A_preB=2.999 A_postC=2.759 B_postB=2.906 B_postC=3.420 Cret=2.805 wall=74.6s
+      ledger: committed=4 a_expert=0 recruits=33 evictions=29 vetoed_segs=0 frac_C(1-20)to_A=0.9766
+    claim.SHARED-HEAD.s5               lr=3e-03 A_preB=3.063 A_postC=2.782 B_postB=2.925 B_postC=4.909 Cret=2.853 wall=77.4s
+    claim.SHARED-HEAD.s6               lr=3e-03 A_preB=3.071 A_postC=2.796 B_postB=2.945 B_postC=4.723 Cret=2.854 wall=78.6s
+    claim.SHARED-HEAD.s7               lr=3e-03 A_preB=3.064 A_postC=2.796 B_postB=2.909 B_postC=4.797 Cret=2.852 wall=73.8s
+    claim.SHARED-HEAD.s8               lr=3e-03 A_preB=3.068 A_postC=2.778 B_postB=2.920 B_postC=4.992 Cret=2.856 wall=77.0s
+    claim.SHARED-HEAD.s9               lr=3e-03 A_preB=3.024 A_postC=2.804 B_postB=2.970 B_postC=4.907 Cret=2.850 wall=76.1s
+    B1: mean=-0.2681 CI=[-0.2919, -0.2444] p_raw=0.0000 p_holm=0.0000 -> PASS
+    B2: mean=0.5259 CI=[0.0028, 1.0489] p_raw=0.0433 p_holm=0.0433 -> INCONCLUSIVE
+    B3: frac_mean=0.959 (bar >= 0.5) forced_cost=+0.0003 (bar <= 0.1) -> PASS
+    B4 PRIM-LM: B-eval degradation post-C mean +0.5431 (reported, not gated)
+    B4 FORCED-RECRUIT: B-eval degradation post-C mean +0.5434 (reported, not gated)
+    B4 FROZEN-TRUNK: B-eval degradation post-C mean +1.8517 (reported, not gated)
+    B4 SHARED-HEAD: B-eval degradation post-C mean +1.9319 (reported, not gated)
+  OUTCOME: INCONCLUSIVE
+  INCONCLUSIVE — a bar CI straddles its margin (PR-03 mirror: never PASS). Pre-committed §5 branch applies (see 'branches').
+  branch: §5 (any INCONCLUSIVE): maintainer addendum decides seed extension (n->10) BEFORE unblinding per-arm numbers, or the leg is honestly abandoned. INCONCLUSIVE is never PASS (PR-03 mirror).
+  ledger: C:\Users\Kullanıcı\Prizma\results\prizma_lm_PR-2026-09-03-18\powered.json
+  raw archive: C:\Users\Kullanıcı\Prizma\results\runs\prizma-lm-PR-2026-09-03-08-20260910T175158Z.json
+==============================================================================

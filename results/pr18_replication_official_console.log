@@ -1,0 +1,25 @@
+[pr08] corpora: A=3906 B=3921 C=3906 segs; eval A=390 B=435 Cret=390; vocab=65; smoke=False; results=C:\Users\Kullanıcı\Prizma\results\prizma_lm_PR-2026-09-03-18\powered.json
+[pr08]   fusion lr=0.001 A-loss=4.7072
+[pr08]   fusion lr=0.003 A-loss=4.2168
+[pr08]   fusion lr=0.01 A-loss=4.3204
+[pr08] lr-select fusion: lr=0.003 grid={0.001: np.float64(4.707164135977779), 0.003: np.float64(4.216777524511507), 0.01: np.float64(4.3203619596783485)}
+[pr08]   shared lr=0.001 A-loss=4.3175
+[pr08]   shared lr=0.003 A-loss=4.2584
+[pr08]   shared lr=0.01 A-loss=4.8852
+[pr08] lr-select shared: lr=0.003 grid={0.001: np.float64(4.317458369704526), 0.003: np.float64(4.258375614930461), 0.01: np.float64(4.885180928852924)}
+[pr08]   frozen-checkpoint lr=0.001 A-loss=5.1432
+[pr08]   frozen-checkpoint lr=0.003 A-loss=4.4588
+[pr08]   frozen-checkpoint lr=0.01 A-loss=4.1966
+[pr08] lr-select frozen-checkpoint: lr=0.01 grid={0.001: np.float64(5.143213668179284), 0.003: np.float64(4.458794193735004), 0.01: np.float64(4.19657656616867)}
+[pr08] budget projection from first cell: 34.6 min for 25 cells
+[pr08] PRIM-LM seed 5: A_preB=3.013 A_postC=2.749 B_postB=2.903 B_postC=3.432 Cret_postC=2.807 wall=82.3s
+[pr08] PRIM-LM seed 6: A_preB=3.036 A_postC=2.757 B_postB=2.889 B_postC=3.413 Cret_postC=2.810 wall=73.5s
+[pr08] PRIM-LM seed 7: A_preB=3.028 A_postC=2.762 B_postB=2.895 B_postC=3.482 Cret_postC=2.814 wall=74.9s
+[pr08] PRIM-LM seed 8: A_preB=3.035 A_postC=2.744 B_postB=2.886 B_postC=3.447 Cret_postC=2.816 wall=71.5s
+[pr08] PRIM-LM seed 9: A_preB=2.999 A_postC=2.759 B_postB=2.906 B_postC=3.420 Cret_postC=2.805 wall=74.6s
+[pr08] FROZEN-TRUNK seed 5: A_preB=3.013 A_postC=2.811 B_postB=3.525 B_postC=6.047 Cret_postC=2.864 wall=64.7s
+[pr08] FROZEN-TRUNK seed 6: A_preB=3.036 A_postC=2.824 B_postB=3.527 B_postC=4.745 Cret_postC=2.878 wall=61.9s
+[pr08] FROZEN-TRUNK seed 7: A_preB=3.028 A_postC=2.826 B_postB=3.529 B_postC=5.484 Cret_postC=2.865 wall=61.0s
+[pr08] FROZEN-TRUNK seed 8: A_preB=3.035 A_postC=2.832 B_postB=3.510 B_postC=5.289 Cret_postC=2.889 wall=63.9s
+[pr08] FROZEN-TRUNK seed 9: A_preB=2.999 A_postC=2.833 B_postB=3.552 B_postC=5.338 Cret_postC=2.887 wall=60.9s
+CANARY ABORT (PR-2026-09-03-11): missing cell for comparison (claim.FROZEN-TRUNK.s5 absent here or in the PR-08 ledger) — refusing to proceed to any further arm.
