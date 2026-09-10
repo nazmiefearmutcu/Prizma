@@ -356,11 +356,20 @@ gates). No new claim was staked; one new mechanism was implemented and honestly 
    added to the vocabulary); README Prizma-Seq crosstalk corrected to the measured 0.117 + counts
    refreshed; notebook stage-6 command/archive/provenance aligned to the PR-13 confirmatory run;
    locale-robust test reads fixed (cp1254).
+4. **Lane 4 — open-world abstain / NOVEL gate (opt-in, `src/prizma.py`).** The documented-but-
+   unimplemented rule (docs/EXPERT_ECONOMY.md §3.4) now exists: `abstain_z=None` knob + new
+   `route_or_novel(X)` (batch mean of per-sample min z over trained experts; novel above the
+   calibrated z=4); default paths untouched (bit-identity test); calibration reproduced at reduced
+   scale (0/36 false-NOVEL on trained domains, 12/12 detection on a never-trained domain, margins
+   ~60–120σ). 7 new tests; calibration caveat recorded (the separation needs recruited,
+   domain-pure floors — the committed test uses K=3/d=24/h=48 geometry, not the usual unit-test
+   scale). Prune/merge stay specified-not-implemented (spec §3.1/§3.2).
 
-**Suite at close: 556 collected -> 546 passed, 10 skipped (CPU, 3:43).** No prereg row changed; the
+**Suite at close: 563 collected -> 553 passed, 10 skipped (CPU, 3:45).** No prereg row changed; the
 next registered rung remains S3 (owner Colab, PRIZMA_GPU_CAMPAIGN.ipynb). New leads: (i) the
 cascade needs a dose/target design pass before any registration; (ii) L2 `fast_reads` could extend
-to `_chunked_delta_eta` (survey-2 C2 extension, not done).
+to `_chunked_delta_eta` (survey-2 C2 extension, not done); (iii) prune/merge open-world lifecycle
+(spec exists, not implemented).
 
 ## BACKLOG
 

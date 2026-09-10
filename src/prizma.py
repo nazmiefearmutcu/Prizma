@@ -248,7 +248,7 @@ class Prizma:
                  route_stat="batch_mean",
                  train_granularity="batch", session_window=0,
                  replay_passes=0, replay_items=256, probation=False,
-                 m_max=0):
+                 m_max=0, abstain_z=None):
         self.d, self.h, self.K, self.M = d, h, K, n_experts
         self.lr, self.lr_cls, self.lambda_cls = lr, lr_cls, lambda_cls
         self.feedback = feedback
@@ -487,6 +487,18 @@ class Prizma:
             act_bits=act_bits, noise_in_std=noise_in_std,
             noise_act_std=noise_act_std, noise_weight_std=noise_weight_std)
 
+        # ---- Open-world abstain / NOVEL gate (opt-in; docs/EXPERT_ECONOMY.md §3.4) -- #
+        # Batch-level test-time abstention, read ONLY by route_or_novel(). None
+        # (shipped) disables the mechanism: the method refuses with a clear
+        # ValueError and every existing code path is untouched. Calibrated in
+        # docs/EXPERT_ECONOMY.md §2.3: batch z=4 -> 0% false-NOVEL on trained
+        # domains, 100% detection on a never-trained domain (same generator family).
+        if abstain_z is not None:
+            abstain_z = float(abstain_z)
+            if not math.isfinite(abstain_z):
+                raise ValueError(f"abstain_z must be finite, got {abstain_z!r}")
+        self.abstain_z = abstain_z
+
         self.experts = [
             Expert(d, h, K, seed + 100 * (m + 1),
                    feedback=feedback, lambda_cls=lambda_cls,
@@ -546,6 +558,43 @@ class Prizma:
             Sc = S.copy(); Sc[:, ~trained] = np.inf
             return np.argmin(Sc, axis=1), S
         return np.argmin(S, axis=1), S
+
+    def route_or_novel(self, X):
+        """Open-world abstain: today's argmin route plus a batch-level NOVEL label.
+
+        OPT-IN (docs/EXPERT_ECONOMY.md §3.4): requires abstain_z at construction; with
+        abstain_z=None this raises a clear ValueError and nothing else changes.
+
+        The NOVEL statistic is the batch mean of the per-sample minimum z-score over the
+        TRAINED experts' own precision floors (the same floors the vigilance test uses):
+            z[n, m] = (S[n, m] - mu_m) / max(var_m, 1e-12)**0.5
+            statistic = mean_n( min_{m trained} z[n, m] )
+        and novel = statistic > abstain_z. Batch-level BY DESIGN: per-sample thresholds
+        had a fat ~11-15% false-flag tail on known domains while the batch rule measured
+        0% false-NOVEL / 100% detection at z=4 (docs/EXPERT_ECONOMY.md §2.3). If NO
+        expert is trained, nothing claims the batch -> novel=True. An empty batch carries
+        no evidence -> novel=False.
+
+        Returns (idx, S, novel) where idx/S are EXACTLY route_for_inference's
+        trained-expert argmin routing (same code path). Side-effect free: no training,
+        no bookkeeping mutation (recon_error may consume an expert's own rng under the
+        noise/quantization knobs, exactly as route_for_inference already does)."""
+        if self.abstain_z is None:
+            raise ValueError(
+                "route_or_novel requires the opt-in abstain_z knob (default None): "
+                "construct Prizma(..., abstain_z=<float>) to enable open-world abstain")
+        idx, S = self.route_for_inference(X)
+        trained = np.array([e.n_seen > 0 for e in self.experts], dtype=bool)
+        if not trained.any():
+            return idx, S, True
+        if len(X) == 0:
+            return idx, S, False
+        mu = np.array([e.mu for e in self.experts], dtype=np.float64)
+        var = np.array([e.var for e in self.experts], dtype=np.float64)
+        sigma = np.sqrt(np.maximum(var, 1e-12))
+        Z = (S - mu[None, :]) / sigma[None, :]
+        stat = float(Z[:, trained].min(axis=1).mean())
+        return idx, S, bool(stat > self.abstain_z)
 
     def predict_logits(self, X):
         idx, _ = self.route_for_inference(X)

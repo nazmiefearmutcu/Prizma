@@ -253,7 +253,7 @@ equivalence, and the anti-conservative statistics gate) runs on every push via
 ```bash
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt pytest
-pytest -q          # CPU-only (what CI runs): 556 collected -> 546 passed, 10 skipped
+pytest -q          # CPU-only (what CI runs): 563 collected -> 553 passed, 10 skipped
                    # (measured 2026-09-11; the 10 skips = 9 static CUDA skips + 1 scipy skip).
                    # Several kernel-equivalence tests are parametrised over devices, so a box
                    # with MPS available collects a different count — re-measure there.
