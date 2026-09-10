@@ -525,3 +525,20 @@ Disclosed incident: the first PR-13 launch ran at a 10x CLI dose typo — INVALI
 (results/invalid_dose_archive/); the runner now refuses unregistered doses. The GPU-tier
 program (PRIZMA_GPU_CAMPAIGN.ipynb) remains the next rung; its repaired-flagship stage
 carries the registered levers.
+
+
+---
+
+## Addendum 2026-09-10 (late night) — PR-18..PR-20: replication, and the honest comparison ledger
+
+| id | Question | Verdict |
+|---|---|---|
+| PR-18 | Does the repaired flagship's all-bars verdict REPLICATE on fresh seeds? | **CLAIMED — REPLICATED at n=10 fresh (seeds 5-14)**: B1 −0.276, B2 +0.683 (CI [0.43, 0.93], Holm p=0.0003), B3 frac 0.965 with zero forced cost. The seeds-5-9 leg alone was B2-INCONCLUSIVE (floor variance); the pre-authorized seeds-10-14 extension resolved it. 15 cumulative seeds. |
+| PR-19 | Does the 5-block accumulation claim replicate on fresh seeds? | **CLAIMED — REPLICATED at n=10 cumulative fresh**: every bar reproduces on seeds 5-9 to 3-4 decimals (recovery +0.81, frac 0.97, A-retention −0.32, harm −0.0083 EXACTLY). |
+| PR-20 | Does the boundary-damage gap replicate on fresh seeds at the halving margin? | **NOT-ESTABLISHED (FINAL, pooled fresh n=10)** — directional in every fresh pair (+0.245 mean) but the 0.25 halving-margin is not CI-established: the fresh gap (~0.25) is ~half the original (~0.55) — the protection's SIZE is seed-dependent. LESSON: retention/margin bars need power analysis against the measured effect. |
+
+**The comparison ledger vs the memory-matched control (final):** accumulation parity;
+boundary-damage protection directional and SCHEDULE-carried (PR-17 attribution; halving
+withdrawn at this margin); routing ledger + specialization purity = tissue-only
+(structural). The CPU-side registered program is COMPLETE through S2.5-replicated; the
+ladder's next rung is S3 (the owner's Colab session; PRIZMA_GPU_CAMPAIGN.ipynb).
