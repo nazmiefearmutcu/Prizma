@@ -84,4 +84,4 @@ The [pre-registration policy](docs/preregistry/POLICY.md) and [artifact-retentio
 
 [Apache License 2.0](LICENSE).
 
-Created By Nazmi Efe Armutcu (Aylin)
+Created By Aylin (Nazmi Efe Armutcu)
